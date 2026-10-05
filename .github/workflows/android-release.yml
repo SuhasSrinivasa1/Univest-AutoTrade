@@ -1,0 +1,123 @@
+name: Univest AutoTrade Android Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK 35
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Validate official execution contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'com.univest.capp' app/src/main/java/com/suhas/multyfideliverybuy/MultyfiNotificationService.java
+          grep -q 'DurableOfficialSignalQueue.enqueueAndDispatch' app/src/main/java/com/suhas/multyfideliverybuy/MultyfiNotificationService.java
+          grep -q 'OFFICIAL_MARKETABLE_LIMIT_BUFFER_PCT = 0.02' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
+          grep -q 'placeUnivestCncGreenSell' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          grep -q 'EXIT_DEFERRED_NOT_GREEN' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          grep -q 'UNIVEST_EXIT_EXTERNAL_OR_MANUAL_HOLDING' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
+          grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
+          grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
+          grep -q 'GreenOfficialExitTest' app/src/test/java/com/suhas/multyfideliverybuy/GreenOfficialExitTest.java
+
+      - name: Unit tests and release build
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle --no-daemon --console=plain clean testReleaseUnitTest assembleRelease | tee test-results.txt
+
+      - name: Sign release APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          VERSION_NAME="$(sed -n "s/.*versionName '\([^']*\)'.*/\1/p" app/build.gradle | head -1)"
+          VERSION_CODE="$(sed -n 's/.*versionCode \([0-9][0-9]*\).*/\1/p' app/build.gradle | head -1)"
+          test -n "$VERSION_NAME"
+          test -n "$VERSION_CODE"
+
+          APK="$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | head -1)"
+          test -n "$APK" && test -s "$APK"
+
+          PASS="$(openssl rand -hex 24)"
+          KS="$RUNNER_TEMP/univest-release.jks"
+          keytool -genkeypair -v \
+            -keystore "$KS" \
+            -storepass "$PASS" \
+            -keypass "$PASS" \
+            -alias univest-release \
+            -keyalg RSA -keysize 4096 -validity 10000 \
+            -dname "CN=Univest AutoTrade $VERSION_NAME, OU=Private Release, O=Univest AutoTrade, L=Bengaluru, ST=Karnataka, C=IN"
+
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 "$APK" "$RUNNER_TEMP/aligned.apk"
+          OUT="release/Univest-AutoTrade-v$VERSION_NAME-SIGNED.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks "$KS" \
+            --ks-pass "pass:$PASS" \
+            --ks-key-alias univest-release \
+            --key-pass "pass:$PASS" \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out "$OUT" "$RUNNER_TEMP/aligned.apk"
+          rm -f "$KS"
+
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$OUT" | tee release/APK-SIGNATURE.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$OUT" | tee release/APK-BADGING.txt
+          grep -q "package: name='com.suhas.multyfideliverybuy'" release/APK-BADGING.txt
+          grep -q "versionCode='$VERSION_CODE'" release/APK-BADGING.txt
+          grep -q "versionName='$VERSION_NAME'" release/APK-BADGING.txt
+          sha256sum "$OUT" | tee release/APK-SHA256.txt
+          cp test-results.txt release/test-results.txt
+
+          zip -qr "release/Univest-AutoTrade-v$VERSION_NAME-source.zip" . \
+            -x '.git/*' '.gradle/*' '*/build/*' 'release/*' '*.jks' '*.keystore' '*.env' 'credentials.env'
+
+          {
+            echo "Univest AutoTrade build: SUCCESS"
+            echo "package=com.suhas.multyfideliverybuy"
+            echo "versionCode=$VERSION_CODE"
+            echo "versionName=$VERSION_NAME"
+            echo "sourcePackage=com.univest.capp"
+            echo "product=NSE CASH / CNC DELIVERY"
+            echo "signing=ephemeral CI identity"
+          } > "release/Univest-AutoTrade-v$VERSION_NAME-build-report.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Univest-AutoTrade-release
+          retention-days: 14
+          path: release/*
+          if-no-files-found: error

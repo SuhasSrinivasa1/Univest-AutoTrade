@@ -1,0 +1,2648 @@
+trading_symbol,name,tick_size,buy_allowed,sell_allowed
+21STCENMGM,21st Century Mgmnt.,0.01,1,1
+3PLAND,3P Land Holdings,0.01,1,1
+3MINDIA,3M India,5.0,1,1
+20MICRONS,20 Microns,0.01,1,1
+5PAISA,5Paisa Capital,0.05,1,1
+360ONE,360 One Wam,0.1,1,1
+3BBLACKBIO,3B Blackbio Dx,0.1,1,1
+63MOONS,63 Moons Tech,0.05,1,1
+ABMKNO,ABM Knowledgeware,0.01,1,1
+ABSLBANETF,ABSLBANETF,0.01,1,1
+AARTIPHARM,Aarti Pharmalabs,0.05,1,1
+ABB,ABB India,0.5,1,1
+AADHARHFC,Aadhar Housing Fin.,0.05,1,1
+AARTIIND,Aarti Industries,0.05,1,1
+AAATECH,AAA Technologies,0.01,1,1
+ABLBL,Aditya Birla Life,0.01,1,1
+ABFRL,ABFRL,0.01,1,1
+AARON,Aaron Industries,0.01,1,1
+ABDL,Allied Blenders&Dist,0.05,1,1
+ABSLLIQUID,ABSLLIQUID,0.01,1,1
+AARVI,Aarvi Encon,0.01,1,1
+AASTHA,Aastha Spintex,0.01,1,1
+ABREL,Aditya Birla Real,0.1,1,1
+AAREYDRUGS,Aarey Pharma,0.01,1,1
+ABCAPITAL,Aditya Birla Cap,0.05,1,1
+ABBOTINDIA,Abbott India,5.0,1,1
+AAVAS,Aavas Financiers,0.1,1,1
+ABSLAMC,Aditya Birla Sun AMC,0.1,1,1
+A2ZINFRA,A2Z InfraEngineering,0.01,1,1
+ABCOTS,AB Cotspin India,0.01,1,1
+AARTIDRUGS,Aarti Drugs,0.05,1,1
+ABANSENT,Abans Enterprise,0.01,1,1
+ABSL10BANK,ABSL10BANK,0.01,1,1
+AAKASH,Aakash Exploration,0.01,1,1
+ADVENZYMES,Advanced Enzyme Tech,0.05,1,1
+AGL,Allcargo Global,0.01,1,1
+AFSL,Abans Finl. Services,0.01,1,1
+AKASH,Akash Infra-Projects,0.01,1,1
+ABSLNN50ET,ABSLNN50ET,0.01,1,1
+ADVANIHOTR,Advani Hotels,0.01,1,1
+AIRAN,Airan,0.01,1,1
+ADVANCE,Advance Agrolife,0.01,1,1
+ACC,ACC,0.1,1,1
+AGI,AGI Greenpac,0.05,1,1
+AKG,AKG Exim,0.01,1,1
+AJMERA,Ajmera Realty,0.01,1,1
+AIIL,Authum Invstmnt,0.05,1,1
+AIAENG,AIA Engineering,0.1,1,1
+AEGISVOPAK,Aegis Vopak Terminal,0.05,1,1
+AEROPLANE,Amir Chand Jagdish,0.01,1,1
+ADVIKCA,Advik Capital,0.01,1,1
+ACL,Andhra Cements,0.01,1,1
+AGIIL,AGI Infra,0.05,1,1
+AETHER,Aether Inds,0.1,1,1
+ABSLMSCIN,ABSLMSCIN,0.01,1,1
+ACMESOLAR,Acme Solar Holdings,0.05,1,1
+AHLUCONT,Ahluwalia Contracts,0.05,1,1
+ACGL,Automobile Corp.Goa,0.1,1,1
+AJOONI,Ajooni Biotech,0.01,1,1
+AGRITECH,Agri-Tech India,0.01,1,1
+ADSL,Allied Digital Serv.,0.01,1,1
+ADOR,Ador Welding,0.1,1,1
+ADDIND,Addi Industries,0.01,1,1
+ACI,Archean Chem. Inds.,0.05,1,1
+ADANIPOWER,Adani Power,0.01,1,1
+AHLADA,Ahlada Engineers,0.01,1,1
+AFCONS,Afcons Infrastruct.,0.05,1,1
+AIROLAM,AiroLam,0.01,1,1
+AFIL,Akme Fintrade (I),0.01,1,1
+ADANIENT,Adani Enterprises,0.1,1,1
+AKCAPIT,AK Capital Serv,0.1,1,1
+ACUTAAS,Acutaas Chemicals,0.1,1,1
+ADROITINFO,Adroit Infotech,0.01,1,1
+ACCELYA,Accelya Solutions,0.1,1,1
+ADVENTHTL,Advent Hotels Inter.,0.01,1,1
+ADANIENSOL,Adani Energy Solut.,0.1,1,1
+AGARIND,Agarwal Indl. Corpn.,0.05,1,1
+AGARWALEYE,Dr. Agarwal's Health,0.05,1,1
+AEGISLOG,Aegis Logistics,0.1,1,1
+AEROFLEX,Aeroflex Industries,0.05,1,1
+ADANIPORTS,Adani Ports &Special,0.1,1,1
+ABSLPSE,ABSLPSE,0.01,1,1
+AERONEU,Aeroflex Neu,0.01,1,1
+AFFORDABLE,ARAPL,0.01,1,1
+AHLEAST,Asian Hotels East,0.01,1,1
+ADL,Archidply Decor,0.01,1,1
+AKSHAR,Akshar Spintex,0.01,1,1
+AFFLE,Affle 3i,0.1,1,1
+ADANIGREEN,Adani Green Energy,0.1,1,1
+AEROENTER,AEROFLEX ENTERPRISES LIMITED,0.01,1,1
+AEPL,Artemis Electricals,0.01,1,1
+AJAXENGG,Ajax Engineering,0.05,1,1
+ADFFOODS,ADF Foods,0.05,1,1
+AGROPHOS,Agro Phos India,0.01,1,1
+ADVAIT,Advait Energy Trans.,0.1,1,1
+AJANTPHARM,Ajanta Pharma,0.1,1,1
+AEQUS,Aequs,0.01,1,1
+AHCL,Anlon Healthcare,0.01,1,1
+ACE,Action Const Equip,0.1,1,1
+AKI,AKI India,0.01,1,1
+ACEINTEG,ACE Integrated Soln.,0.01,1,1
+ALKEM,Alkem Laboratories,0.5,1,1
+ANTGRAPHIC,Antarctica,0.01,1,1
+ANGELONE,Angel One,0.05,1,1
+AMNPLST,Amines & Plasticizer,0.01,1,1
+AMBER,Amber Enterprises,0.5,1,1
+ALPHAETF,ALPHAETF,0.01,1,1
+AONEGOLD,AONEGOLD,0.01,1,1
+APCL,Anjani Portland Cem.,0.01,1,1
+AMARJOTHI,Amarjothi Mills,0.01,1,1
+ALPA,Alpa Laboratories,0.01,1,1
+APLLTD,Alembic Pharma,0.05,1,1
+ANTELOPUS,Antelopus Selan,0.05,1,1
+ALBERTDAVD,Albert David,0.05,1,1
+APLAPOLLO,APL Apollo Tubes,0.1,1,1
+ANANTRAJ,Anant Raj,0.05,1,1
+ANIKINDS,Anik Industries,0.01,1,1
+AONETOTAL,AONETOTAL,0.01,1,1
+APOLSINHOT,Apollo SindooriHotel,0.1,1,1
+AMDIND,AMD Industries,0.01,1,1
+APARINDS,Apar Industries,1.0,1,1
+AMBICAAGAR,Ambica Agarbathies,0.01,1,1
+AONELIQUID,AONELIQUID,0.01,1,1
+ALLTIME,All Time Plastics,0.01,1,1
+ANDHRAPAP,Andhra Paper,0.01,1,1
+ALICON,Alicon Castalloy,0.05,1,1
+APOORVA,Apoorva Leasing Fin.,0.01,1,1
+APCOTEXIND,Apcotex Industries,0.05,1,1
+AMBUJACEM,Ambuja Cements,0.05,1,1
+ALPINETEX,Alpine Texworld,0.01,1,1
+AMAGI,Amagi Media Labs,0.05,1,1
+ALGOQUANT,Algoquant Fintec,0.01,1,1
+ANTHEM,Anthem Biosciences,0.05,1,1
+AMRUTANJAN,Amrutanjan Health.,0.05,1,1
+ANNAPURNA,Annapurna Swadisht,0.01,1,1
+ANUP,Anup Engineering,0.1,1,1
+ALLCARGO,Allcargo Logistics,0.01,1,1
+AMJLAND,AMJ Land Holdings,0.01,1,1
+AMAL,Amal,0.05,1,1
+ANANDRATHI,Anand Rathi Weal,0.1,1,1
+APOLLOTYRE,Apollo Tyres,0.05,1,1
+APOLLOPIPE,Apollo Pipes,0.05,1,1
+ALUFLUOR,Alufluoride,0.05,1,1
+ALPL30IETF,ALPHALIETF,0.01,1,1
+ALPHA,KOTAKALPHA,0.01,1,1
+APOLLO,Apollo Micro Systems,0.05,1,1
+AONESILVER,Angel One Silver ETF,0.01,1,1
+AONETMMQ50,AONETMMQ50,0.01,1,1
+AKUMS,Akums Drugs & Pharmaceuticals,0.05,1,1
+AONENIFTY,AONENIFTY,0.01,1,1
+ALMONDZ,Almondz Global Sec.,0.01,1,1
+ALFREDHE,Alfred Herbert,0.1,1,1
+ANURAS,Anupam Rasayan,0.1,1,1
+ANDHRSUGAR,Andhra Sugars,0.01,1,1
+AMBIKCO,Ambika Cotton Mills,0.1,1,1
+ALANKIT,Alankit,0.01,1,1
+ALEMBICLTD,Alembic,0.01,1,1
+ALIVUS,Alivus Life Sciences,0.1,1,1
+APEX,Apex Frozen Foods,0.05,1,1
+ANUHPHR,Anuh Pharma,0.01,1,1
+ALKYLAMINE,Alkyl Amines Chem.,0.1,1,1
+ANDREWYU,Andrew Yule & Co,0.01,1,1
+ALLDIGI,Alldigi Tech,0.05,1,1
+ALOKINDS,Alok Industries,0.01,1,1
+ANMOL,Anmol India,0.01,1,1
+ANSALBU,Ansal Buildwell,0.01,1,1
+APOLLOHOSP,Apollo Hospitals,0.5,1,1
+AURUS,Aurus Gem Corp,0.01,1,1
+AUROPHARMA,Aurobindo Pharma,0.1,1,1
+ASIANTNE,Asian Tea & Export,0.01,1,1
+ASTEC,Astec Lifesciences,0.05,1,1
+ASAHIINDIA,Asahi India Glass,0.05,1,1
+ARIS,Arisinfra Solutions,0.01,1,1
+AURIONPRO,Aurionpro Solutions,0.05,1,1
+ASIANTILES,Asian Granito India,0.01,1,1
+ATAM,Atam Valves,0.01,1,1
+APTUS,Aptus Value Housing,0.01,1,1
+ASHOKAMET,Ashoka Metcast,0.01,1,1
+AQYLON,Aqylon Nexus,0.01,1,1
+ARIHANTSUP,Arihant Superstructures,0.05,1,1
+ARVIND,Arvind,0.05,1,1
+ARKADE,Arkade Developers,0.01,1,1
+ATL,Allcargo Terminals,0.01,1,1
+ARYAMAN,Aryaman Fin Service,0.05,1,1
+ASIANPAINT,Asian Paints,0.1,1,1
+ATLANTAELE,Atlanta Electricals,0.1,1,1
+ATHERENERG,Ather Energy,0.1,1,1
+ATULAUTO,Atul Auto,0.05,1,1
+ASHAPURMIN,Ashapura Minechem,0.05,1,1
+ASTAR,Asian Star Co,0.05,1,1
+ATALREAL,Atal Realtech,0.01,1,1
+ARDEE,Ardee Industries,0.01,1,1
+ARVEE,Arvee Labs (India),0.01,1,1
+ASAL,Automotive Stamping,0.05,1,1
+AROGRANITE,Aro Granite Inds.,0.01,1,1
+ASHOKA,Ashoka Buildcon,0.01,1,1
+ATLANTAA,Atlantaa,0.01,1,1
+ARIHANT,Arihant Foundations,0.05,1,1
+ARENTERP,Rajdarshan Inds.,0.01,1,1
+ARMANFIN,Arman Financial Serv,0.1,1,1
+ASHIMASYN,Ashima,0.01,1,1
+AUSOMENT,Ausom Enterprise,0.01,1,1
+ARE&M,Amara Raja Energy,0.05,1,1
+ASALCBR,Assoc Alcohol & Brew,0.05,1,1
+ASHOKLEY,Ashok Leyland,0.01,1,1
+AURUM,Aurum Proptech,0.01,1,1
+ASKAUTOLTD,ASK Automotive,0.05,1,1
+ARTEMISMED,Artemis MedicareServ,0.05,1,1
+ARIHANTCAP,Arihant Capital,0.01,1,1
+ARTNIRMAN,Art Nirman,0.01,1,1
+ATGL,Adani Total Gas,0.05,1,1
+ATLASCYCLE,Atlas Cycles Haryana,0.01,1,1
+ARIES,Aries Agro,0.05,1,1
+ARCHIES,Archies,0.01,1,1
+ASTRAMICRO,Astra Micro Wave,0.1,1,1
+ASIANHOTNR,Asian Hotels North,0.05,1,1
+ARFIN,Arfin India,0.01,1,1
+ARCHIDPLY,Archidply Industries,0.01,1,1
+ASIANENE,Asian Energy Serv,0.05,1,1
+ARVINDFASN,Arvind Fashions,0.05,1,1
+ARCL,ARCL Organics,0.01,1,1
+ASTRAL,Astral,0.1,1,1
+ATUL,Atul,0.5,1,1
+ARSSBL,Anand Rathi Share,0.05,1,1
+ASTERDM,Aster DM Quality,0.05,1,1
+ASSAMENT,Assam Entrade,0.05,1,1
+ASPINWALL,Aspinwall & Co,0.05,1,1
+AUSTENG,Austin Engg Co,0.01,1,1
+ASTRAZEN,Astrazeneca Pharma,0.5,1,1
+AUGMONT,Augmont Enterprises,0.05,1,1
+AUBANK,AU Small Fin. Bank,0.1,1,1
+ASHIANA,Ashiana Housing,0.05,1,1
+ARVSMART,Arvind Smartspaces,0.05,1,1
+BALUFORGE,Balu Forge Inds.,0.05,1,1
+BALAJITELE,Balaji Telefilms,0.01,1,1
+BAJAJELEC,Bajaj Electricals,0.05,1,1
+BANKIETF,ICICIBANKN,0.01,1,1
+BAJAJST,Bajaj Steel Industries,0.05,1,1
+BANKETF,BANKETF,0.01,1,1
+AXTEL,Axtel Industries,0.05,1,1
+BALKRISHNA,Balkrishna Paper,0.01,1,1
+BANKA,Banka BioLoo,0.01,1,1
+BBNPPGOLD,BBNPPGOLD,0.05,1,1
+AUTOAXLES,Automotive Axles,0.1,1,1
+BAGFILMS,BAG Films & Media,0.01,1,1
+BBTC,Bombay Burmah Trdg.,0.1,1,1
+BALAJEE,Shree Tirup.Bal.Agro,0.01,1,1
+BANSWRAS,Banswara Syntex,0.01,1,1
+BALKRISIND,Balkrishna Inds.,0.1,1,1
+AUTOIETF,ICICIAUTO,0.01,1,1
+AVTNPL,AVT Natural Products,0.01,1,1
+BAJEL,Bajel Projects,0.01,1,1
+BALMLAWRIE,Balmer Lawrie & Co,0.01,1,1
+AZAD,Azad Engineering,0.1,1,1
+BAJAJHLDNG,Bajaj Hold & Invest.,1.0,1,1
+AVL,Aditya Vision,0.05,1,1
+AUTOBEES,NETFAUTO,0.01,1,1
+BALRAMCHIN,Balrampur Chini Mill,0.05,1,1
+BANKBARODA,Bank of Baroda,0.01,1,1
+BALAMINES,Balaji Amines,0.1,1,1
+BAJAJ-AUTO,Bajaj Auto,1.0,1,1
+AWFIS,Awfis Space Solution,0.05,1,1
+BAJFINANCE,Bajaj Finance,0.1,1,1
+AVANTEL,Avantel,0.01,1,1
+BBETF0432,BBETF0432,0.01,1,1
+BANARBEADS,Banaras Beads,0.01,1,1
+BAJAJHCARE,Bajaj Healthcare,0.05,1,1
+BBL,Bharat Bijlee,0.1,1,1
+BANDHANBNK,Bandhan Bank,0.01,1,1
+BBTCL,B&B Triplewall Cont.,0.01,1,1
+AVANCE,Avance Technologies,0.01,1,1
+BANKBEES,Nippon India ETF Bank BeES,0.01,1,1
+BANKPSU,Mirae Asset NiftyPSU,0.01,1,1
+BASF,BASF India,0.1,1,1
+BBNPNBETF,BBNPNBETF,0.01,1,1
+BATLIBOI,Batliboi,0.01,1,1
+BANK10BETF,BANK10BETF,0.01,1,1
+BCLIND,BCL Industries,0.01,1,1
+BANKINDIA,Bank Of India,0.01,1,1
+BANKBETF,BANKBETF,0.01,1,1
+BALPHARMA,Bal Pharma,0.01,1,1
+AVALON,Avalon Technologies,0.1,1,1
+BANKADD,BANKETFADD,0.01,1,1
+AZADIND,Azad India Mobility,0.01,1,1
+AXISBANK,Axis Bank,0.1,1,1
+BALAXI,Balaxi Pharma,0.01,1,1
+AYE,AYE Finance,0.01,1,1
+BAIDFIN,Baid Leasing & Fin,0.01,1,1
+BAJAJHIND,Bajaj Hindusthan Sug,0.01,1,1
+AUTOIND,Autoline Industries,0.01,1,1
+BAJAJCON,Bajaj Consumer Care,0.05,1,1
+BAYERCROP,Bayer CropScience,0.1,1,1
+BANSALWIRE,Bansal Wire Inds.,0.05,1,1
+BANKBETA,UTIBANKETF,0.01,1,1
+BANARISUG,Bannari Amman Sugars,0.1,1,1
+BBOX,Black Bo,0.05,1,1
+BCG,Brightcom Group,0.01,1,1
+BANK10ADD,BANK10ADD,0.01,1,1
+BANCOINDIA,Banco Products,0.05,1,1
+BATAINDIA,Bata india,0.05,1,1
+BANKNIFTY1,KOTAKBKETF,0.01,1,1
+BANG,Bang Overseas,0.01,1,1
+AWL,AWL Agri Business,0.01,1,1
+AXISCADES,Axiscades Tech,0.1,1,1
+AVROIND,Avro India,0.01,1,1
+AWHCL,Antony WasteHandling,0.05,1,1
+BAJAJHFL,Bajaj Housing Fin.,0.01,1,1
+BAJAJFINSV,Bajaj Finserv,0.1,1,1
+AVANTIFEED,Avanti Feeds,0.05,1,1
+AVADHSUGAR,Avadh Sugar & Energy,0.05,1,1
+BAJAJINDEF,BAJAJINDEF,0.01,1,1
+AVONMORE,Avonmore Cap.&Mgmnt.,0.01,1,1
+AXITA,Axita Cotton,0.01,1,1
+AYMSYNTEX,Aym Syntex,0.05,1,1
+BHANDARI,Bhandari Hosiery,0.01,1,1
+BLUESTARCO,Blue Star,0.1,1,1
+BIOFILCHEM,Biofil Chem & Pharma,0.01,1,1
+BIRLAPREC,Birla Precision,0.01,1,1
+BLUEJET,Blue Jet Healthcare,0.05,1,1
+BORORENEW,Borosil Renewables,0.05,1,1
+BELLACASA,Bella Casa Fashion,0.01,1,1
+BONLON,Bonlon Industries,0.01,1,1
+BMWVENTLTD,BMW Ventures,0.01,1,1
+BEPL,Bhansali Engg. Poly.,0.01,1,1
+BLUECLOUDS,Blue Cloud Softech,0.01,1,1
+BEL,Bharat Electronics,0.05,1,1
+BHEL,Bharat Heavy Elect.,0.05,1,1
+BIRLAMONEY,Aditya Birla Money,0.01,1,1
+BOSCH-HCIL,Bosch Home Comfort,0.1,1,1
+BIGBLOC,Bigbloc Construction,0.01,1,1
+BFINVEST,BF Investment,0.05,1,1
+BFSI,Mirae Asset Nifty Fin Serv ETF,0.01,1,1
+BHAGCHEM,Bhagiradha Chemicals,0.05,1,1
+BLSE,BLS E-Services,0.05,1,1
+BHARTIARTL,Bharti Airtel,0.1,1,1
+BHARATSE,Bharat Seats,0.01,1,1
+BODALCHEM,Bodal Chemicals,0.01,1,1
+BNKETFAXIS,AXISBNKETF,0.01,1,1
+BLS,BLS Internatl. Serv.,0.01,1,1
+BLAL,BEML Land Assets,0.01,1,1
+BHARATWIRE,Bharat Wire Ropes,0.01,1,1
+BCPL,BCPL Railway Infra,0.01,1,1
+BOSCHLTD,Bosch,5.0,1,1
+BEML,BEML,0.1,1,1
+BFUTILITIE,BF Utilities,0.05,1,1
+BIKAJI,Bikaji Foods Inter.,0.05,1,1
+BNAGROCHEM,BN Agrochem,0.01,1,1
+BIL,Bhartiya Intl,0.05,1,1
+BCONCEPTS,Brand Concepts,0.01,1,1
+BOROSCI,Borosil Scientific,0.01,1,1
+BLBLIMITED,BLB,0.01,1,1
+BIOCON,Biocon,0.05,1,1
+BESTAGRO,Best Agrolife,0.01,1,1
+BEARDSELL,Beardsell,0.01,1,1
+BHARATFORG,Bharat Forge,0.1,1,1
+BHARTIHEXA,Bharti Hexacom,0.1,1,1
+BLEL,Behari Lal Engineeri,0.05,1,1
+BENGALASM,Bengal & Assam Co,0.5,1,1
+BORANA,Borana Weaves,0.05,1,1
+BETA,Beta Drugs,0.1,1,1
+BIRLACORPN,Birla Corporation,0.05,1,1
+BLACKBUCK,BlackBuck,0.05,1,1
+BOROLTD,Borosil,0.01,1,1
+BDL,Bharat Dynamics,0.1,1,1
+BHAGYANGR,Bhagyanagar India,0.05,1,1
+BIRLANU,BirlaNu,0.1,1,1
+BHARATCOAL,Bharat Coking Coal,0.01,1,1
+BELRISE,Belrise Industries,0.01,1,1
+BPCL,Bharat PetroleumCorp,0.05,1,1
+BEDMUTHA,Bedmutha Industries,0.01,1,1
+BERGEPAINT,Berger Paints India,0.05,1,1
+BOMDYEING,Bombay Dyeing & Mfg.,0.01,1,1
+BLIL,Balmer Lawie Invst,0.01,1,1
+BLUESTONE,Bluestone Jewellery,0.05,1,1
+BEEKAY,Beekay Steel Inds.,0.05,1,1
+BLUEDART,Blue Dart Express,0.1,1,1
+BIMETAL,Bimetal Bearings,0.05,1,1
+BENARAS,Benares Hotels,1.0,1,1
+BECTORFOOD,Mrs Bectors Food,0.01,1,1
+BLUSPRING,Bluspring Enterprise,0.01,1,1
+BHARATRAS,Bharat Rasayan,0.1,1,1
+BLKASHYAP,BL Kashyap & Sons,0.01,1,1
+CCL,CCL Products India,0.1,1,1
+CARYSIL,Carysil,0.1,1,1
+CAMS,Computer Age Mgmnt.,0.05,1,1
+CENTRUM,Centrum Capital,0.01,1,1
+CCHHL,Country Club & Hosp.,0.01,1,1
+BSLSENETFG,BSLSENETFG,0.01,1,1
+CANHLIFE,Canara HSBC Life Ins,0.01,1,1
+CEMNTGROWW,Groww Nifty Cements ETF,0.01,1,1
+CENTENKA,Century Enka,0.05,1,1
+CDSL,Central Dep. Service,0.1,1,1
+CEINSYS,Ceinsys Tech,0.05,1,1
+CALSOFT,California Software,0.01,1,1
+CENTEXT,Century Extrusions,0.01,1,1
+BSOFT,Birlasoft,0.05,1,1
+BPL,BPL,0.01,1,1
+CARRARO,Carraro India,0.05,1,1
+BSLGOLDETF,BSLGOLDETF,0.01,1,1
+CANBK,Canara Bank,0.01,1,1
+CAPLIPOINT,Caplin Point Labs.,0.1,1,1
+CELLO,Cello World,0.05,1,1
+CARBORUNIV,Carborundum Univers.,0.1,1,1
+BRIGHOTEL,Brigade Hotel Ven.,0.01,1,1
+BVCL,Barak Valley Cem,0.01,1,1
+BSE,BSE,0.1,1,1
+CAPITALSFB,Capital Small Fin.,0.05,1,1
+CCCL,Consolidated Const,0.01,1,1
+CARTRADE,Cartrade Tech,0.1,1,1
+BURNPUR,Burnpur Cement,0.01,1,1
+CEATLTD,Ceat,0.1,1,1
+BRIGADE,Brigade Enterprises,0.05,1,1
+CAPILLARY,Capillary Tech. Ind,0.05,1,1
+BPLPHARMA,Bharat Parenteral,0.1,1,1
+CENTRALBK,Central Bank of India,0.01,1,1
+BRNL,Bharat Road Network,0.01,1,1
+CELEBRITY,Celebrity Fashion,0.01,1,1
+CANTABIL,Cantabil Retail Ind,0.01,1,1
+CANFINHOME,Can Fin Homes,0.05,1,1
+CEIGALL,Ceigall India,0.05,1,1
+CAPACITE,Capacite Infra,0.01,1,1
+BSLNIFTY,BSLNIFTY,0.01,1,1
+CASHIETF,CASHIETF,0.01,1,1
+BTML,Bodhi Tree MM,0.01,1,1
+BSE500IETF,BSE500IETF,0.01,1,1
+BSHSL,Bombay Hybrid Seeds,0.01,1,1
+CENTUM,Centum Electronics,0.1,1,1
+BUILDPRO,Shankara Buildpro,0.1,1,1
+CCAVENUE,AvenuesAI,0.01,1,1
+BSL,BSL,0.01,1,1
+CEMPRO,Cemindia Projects,0.1,1,1
+BRITANNIA,Britannia Industries,0.5,1,1
+BRIGHTBR,Bright Brothers,0.05,1,1
+BUTTERFLY,ButterflyGandhimathi,0.05,1,1
+CASTROLIND,Castrol India,0.01,1,1
+CAMLINFINE,Camlin Fine Sciences,0.01,1,1
+BRAHMINFRA,Brahmaputra Infrast.,0.01,1,1
+CAMPUS,Campus Active,0.01,1,1
+CARERATING,CARE Ratings,0.1,1,1
+COHANCE,Cohance Lifesciences,0.05,1,1
+COSMOFIRST,Cosmo First,0.05,1,1
+CONSUMBEES,Nippon India ETF Consumption,0.01,1,1
+CIEINDIA,CIE Automotive India,0.05,1,1
+CONCOR,Container Corporat.,0.05,1,1
+CHEMPLASTS,Chemplast Sanmar,0.01,1,1
+CPPLUS,Aditya Infotech,0.1,1,1
+COCHINSHIP,Cochin Shipyard,0.1,1,1
+CONFIPET,Confidence Petro,0.01,1,1
+CLSEL,Chaman L S Exports,0.05,1,1
+COROMANDEL,Coromandel Intl,0.1,1,1
+CMLL,Caliber Mining & Log,0.05,1,1
+CMPDI,Central Mine Plan.,0.01,1,1
+CHEMICAL,CHEMICAL,0.01,1,1
+CPSEETF,CPSE ETF,0.01,1,1
+COALINDIA,Coal India,0.05,1,1
+CHEMCRUX,Chemcrux Enterprises,0.01,1,1
+CHOICEGOLD,CHOICEGOLD,0.01,1,1
+CMRGREEN,CMR Green Tech,0.01,1,1
+CINELINE,Cineline India,0.01,1,1
+COMMOIETF,COMMOIETF,0.01,1,1
+CONS,KOTAKCONS,0.01,1,1
+CERA,Cera Sanitaryware,0.5,1,1
+CEWATER,Concord Enviro Sys.,0.05,1,1
+CHENNPETRO,Chennai Petro Corp,0.1,1,1
+COLPAL,Colgate-Palmolive(I),0.1,1,1
+CPL,Captain Polyplast,0.01,1,1
+CORALFINAC,Coral India Finance,0.01,1,1
+CONTROLPR,Control Print,0.05,1,1
+CHALET,Chalet Hotels,0.05,1,1
+CMSINFO,CMS Info Systems,0.01,1,1
+CLEAN,Clean Science & Tech,0.05,1,1
+CPEDU,Career Point Edutech,0.01,1,1
+CONSUMAXIS,AXISCETF,0.01,1,1
+CNL,Creative Peripherals,0.1,1,1
+CONCORDBIO,Concord Biotech,0.1,1,1
+CHOLAFIN,Cholamandalam Invest,0.1,1,1
+COMPUSOFT,Compucom Software,0.01,1,1
+CGCL,Capri Global Capital,0.05,1,1
+CONSUMIETF,CONSUMIETF,0.01,1,1
+CESC,CESC,0.01,1,1
+CINEVISTA,Cinevista,0.01,1,1
+COCKERILL,John Cockerill India,0.5,1,1
+CORONA,CORONA Remedies,0.1,1,1
+CFEL,Confidence Futuristic,0.01,1,1
+CHOICEIN,Choice Intl,0.05,1,1
+CLEANMAX,Clean Max Env. Energ,0.1,1,1
+CORDSCABLE,Cords Cable Inds,0.05,1,1
+COFORGE,Coforge,0.1,1,1
+CHAMBLFERT,Chambal Fer. & Chem.,0.05,1,1
+CPCAP,CP Capital,0.01,1,1
+CIFL,Capital India Fin.,0.01,1,1
+CGVAK,Cg Vak,0.01,1,1
+COMSYN,Commercial Syn Bags,0.05,1,1
+CONSUMER,Mirae Asset Nifty In,0.01,1,1
+CHEMBOND,Chembond Matl. Tech.,0.01,1,1
+CHEMFAB,Chemfab Alkalis,0.05,1,1
+CHEVIOT,Cheviot Co,0.1,1,1
+CHOLAHLDNG,Cholamandalam Fin.,0.1,1,1
+CENTURYPLY,Century Plyboard,0.05,1,1
+COMPEAU,Competent Automobile,0.05,1,1
+COMFINTE,Comfort Intech,0.01,1,1
+COASTCORP,Coastal Corporation,0.01,1,1
+CIPLA,Cipla,0.1,1,1
+CORDELIA,Waterways Leisure,0.01,1,1
+CGPOWER,CG Power & Ind.Sol.,0.05,1,1
+DCW,DCW,0.01,1,1
+DECNGOLD,Deccan Gold Mines,0.01,1,1
+DCMSRIND,DCM Shriram Inds.,0.01,1,1
+DEFENCE,DEFENCE,0.01,1,1
+DATAMATICS,Datamatic GlobalServ,0.05,1,1
+DHANBANK,Dhanlaxmi Bank,0.01,1,1
+DEEPAKFERT,Deepak Fert & Petro,0.1,1,1
+CSLFINANCE,CSL Finance,0.01,1,1
+CYBERMEDIA,Cyber Media India,0.01,1,1
+CRAMC,Canara Robeco AM Co.,0.05,1,1
+CRISIL,CRISIL,0.1,1,1
+DGCONTENT,Digicontent,0.01,1,1
+DELHIVERY,Delhivery,0.05,1,1
+DABUR,Dabur India,0.05,1,1
+DEEPINDS,Deep Industries,0.05,1,1
+DENORA,De Nora India,0.05,1,1
+CUBEXTUB,Cubex Tubings,0.01,1,1
+DDEVPLSTIK,Ddev Plastiks Inds.,0.05,1,1
+DALBHARAT,Dalmia Bharat,0.1,1,1
+CUPID,Cupid,0.05,1,1
+CYIENT,Cyient,0.1,1,1
+DHARMAJ,Dharmaj Crop Guard,0.05,1,1
+DANGEE,Dangee Dums,0.01,1,1
+CURAA,CURA Technologies,0.01,1,1
+DCAL,Dishman Carbogen,0.01,1,1
+DHANUKA,Dhanuka Agritech,0.05,1,1
+DBREALTY,Valor Estate,0.01,1,1
+DAVANGERE,Davangere Sugar Co,0.01,1,1
+CRAVATEX,Cravatex,0.05,1,1
+DAICHI,Dai Ichi Karkaria,0.05,1,1
+DEVIT,Dev It,0.01,1,1
+DCI,DC Infotech & Commu.,0.05,1,1
+DEN,DEN Networks,0.01,1,1
+DCMSIL,DCM Shriram Intl.,0.01,1,1
+DEVX,Dev Accelerator,0.01,1,1
+DEEDEV,Dee Development Eng.,0.05,1,1
+DBCORP,DB Corp,0.01,1,1
+DBL,Dilip Buildcon,0.05,1,1
+CREST,Crest Ventures,0.05,1,1
+DENTA,Denta Water & Infra,0.05,1,1
+DELTAMAGNT,Delta Manufacturing,0.01,1,1
+DHAMPURSUG,Dhampur Sugar Mills,0.01,1,1
+DCMNVL,DCM Nouvelle,0.01,1,1
+CSM,CSM Technologies,0.01,1,1
+DEVYANI,Devyani,0.01,1,1
+DBOL,Dhampur Bio Organics,0.01,1,1
+CUMMINSIND,Cummins India,0.5,1,1
+DAMCAPITAL,DAM Capital Advisors,0.01,1,1
+CRIZAC,Crizac,0.01,1,1
+CUB,City Union Bank,0.01,1,1
+CROMPTON,Crompton Greaves,0.01,1,1
+DCMSHRIRAM,DCM Shriram,0.1,1,1
+DATAPATTNS,Data Patterns (I),0.1,1,1
+CROWN,Crown Lifters,0.01,1,1
+DCXINDIA,DCX Systems,0.01,1,1
+DHATRE,Dhatre Udyog,0.01,1,1
+CSBBANK,CSB Bank,0.05,1,1
+DEEPAKNTR,Deepak Nitrite,0.1,1,1
+CREDITACC,CreditAccess Grameen,0.1,1,1
+DALMIASUG,Dalmia Bharat Inds,0.05,1,1
+CYIENTDLM,Cyient DLM,0.05,1,1
+DECCANCE,Deccan Cements,0.05,1,1
+DELTACORP,Delta Corp,0.01,1,1
+CRAFTSMAN,Craftsman Automation,1.0,1,1
+DHOOTTRANS,Dhoot Transmission,0.1,1,1
+DCBBANK,DCB Bank,0.01,1,1
+DEEP,Deep Polymers,0.01,1,1
+CREATIVEYE,Creative Eye,0.01,1,1
+DCMFINSERV,DCM Financial Serv,0.01,1,1
+EIDPARRY,EID-Parry India,0.05,1,1
+DMCC,DMCC Speciality Chem,0.05,1,1
+DSSL,Dynacons Sys.& Soln.,0.1,1,1
+EBBETF0431,EBBETF0431,0.01,1,1
+DJML,DJ Mediaprint & Logi,0.01,1,1
+EASEMYTRIP,EaseMyTrip,0.01,1,1
+DHUNINV,Dhunseri Investments,0.05,1,1
+DRREDDY,Dr. Reddy's Labs.,0.1,1,1
+DOLLAR,Dollar Industries,0.05,1,1
+EFCIL,EFC (I),0.01,1,1
+DNAMEDIA,Diligent Media Co,0.01,1,1
+DREDGECORP,Dredging Corporation,0.1,1,1
+EBANK10,EBANK10,0.01,1,1
+DYNPRO,Dynemic Products,0.01,1,1
+DLF,DLF,0.05,1,1
+ECORECO,Eco Recycling,0.05,1,1
+DIVOPPBEES,Nippon India ETF Dividend Opps,0.01,1,1
+DRAGARWQ,Dr Agarwals Eye Hosp,0.5,1,1
+DIGIDRIVE,Digidrive Distribut.,0.01,1,1
+EBIX,EBIX,0.01,1,1
+EKI,EKI Energy Serv,0.01,1,1
+ECOSMOBLTY,Ecos India Mob Hosp.,0.01,1,1
+DIAMINESQ,Diamines & Chemicals,0.01,1,1
+DISAQ,DISA India,1.0,1,1
+DOLPHIN,Dolphin Enterprise,0.05,1,1
+ELDEHSG,EHIL,0.05,1,1
+ECLERX,eClerx Services,0.1,1,1
+DREAMFOLKS,Dreamfolks Services,0.01,1,1
+DIVIDEND,DIVIDEND,0.01,1,1
+DIGISPICE,Digispice Tech.,0.01,1,1
+DRCSYSTEMS,DRC Systems,0.01,1,1
+EBGNG,GNG Electronics,0.05,1,1
+DHRUV,Dhruv ConsultancySer,0.01,1,1
+DMART,Avenue Supermarts,0.1,1,1
+DWARKESH,Dwarikesh Sugar,0.01,1,1
+DIFFNKG,Diffusion Engineers,0.05,1,1
+DTIL,Dhunseri Tea & Inds.,0.01,1,1
+DIAMONDYD,Prataap Snacks,0.1,1,1
+EIHAHOTELS,EIH Associated Hotel,0.05,1,1
+ECAPINSURE,Edelweiss BSE Capita,0.01,1,1
+DVL,Dhunseri Ventures,0.05,1,1
+EICHERMOT,Eicher Motors,0.5,1,1
+DODLA,Dodla Dairy,0.1,1,1
+DIGITIDE,Digitide Solutions,0.01,1,1
+DYCL,Dynamic Cables,0.05,1,1
+DIGJAMLMTD,DIGJAM,0.01,1,1
+DIVISLAB,Divi's Laboratories,0.5,1,1
+DONEAR,Donear Industries,0.01,1,1
+EBBETF0433,EBBETF0433,0.01,1,1
+DISHTV,Dish TV India,0.01,1,1
+DPABHUSHAN,DP Abhushan,0.1,1,1
+DOMS,DOMS Industries,0.1,1,1
+DOLATALGO,Dolat Algotech,0.01,1,1
+DLINKINDIA,D-Link (India),0.05,1,1
+DIXON,Dixon Tech. (India),1.0,1,1
+DUCON,Ducon Infratech.,0.01,1,1
+EIHOTEL,EIH,0.05,1,1
+EIEL,Enviro Infra Engine.,0.01,1,1
+EKC,Everest Kanto,0.01,1,1
+DYNAMATECH,Dynamatic Tech.,1.0,1,1
+ELANTAS,ELANTAS Beck India,1.0,1,1
+EBANKNIFTY,EBANKNIFTY,0.01,1,1
+EIMCOELECO,Eimco Elecon India,0.1,1,1
+EBBETF0430,EBBETF0430,0.01,1,1
+ELCIDIN,Elcid Investments,5.0,1,1
+DICIND,DIC India,0.05,1,1
+DIVGIITTS,Divgi Torqtransfer,0.1,1,1
+EGOLD,EGOLD,0.05,1,1
+EASTWEST,East West Freight,0.01,1,1
+EDELWEISS,Edelweiss Fin. Serv.,0.01,1,1
+ENERGY,ENERGY,0.01,1,1
+ESSENTIA,Integra Essentia,0.01,1,1
+EMPOWER,Empower India,0.01,1,1
+EMSLIMITED,EMS,0.05,1,1
+ENDURANCE,Endurance Tech.,0.1,1,1
+EQUAL50ADD,DSP Mutual Fund,0.01,1,1
+FACT,Fert & Chem Travan,0.05,1,1
+ETERNAL,Eternal (Zomato),0.05,1,1
+EPACKPEB,EPack Prefab Techno.,0.01,1,1
+EPIGRAL,Epigral Ltd,0.1,1,1
+EVEREADY,Eveready Industries,0.05,1,1
+ETHOSLTD,Ethos,0.1,1,1
+EMKAY,EmkayGlobal Finl.Ser,0.05,1,1
+EMPIND,Empire Industries,0.1,1,1
+EQUITASBNK,Equitas Small Fin,0.01,1,1
+ELGIEQUIP,Elgi Equipments,0.05,1,1
+ELLEN,Ellenbarrie Indl.Gas,0.05,1,1
+ESENSEX,ESENSEX,0.01,1,1
+EVIETF,EVIETF,0.01,1,1
+FCL,Fineotex Chemical,0.01,1,1
+FCSSOFT,FCS Software Soln,0.01,1,1
+ELMDIV,ELMDIV,0.01,1,1
+EUREKAFORB,Eureka Forbes,0.05,1,1
+EMMVEE,Emmvee Photovoltaic,0.05,1,1
+ENTERO,Entero Healthcare,0.1,1,1
+EXICOM,Exicom Tele-Systems,0.01,1,1
+ELIQUID,ELIQUID,0.01,1,1
+FDC,FDC,0.05,1,1
+ESCORTS,Escorts,0.1,1,1
+EUROBOND,Euro Panel Products,0.01,1,1
+EXXARO,Exxaro Tiles,0.01,1,1
+EXIDEIND,Exide Industries,0.05,1,1
+ELPROINTL,Elpro International,0.01,1,1
+EMUDHRA,eMudhra,0.05,1,1
+FAZE3Q,Faze Three,0.05,1,1
+EMIL,Electronics Mart Ind,0.01,1,1
+ENERGYAXIS,ENERGYAXIS,0.01,1,1
+ENKEIWHEL,Enkei Wheels (India),0.05,1,1
+EMAMILTD,Emami,0.05,1,1
+EVINDIA,EVINDIA,0.01,1,1
+ERIS,Eris Lifesciences,0.1,1,1
+ESSARSHPNG,Essar Shipping,0.01,1,1
+ELITECON,Elitecon Intl.,0.01,1,1
+EQUAL200,EQUAL200,0.01,1,1
+EPACK,EPACK Durable,0.01,1,1
+ESABINDIA,Esab india,0.5,1,1
+EPL,EPL,0.05,1,1
+EMCURE,Emcure Pharma,0.1,1,1
+ENEXT50,ENEXT50,0.01,1,1
+ESTER,Ester Industries,0.01,1,1
+EXCELSOFT,Excelsoft Tech.,0.01,1,1
+ENIL,Entertainment Netw.,0.01,1,1
+EMBDL,Embassy Developments,0.01,1,1
+ENRIN,Siemens Energy India,0.1,1,1
+EMULTIMQ,EDELAMC - EMULTIMQ,0.01,1,1
+ENERGYDEV,Energy Development Co,0.01,1,1
+ESG,MAESGETF,0.01,1,1
+ENGINERSIN,Engineers India,0.05,1,1
+ELECTHERM,Electrotherm (India),0.05,1,1
+EQUAL50,EQUAL50,0.01,1,1
+ELGIRUBCO,ELGI Rubber Co,0.01,1,1
+EXPLEOSOL,Expleo Solutions,0.05,1,1
+ENIFTY,Edelweiss Nifty 50,0.01,1,1
+ELECON,Elecon Engg. Co.,0.05,1,1
+EMETAL,Edelweiss Nifty Metal ETF,0.01,1,1
+EXCELINDUS,Excel Industries,0.1,1,1
+FABTECH,Fabtech Technologies,0.01,1,1
+ELECTCAST,Electrosteel Castings,0.01,1,1
+ELIN,Elin Electronics,0.01,1,1
+ELM250,Edelweiss Nifty Larg,0.01,1,1
+EMAMIREAL,Emami Realty,0.01,1,1
+ESILVER,ESILVER,0.01,1,1
+EUROPRATIK,Euro Pratik Sales,0.05,1,1
+FRONTSP,Frontier Springs,0.1,1,1
+GARFIBRES,Garware Tech Fibre,0.05,1,1
+GENESYS,Genesys Intl. Corpn.,0.01,1,1
+GAIL,GAIL (India),0.01,1,1
+GATEWAY,Gateway Distri,0.01,1,1
+GANDHITUBE,Gandhi Special Tubes,0.05,1,1
+FREDUN,Fredun Pharma,0.1,1,1
+GANESHHOU,Ganesh Housing,0.05,1,1
+FOODSIN,Foods and Inns,0.01,1,1
+GAYAPROJ,Gayatri Projects,0.01,1,1
+GANECOS,Ganesha Ecosphere,0.1,1,1
+GABRIEL,Gabriel India,0.1,1,1
+GENUSPOWER,Genus Power Infra,0.05,1,1
+FORTIS,Fortis Healthcare,0.05,1,1
+FSL,Firstsource Solution,0.05,1,1
+FINEORG,Fine Organic Inds.,0.5,1,1
+FUSION,Fusion Finance,0.01,1,1
+FISCHER,Fischer Medical,0.01,1,1
+GEEKAYWIRE,Geekay Wires,0.01,1,1
+FINOPB,Fino Payments Bk,0.01,1,1
+FINCABLES,Finolex Cables,0.1,1,1
+GAEL,Gujarat Ambuja Exp,0.01,1,1
+FLUOROCHEM,Gujarat Fluorochem.,0.1,1,1
+GANESHCP,Ganesh Consumer Prod,0.01,1,1
+FRACTAL,Fractal Analytics,0.05,1,1
+FEDFINA,Fedbank Fin.l Serv.,0.01,1,1
+FINIETF,ICICIFIN,0.01,1,1
+FIBERWEB,Fiberweb (India),0.01,1,1
+GALLANTT,Gallantt Ispat,0.05,1,1
+FIEMIND,Fiem Industries,0.1,1,1
+FERMENTA,Fermenta Biotech,0.05,1,1
+FMNL,Future Market Netw,0.01,1,1
+FLAIR,Flair Writing Ind.,0.01,1,1
+FLEXIADD,FLEXIADD,0.01,1,1
+FILATFASH,Filatex Fashions,0.01,1,1
+GENCON,Generic Engg,0.01,1,1
+GANDHAR,Gandhar Oil Refinery,0.05,1,1
+GALAXYSURF,Galaxy Surfactants,0.1,1,1
+GALAPREC,Gala Precision Engg.,0.1,1,1
+GANGESSECU,Ganges Securities,0.01,1,1
+FILATEX,Filatex India,0.01,1,1
+GAYAHWS,Gayatri Highways,0.01,1,1
+GAJA,Gaja Alternative Ass,0.01,1,1
+FOSECOIND,Foseco India,0.5,1,1
+FMCGADD,DSP Nifty FMCG ETF,0.01,1,1
+FMCGIETF,ICICIFMCG,0.01,1,1
+GCSL,Gretex CorporateServ,0.05,1,1
+GARUDA,Garuda Const. & Eng.,0.01,1,1
+GENUSPAPER,Genus Paper & Boards,0.01,1,1
+FEDERALBNK,The Federal Bank,0.05,1,1
+FINKURVE,Finkurve Financial,0.01,1,1
+FIVESTAR,Five Star Business,0.05,1,1
+GEMAROMA,Gem Aromatics,0.01,1,1
+FINPIPE,Finolex Industries,0.01,1,1
+FMGOETZE,Federal-Mogul Goetze,0.05,1,1
+FIRSTCRY,Brainbees Solutions,0.01,1,1
+FORCEMOT,Force Motors,1.0,1,1
+GANGAFORGE,Ganga Forging,0.01,1,1
+FEDDERSHOL,Fedders Holding,0.01,1,1
+GHCLTEXTIL,GHCL Textiles,0.01,1,1
+GKWLIMITED,GKW,0.1,1,1
+GNRL,Guj.Natural Resource,0.01,1,1
+GRAVISSHO,Graviss Hospitality,0.01,1,1
+GOLDBND,GOLDBND,0.01,1,1
+GODREJPROP,Godrej Properties,0.1,1,1
+GOCOLORS,Go Fashion (India),0.05,1,1
+GRADIENTE,Gradiente Infotain.,0.01,1,1
+GODIGIT,Go Digit General Ins,0.05,1,1
+GMMPFAUDLR,GMM Pfaudler,0.1,1,1
+GODFRYPHLP,Godfrey Phillips Ind,0.1,1,1
+GOLDCASE,GOLDCASE,0.01,1,1
+GLOBAL,Global Education,0.01,1,1
+GILT10BETA,NIF10GETF,0.01,1,1
+GREENPLY,Greenply Industries,0.05,1,1
+GFLLIMITED,GFL,0.01,1,1
+GOLDBEES,Nippon India ETF Gold BeES,0.01,1,1
+GOLD1,Kotak - MF - Gold ETF,0.01,1,1
+GPTINFRA,GPT Infraprojects,0.01,1,1
+GLOBECIVIL,Globe Civil Projects,0.01,1,1
+GOLD360,GOLD360,0.05,1,1
+GPPL,Gujarat Pipavav Port,0.01,1,1
+GPTHEALTH,GPT Healthcare,0.01,1,1
+GMBREW,GM Breweries,0.05,1,1
+GOLDBETA,UTI GOLD ETF,0.05,1,1
+GRAPHITE,Graphite India,0.05,1,1
+GOYALALUM,Goyal Aluminiums,0.01,1,1
+GOKUL,Gokul Refoils,0.01,1,1
+GODREJIND,Godrej Industries,0.1,1,1
+GILLANDERS,Gillanders Arbuthnot,0.01,1,1
+GOODYEAR,Goodyear India,0.05,1,1
+GLOTTIS,Glottis,0.01,1,1
+GREENLAM,Greenlam Industries,0.01,1,1
+GOLDIAM,Goldiam Intl,0.05,1,1
+GESHIP,Great Eastern Ship.,0.1,1,1
+GLOBUSSPR,Globus Spirits,0.05,1,1
+GMRP&UI,GMR Power,0.01,1,1
+GOKULAGRO,Gokul Agro Resources,0.01,1,1
+GLAXO,GSK Pharma,0.1,1,1
+GRAUWEIL,Grauer & Weil,0.01,1,1
+GEOJITFSL,Geojit Finl. Service,0.01,1,1
+GREENPANEL,Greenpanel Inds.,0.01,1,1
+GODAVARIB,Godavari Biorefineri,0.01,1,1
+GREAVESCOT,Greaves Cotton,0.01,1,1
+GICHSGFIN,GIC Housing Finance,0.01,1,1
+GLAND,Gland Pharma,0.1,1,1
+GMRAIRPORT,GMR Airports,0.01,1,1
+GLENMARK,Glenmark Pharma.,0.1,1,1
+GLOBALVECT,Global Vectra,0.01,1,1
+GILT5BETA,NIF5GETF,0.01,1,1
+GNA,GNA Axles,0.05,1,1
+GLOBALE,Globale Tessile,0.01,1,1
+GICRE,General Ins. Corpn.,0.05,1,1
+GRANULES,Granules India,0.05,1,1
+GOPAL,Gopal Snacks,0.05,1,1
+GKB,GKB Ophthalmics,0.01,1,1
+GOLDADD,GOLDETFADD,0.01,1,1
+GKENERGY,GK Energy,0.01,1,1
+GILT5YBEES,NETFGILT5Y,0.01,1,1
+GOCLCORP,GOCL Corp,0.05,1,1
+GRANDOAK,Grand Oak Canyons,0.01,1,1
+GOLDIETF,ICICI Prud Gold ETF,0.01,1,1
+GKSL,Guj. Kidney & Super,0.01,1,1
+GILLETTE,Gillette India,0.5,1,1
+GOACARBON,Goa Carbon,0.05,1,1
+GHCL,GHCL,0.05,1,1
+GLFL,Gujarat Lease Fin.,0.01,1,1
+GPIL,Godawari Pwr,0.01,1,1
+GICL,Globe Intl Carriers,0.01,1,1
+GIPCL,Guj. Inds. Power Co,0.01,1,1
+GOODLUCK,Goodluck India,0.05,1,1
+GNFC,GNFC,0.05,1,1
+GRAVITA,Gravita India,0.1,1,1
+GOLDETF,MAGOLDETF,0.01,1,1
+GODREJCP,Godrej Consumer,0.05,1,1
+GRASIM,Grasim Industries,0.1,1,1
+GODREJAGRO,Godrej Agrovet,0.05,1,1
+GLOBE,Globe Enterprises(I),0.01,1,1
+GOKEX,Gokaldas Exports,0.05,1,1
+GMDCLTD,GMDC,0.05,1,1
+GOLDAXIS,AXISGOLD,0.01,1,1
+GLOSTERLTD,Gloster,0.05,1,1
+GUJRAFFIA,Gujarat Raffia Inds.,0.01,1,1
+HATHWAY,Hathway Cable,0.01,1,1
+GROWWNIFTY,Groww Nifty 50 ETF,0.01,1,1
+HAPPYFORGE,Happy Forgings,0.1,1,1
+GROWWCAPM,GROWWCAPM,0.01,1,1
+GROWWNXT50,Groww Nifty Next 50 ETF,0.01,1,1
+GULFOILLUB,Gulf Oil Lubricants,0.1,1,1
+GRPLTD,GRP,0.1,1,1
+GSFC,GSFC,0.01,1,1
+GROWWMETAL,GROWWMETAL,0.01,1,1
+GREENPOWER,Orient Green Power,0.01,1,1
+HALEOSLABS,Haleos Labs,0.1,1,1
+GVPTECH,GVP Infotech,0.01,1,1
+GSPCROP,GSP Crop science,0.05,1,1
+HAPPSTMNDS,Happiest Minds Tech.,0.05,1,1
+GROWWPSUBK,Groww Nifty PSU Bank ETF,0.01,1,1
+GSEC10IETF,GSEC10IETF,0.01,1,1
+GROWWNET,Groww Nifty India Internet ETF,0.01,1,1
+GROBTEA,Grob Tea Co,0.05,1,1
+GROWWEV,GROWWEV,0.01,1,1
+GROWWPSE,GROWWPSE,0.01,1,1
+GROWWDEFNC,Groww Nifty India Defence ETF,0.01,1,1
+GULPOLY,Gulshan Polyols,0.01,1,1
+GUJALKALI,Gujarat Alkalies,0.05,1,1
+GROWWRAIL,Groww Nifty India Railways PSU ETF,0.01,1,1
+HAMPTON,Hampton Sky Realty,0.01,1,1
+GROWWHOSPI,GROWWHOSPI,0.01,1,1
+GRINFRA,GR Infraprojects,0.05,1,1
+GROWWN200,Groww Nifty 200 ETF,0.01,1,1
+GRMOVER,GRM Overseas,0.01,1,1
+GROWWMOM50,Groww Nifty 500 Momentum 50 ETF,0.01,1,1
+GVPIL,GE Power India,0.05,1,1
+GRSE,Garden Reach,0.1,1,1
+GROWW,Groww,0.01,1,1
+HARRMALAYA,Harrisons Malayalam,0.01,1,1
+GROWWCHEM,GROWWCHEM,0.01,1,1
+GVT&D,GE Vernova T&D India,0.1,1,1
+HARIOMPIPE,Hariom Pipe Inds,0.05,1,1
+GSLSU,Global Surfaces,0.01,1,1
+GTLINFRA,GTL Infrastructure,0.01,1,1
+GUFICBIO,Gufic Biosciences,0.05,1,1
+HARSHA,Harsha Engineers Int,0.05,1,1
+GROWWLIQID,Groww Nifty 1D Rate Liquid ETF,0.01,1,1
+GROWWSLVR,Groww Silver ETF,0.01,1,1
+GSS,GSS Infotech,0.01,1,1
+GROWWSC250,GROWWSC250,0.01,1,1
+GROWWLOVOL,GROWWLOVOL,0.01,1,1
+HARDWYN,Hardwyn India,0.01,1,1
+GSEC10ADD,GSEC10ADD,0.01,1,1
+GTL,GTL,0.01,1,1
+GRWRHITECH,Garware Hi-Tech Film,0.5,1,1
+HAL,Hindustan Aeronaut.,0.1,1,1
+GROWWPOWER,GROWWPOWER,0.01,1,1
+GSEC5IETF,ICICI5GSEC,0.01,1,1
+GROWWMC150,GROWWMC150,0.01,1,1
+GROWWRLTY,GROWWRLTY,0.01,1,1
+GUJTHEM,Guj Themis Biosyn,0.05,1,1
+GTPL,GTPL Hathway,0.01,1,1
+GYFTR,Gyftr,0.01,1,1
+GUJAPOLLO,Gujarat Apollo Inds.,0.05,1,1
+GRINDWELL,Grindwell Norton,0.1,1,1
+HALDER,Halder Venture,0.05,1,1
+GROWWGOLD,Groww Gold ETF,0.01,1,1
+GUJENERGY,Gujarat Energy,0.01,1,1
+HAZOOR,Hazoor Multi Proj,0.01,1,1
+HDFCQUAL,HDFCQUAL,0.01,1,1
+HINDALUMI,Hind Aluminium Inds.,0.01,1,1
+HINDOILEXP,HOEC,0.01,1,1
+HGS,Hinduja Global,0.05,1,1
+HDFCGOLD,HDFC MF - GETF,0.01,1,1
+HILTON,Hilton Metal Forging,0.01,1,1
+HDFCLIFE,HDFC Life Insurance,0.05,1,1
+HDFCLIQUID-EQ,HDFC Nifty 1D Rate Liquid ETF - Growth,0.01,0,1
+HERITGFOOD,Heritage Foods,0.05,1,1
+HDFCSML250,HDFCSML250,0.01,1,1
+HEALTHADD,HEALTHADD,0.01,1,1
+HDFCBANK,HDFC Bank,0.05,1,1
+HDFCVALUE,HDFCVALUE,0.01,1,1
+HINDPETRO,HPCL,0.05,1,1
+HDFCNIF100,HDFCNIF100,0.01,1,1
+HEXT,HEXT,0.05,1,1
+HEALTHCARE,HEALTHCARE,0.01,1,1
+HINDWAREAP,Hindware Home Innovation Limited,0.01,1,1
+HDFCMID150,HDFCMID150,0.01,1,1
+HGM,HandsOn GlobalMgmnt.,0.01,1,1
+HAWKINCOOK,Hawkins Cookers,0.5,1,1
+HATSUN,Hatsun Agro Prod,0.1,1,1
+HINDZINC,Hindustan Zinc,0.05,1,1
+HDFCMOMENT,HDFC NIFTY200 Mom 30,0.01,1,1
+HLVLTD,HLV,0.01,1,1
+HILINFRA,Highway Infrast.,0.01,1,1
+HEALTHAXIS,AXISHCETF,0.01,1,1
+HDFCBSE500,HDFCBSE500,0.01,1,1
+HFCL,HFCL,0.01,1,1
+HBLENGINE,HBL Engineering,0.05,1,1
+HCC,Hindustan Constr,0.01,1,1
+HDFCSENSEX,HDFCSENSEX,0.01,1,1
+HEADSUP,Mandhana Retail,0.01,1,1
+HDFCAMC,HDFC Asset Mgmt Co,0.1,1,1
+HLEGLAS,HLE Glascoat,0.05,1,1
+HDFCPSUBK,HDFCPSUBK,0.01,1,1
+HECPROJECT,HEC Infra Projects,0.01,1,1
+HISARMETAL,Hisar Metal Inds.,0.01,1,1
+HDFCNIFBAN,HDFCNIFBAN,0.01,1,1
+HCL-INSYS,HCL Infosystems,0.01,1,1
+HDFCPVTBAN,HDFCPVTBAN,0.01,1,1
+HINDUNILVR,Hindustan Unilever,0.1,1,1
+HEALTHX,Health X Platform,0.05,1,1
+HAVELLS,Havells India,0.1,1,1
+HDFCNIFTY,HDFCNIFTY,0.01,1,1
+HEROMOTOCO,Hero MotoCorp,0.5,1,1
+HINDADH,Hindustan Adhesive,0.05,1,1
+HEXATRADEX,Hexa Tradex,0.01,1,1
+HEMIPROP,Hemisphere Prop,0.01,1,1
+HDFCNEXT50,HDFCNEXT50,0.01,1,1
+HESTERBIO,Hester Biosciences,0.1,1,1
+HIMATSEIDE,Himatsingka Seide,0.01,1,1
+HEG,HEG,0.05,1,1
+HDFCNIFIT,HDFCNIFIT,0.01,1,1
+HITECH,Hi-Tech Pipes,0.01,1,1
+HBPOR,HB Portfolio,0.01,1,1
+HINDCOMPOS,Hindustan Composites,0.05,1,1
+HDFCLOWVOL,HDFC NIFTY100 Low Vo,0.01,1,1
+HDBFS,HDB Financial Serv.,0.05,1,1
+HCG,Healthcare Global,0.05,1,1
+HINDCOPPER,Hindustan Copper,0.05,1,1
+HIKAL,Hikal,0.01,1,1
+HERANBA,Heranba Industries,0.01,1,1
+HMAAGRO,HMA Agro Inds.,0.01,1,1
+HIRECT,Hirect,0.1,1,1
+HBESD,HB Estate Developers,0.01,1,1
+HEALTHIETF,ICICIPHARM,0.01,1,1
+HEALTHY,BSL Nifty Healthcare ETF,0.01,1,1
+HINDALCO,Hindalco Industries,0.1,1,1
+HINDCON,Hindcon Chemicals,0.01,1,1
+HDFCSILVER,HDFCSILVER,0.01,1,1
+HDFCGROWTH,HDFCGROWTH,0.01,1,1
+HAVISHA,Sri Havisha Hosp,0.01,1,1
+HBSL,HB Stockholdings,0.01,1,1
+HDFCNIMEG,HDFC Nifty Metal ETF,0.01,1,1
+HCLTECH,HCL Technologies,0.1,1,1
+HGINFRA,HGIEL,0.05,1,1
+HEIDELBERG,Heidelberg Cement,0.01,1,1
+IIFLCAPS,IIFL Securities,0.05,1,1
+INCREDIBLE,Incredible Inds.,0.01,1,1
+IFGLEXPOR,IFGL Refractories,0.01,1,1
+IGARASHI,Igarashi MotorsIndia,0.05,1,1
+IFBIND,IFB Industries,0.1,1,1
+ICICIPRULI,ICICI PrudentialLife,0.05,1,1
+HOMEFIRST,Home First Finance,0.1,1,1
+IKIO,IKIO Technologies,0.01,1,1
+ICICIAMC,ICICI Prud.Asset Man,0.1,1,1
+INDHOTEL,The Indian Hotels Co,0.05,1,1
+IBULLSLTD,Indiabulls,0.01,1,1
+HNGSNGBEES,Nippon ETF HangSeng BeES,0.01,1,1
+HORIZONIND,Horizon Industrial,0.01,1,1
+HONAUT,Honeywell Automation,5.0,1,1
+HUHTAMAKI,Huhtamaki India,0.05,1,1
+IDFNIFTYET,IDFC Nifty ETF,0.01,1,1
+INDIAMART,Indiamart Inter,0.1,1,1
+IKS,Inventurus Knowledge,0.1,1,1
+HSCL,Himadri Speciality,0.05,1,1
+IMFA,IMFA,0.1,1,1
+ICICIGI,ICICI Lombard Gen.,0.1,1,1
+ICICIBANK,ICICI Bank,0.1,1,1
+HTMEDIA,HT Media,0.01,1,1
+INDBANK,Indbank Merchant,0.01,1,1
+IGL,Indraprastha Gas,0.01,1,1
+HONDAPOWER,Honda Power Prods,0.1,1,1
+ICDSLTD,ICDS,0.01,1,1
+HPAL,Hp Adhesives,0.01,1,1
+HSBCGOLD,HSBCGOLD,0.01,1,1
+INDGN,Indegene,0.05,1,1
+IFBAGRO,IFB Agro Industries,0.05,1,1
+HYUNDAI,Hyundai Motor India,0.1,1,1
+IGCL,Indogulf Cropscience,0.01,1,1
+HYBRIDETF,HYBRIDETF,0.01,1,1
+HUDCO,HUDCO,0.01,1,1
+IFCI,IFCI,0.01,1,1
+ICIL,Indo Count Inds,0.05,1,1
+INA,Insolation Energy,0.01,1,1
+ICICIB22,ICICIB22,0.01,1,1
+ICRA,ICRA,0.1,1,1
+HONASA,Honasa Consumer,0.05,1,1
+HPL,HPL Electric & Power,0.05,1,1
+HRYNSHP,Hariyana Ship,0.01,1,1
+IDBI,IDBI Bank,0.01,1,1
+IIFL,IIFL Finance,0.05,1,1
+IGIL,International Gemolo,0.05,1,1
+IDEAFORGE,Ideaforge Technology,0.05,1,1
+INDIACEM,India Cements,0.05,1,1
+IMPAL,India MotorParts&Acc,0.1,1,1
+IDFCFIRSTB,IDFC First Bank,0.01,1,1
+ICEMAKE,ICE Make Refrige.,0.05,1,1
+IDEA,Vodafone Idea,0.01,1,1
+IMAGICAA,Imagicaaworld Ent.,0.01,1,1
+IEX,Indian Energy Exch.,0.01,1,1
+HPIL,Hindprakash Inds.,0.01,1,1
+HUBTOWN,Hubtown,0.01,1,1
+IGPL,IG Petrochemicals,0.05,1,1
+HNDFDS,Hindustan Foods,0.05,1,1
+IITL,Industrial Invest,0.01,1,1
+INDPRUD,Indl & Prud Invts.Co,0.5,1,1
+INDORAMA,Indo Rama Synthetic,0.01,1,1
+IPCALAB,Ipca Laboratories,0.1,1,1
+INDOMIM,INDO-MIM,0.05,1,1
+ISGEC,ISGEC Heavy Engg,0.05,1,1
+INDIGOPNTS,Indigo Paints,0.1,1,1
+INTENTECH,Intense Technologies,0.01,1,1
+INDUSINDBK,IndusInd Bank,0.1,1,1
+IRIS,IRIS RegTech Solns.,0.01,1,1
+IOLCP,IOLCP,0.01,1,1
+INDOUS,Indo US Bio-Tech,0.01,1,1
+ITBETA,NIFITETF,0.01,1,1
+INFY,Infosys,0.1,1,1
+INTERNET,INTERNET,0.01,1,1
+INFRAIETF,ICICI Prudential Nifty Infrastructure ETF,0.01,1,1
+IOB,Indian Overseas Bank,0.01,1,1
+INDIANB,Indian Bank,0.05,1,1
+ISHANCH,Ishan Dyes and Chem.,0.01,1,1
+INNOVACAP,Innova Captab,0.1,1,1
+INDIANHUME,India Hume Pipe Co,0.05,1,1
+ITBEES,Nippon India ETF IT,0.01,1,1
+INNOVANA,Innovana Thinklabs,0.05,1,1
+INDOTHAI,Indo Thai Secs,0.01,1,1
+INOXWIND,INOX Wind,0.01,1,1
+IRMENERGY,IRM Energy,0.05,1,1
+INDOBORAX,Indo Borax,0.05,1,1
+INDOWIND,Indowind Energy,0.01,1,1
+INVENTURE,Inventure Growth,0.01,1,1
+INDOSTAR,IndoStar Capital,0.01,1,1
+INDIGO,Interglobe Aviation,0.5,1,1
+INDOKEM,Indokem,0.05,1,1
+INDRAMEDCO,Indrapras Med Corp,0.05,1,1
+IPL,India Pesticides,0.01,1,1
+ISFT,Intrasoft Tech,0.01,1,1
+INDIANCARD,Indian Card Cloth,0.01,1,1
+INTERARCH,Interarch Building,0.1,1,1
+INDSWFTLAB,Ind-Swift Labs.,0.05,1,1
+INNOVISION,Innovision,0.05,1,1
+INFOMEDIA,Infomedia Press,0.01,1,1
+INTLCONV,Intl Conveyors,0.01,1,1
+INSECTICID,Insecticides India,0.05,1,1
+INDIQUBE,Indiqube Spaces,0.01,1,1
+INDUSTOWER,Indus Towers,0.05,1,1
+INDOTECH,Indo Tech,0.1,1,1
+INTELLECT,Intellect Design,0.05,1,1
+IOC,Indian Oil Corpn.,0.01,1,1
+INSUREIETF,INSUREIETF,0.01,1,1
+INFRABEES,Nippon India ETF Infra BeES,0.01,1,1
+INFRA,INFRA,0.01,1,1
+INSPIRISYS,Inspirisys Solutions,0.01,1,1
+IT,KOTAKIT,0.01,1,1
+IRCON,Ircon International,0.01,1,1
+INDNIPPON,India Nipon Elect.,0.1,1,1
+IRFC,IRFC,0.01,1,1
+INOXGREEN,Inox Green Energy Se,0.01,1,1
+ISTLTD,IST,0.05,1,1
+IREDA,Indian Ren. Energy,0.01,1,1
+INDOCO,Indoco Remedies,0.01,1,1
+IRCTC,IRCTC,0.05,1,1
+INGERRAND,Ingersoll-Rand India,0.1,1,1
+INDTERRAIN,Indian Terrain,0.01,1,1
+IRISDOREME,Iris Clothings,0.01,1,1
+INFOBEAN,Infobeans Tech.,0.01,1,1
+ITADD,ITETFADD,0.01,1,1
+IONEXCHANG,Ion Exchange,0.05,1,1
+IRB,IRB Infra Devs,0.01,1,1
+IPRINGLTD,IP Rings,0.01,1,1
+INDOFARM,Indo Farm Equipments,0.01,1,1
+ITAXIS,AXISTECETF,0.01,1,1
+INDIASHLTR,India Shelter Fin.,0.05,1,1
+INOXINDIA,Inox India,0.1,1,1
+ITI,ITI,0.05,1,1
+JUBLINGREA,Jubilant Ingrevia,0.05,1,1
+JAINREC,Jain Resource Recycl,0.05,1,1
+JITFINFRA,JITF Infra,0.05,1,1
+JKTYRE,JK Tyre & Industries,0.05,1,1
+IXIGO,Le Travenues Techno,0.01,1,1
+JKCEMENT,JK Cement,0.5,1,1
+JAYSREETEA,Jay Shree Tea& Inds.,0.01,1,1
+JSWCEMENT,JSW Cement,0.01,1,1
+JIOFIN,JIO Financial Serv.,0.01,1,1
+JPOLYINVST,Jindal Poly Invst,0.05,1,1
+JMFINANCIL,JM Financial,0.01,1,1
+IVZINNIFTY,Invesco Nifty ETF,0.01,1,1
+IVZINGOLD,Invesco Gold ETF,0.05,1,1
+JINDALPOLY,Jindal Poly Films,0.05,1,1
+JSWENERGY,JSW Energy,0.05,1,1
+ITL,ITL Industries,0.05,1,1
+JINDRILL,Jindal Drilling,0.05,1,1
+JYOTISTRUC,Jyoti Structures,0.01,1,1
+JUNIORBEES,JUNIORBEES,0.01,1,1
+JTLIND,JTL Industries,0.01,1,1
+JINDALPHOT,Jindal Photo,0.1,1,1
+JUBLFOOD,Jubilant Foodworks,0.05,1,1
+J&KBANK,Jammu & Kashmir Bank,0.01,1,1
+JLHL,Jupiter Life Line,0.05,1,1
+JKIL,J Kumar Infra,0.05,1,1
+JARO,Jaro Inst. of Tech.,0.05,1,1
+JTEKTINDIA,JTEKT India,0.01,1,1
+ITIETF,ICICITECH,0.01,1,1
+JISLJALEQS,Jain Irrigation Sys,0.01,1,1
+IVZSENSEX,IVZSENSEX,0.01,1,1
+IVC,IL&FS Invest.Manager,0.01,1,1
+JKIPL,Jinkushal Industries,0.01,1,1
+JINDALSAW,Jindal SAW,0.05,1,1
+JAYBARMARU,Jay Bharat Maruti,0.01,1,1
+JSWSTEEL,JSW Steel,0.1,1,1
+IVZBANKNF,Invesco India Nifty Bank ETF,0.01,1,1
+JAYNECOIND,Jayaswal Neco Inds,0.01,1,1
+JISLDVREQS,Jain Irrigation - DVR,0.01,1,1
+JAGRAN,Jagran Prakashan,0.01,1,1
+JASH,Jash Engineering,0.05,1,1
+JINDALSTEL,Jindal Steel,0.1,1,1
+JYOTHYLAB,Jyothy Labs,0.01,1,1
+JSL,Jindal Stainless,0.05,1,1
+ITC,ITC,0.05,1,1
+JKLAKSHMI,JK Lakshmi Cement,0.05,1,1
+JAIBALAJI,Jai Balaji Inds,0.01,1,1
+KAJARIACER,Kajaria Ceramics,0.1,1,1
+JKPAPER,JK Paper,0.05,1,1
+JYOTIRES,Jyoti Resins,0.05,1,1
+JGCHEM,JG Chemicals,0.05,1,1
+JSWINFRA,JSW Infrastructure,0.05,1,1
+JAMNAAUTO,Jamna Auto Inds,0.01,1,1
+ITETF,ITETF,0.01,1,1
+JSFB,Jana Small Fin. Bank,0.05,1,1
+JENBURPH,Jenburkt Pharma,0.1,1,1
+JETFREIGHT,Jet Freight Logistic,0.01,1,1
+JNPR,Juniper Green Energy,0.05,1,1
+JWL,Jupiter Wagons,0.01,1,1
+ITDC,ITDC,0.05,1,1
+JPPOWER,Jaiprakash Power,0.01,1,1
+JNKINDIA,JNK India,0.05,1,1
+IZMO,Izmo,0.05,1,1
+JUSTDIAL,Just Dial,0.05,1,1
+JSWDULUX,JSW Dulux,0.1,1,1
+KABRAEXTRU,Kabra Extrus.technik,0.05,1,1
+ITCHOTELS,ITC Hotels,0.01,1,1
+JBMA,JBM Auto,0.05,1,1
+JHS,JHS Svendgaard Labs.,0.01,1,1
+JAYKAY,Jaykay Enterprises,0.01,1,1
+JUBLPHARMA,Jubilant Pharmova,0.05,1,1
+JMA,Jullundur Motor,0.01,1,1
+JAGSNPHARM,Jagson Pal Pharma,0.01,1,1
+IVALUE,Ivalue Infosolutions,0.01,1,1
+JSWHL,JSW Holdings,1.0,1,1
+JAYAGROGN,Jayant Agro-Organics,0.01,1,1
+JUNIPER,Juniper Hotels,0.01,1,1
+JSLL,Jeena Sikho Lifecare,0.05,1,1
+JINDWORLD,Jindal Worldwide,0.01,1,1
+JAICORPLTD,Jai Corp,0.01,1,1
+JUBLCPL,Jubilant Agri & Con.,0.1,1,1
+IWP,Indian Wood Products,0.01,1,1
+JAIPURKURT,Nandani Creation,0.01,1,1
+JYOTICNC,Jyoti CNC Automation,0.05,1,1
+KPIGREEN,KPI Green Energy,0.05,1,1
+KDDL,KDDL,0.1,1,1
+KENNAMET,Kennametal,0.1,1,1
+KALYANKJIL,Kalyan Jewellers,0.05,1,1
+KOKUYOCMLN,Kokuyo Camlin,0.01,1,1
+KELLTONTEC,Kellton Tech Soln,0.01,1,1
+KOTHARIPET,Kothari Petrochem,0.01,1,1
+KOHINOOR,Kohinoor Foods,0.01,1,1
+KAPSTON,Kapston Services,0.05,1,1
+KISSHT,OnEMI Technology,0.05,1,1
+KICL,KICL,0.5,1,1
+KAMOPAINTS,Kamdhenu Ventures,0.01,1,1
+KEEPLEARN,DSJ Communications,0.01,1,1
+KRBL,KRBL,0.05,1,1
+KNAGRI,KN Agri Resources,0.01,1,1
+KPL,Kwality Pharma,0.1,1,1
+KEC,KEC International,0.05,1,1
+KOLTEPATIL,Kolte-Patil Develop.,0.05,1,1
+KERNEX,Kernex Microsystem,0.1,1,1
+KIOCL,KIOCL,0.05,1,1
+KNRCON,KNR Constructions,0.01,1,1
+KOVAI,Kovai Medical Center,0.5,1,1
+KMEW,Knowledge Marine,0.1,1,1
+KMSUGAR,KM Sugar Mills,0.01,1,1
+KIRLPNU,Kirloskar Pneumatic,0.05,1,1
+KIRLOSIND,Kirloskar Industries,0.1,1,1
+KINGFA,Kingfa Science &Tech,0.5,1,1
+KPIL,Kalpataru Projects,0.1,1,1
+KLBRENG-B,Kilburn Engineering,0.05,1,1
+KANANIIND,Kanani Industries,0.01,1,1
+KIRANVYPAR,Kiran Vyapar,0.01,1,1
+KIRLOSBROS,Kirloskar Brothers,0.1,1,1
+KNACK,Knack Packaging,0.01,1,1
+KAYNES,Kaynes Technology,0.1,1,1
+KAMANWALA,Kamanwala Housing,0.01,1,1
+KIRLOSENG,Kirloskar Oil Engine,0.1,1,1
+KCP,KCP,0.01,1,1
+KANCOTEA,Kanco Tea & Inds.,0.01,1,1
+KKCL,Kewal Kiran Clothing,0.05,1,1
+KECL,Kirloskar Electric,0.01,1,1
+KREBSBIO,Krebs Biochem,0.01,1,1
+KIRIINDUS,Kiri Industries,0.05,1,1
+KOTHARIPRO,Kothari Products,0.01,1,1
+KARMAENG,Karma Energy,0.01,1,1
+KANCHI,Kanchi Karpooram,0.05,1,1
+KANPRPLA,Kanpur Plastipack,0.05,1,1
+KPITTECH,KPIT Tech,0.05,1,1
+KOPRAN,Kopran,0.01,1,1
+KHAICHEM,Khaitan Chem & Fert,0.01,1,1
+KANSAINER,Kansai Nerolac,0.01,1,1
+KMCSHIL,KMC Speciality Hosp.,0.01,1,1
+KAMAHOLD,Kama Holdings,0.1,1,1
+KARURVYSYA,Karur Vysya Bank,0.05,1,1
+KAKATCEM,Kakatiya Cemen Sugar,0.01,1,1
+KAMATHOTEL,Kamat Hotels,0.01,1,1
+KJMCFIN,KJMC Financial,0.01,1,1
+KPEL,KP ENERGY,0.01,1,1
+KOTIC,Kothari Indl. Corpn.,0.01,1,1
+KALPATARU,Kalpataru,0.05,1,1
+KIRLFER,Kirloskar Ferrous,0.05,1,1
+KOTAKBANK,Kotak Mahindra Bank,0.05,1,1
+KALYANIFRG,Kalyani Forge,0.05,1,1
+KFINTECH,KFin Technologies,0.05,1,1
+KHANDSE,Khandwala Securities,0.01,1,1
+KEI,KEI Industries,0.5,1,1
+KHAITANLTD,Khaitan (India),0.01,1,1
+KAVDEFENCE,Kavveri Def. Wireles,0.01,1,1
+KPRMILL,K.P.R. Mill,0.1,1,1
+KITEX,Kitex Garments,0.01,1,1
+KIMS,KIMS,0.05,1,1
+KEYFINSERV,Keynote Financial,0.05,1,1
+KALAMANDIR,Sai Silks (Kalaman),0.01,1,1
+KRITINUT,Kriti Nutrients,0.01,1,1
+LLOYDSENGG,Lloyds Engg. Works,0.01,1,1
+KRISHNADEF,Krishna Defence,0.1,1,1
+LINCOLN,Lincoln Pharma,0.05,1,1
+LIQUIDPLUS,LIQUIDPLUS,0.01,1,1
+LIQUIDSBI,LIQUIDSBI,0.01,1,1
+LAXMICOT,Laxmi Cotspin,0.01,1,1
+LALPATHLAB,Dr Lal PathLabs,0.1,1,1
+LATENTVIEW,Latent View,0.05,1,1
+LICNETFGSC,LICNMFET,0.01,1,1
+LLOYDSENT,Lloyds enterprises limited,0.01,1,1
+KSOLVES,Ksolves India,0.05,1,1
+LICHSGFIN,LIC Housing Finance,0.05,1,1
+KRSNAA,Krsnaa,0.05,1,1
+LAOPALA,La Opala RG,0.01,1,1
+KRITIKA,Kritika Wires,0.01,1,1
+KSE,KSE,0.01,1,1
+LINC,Linc,0.01,1,1
+LICNETFN50,LICNETFN50,0.01,1,1
+LIQGRWBEES,LIQGRWBEES,0.01,1,1
+LIBAS,Libas Consumer Prod.,0.01,1,1
+LIQUIDETF,LIQUIDETF,0.01,1,1
+KTKBANK,Karnataka Bank,0.05,1,1
+LAXMIINDIA,Laxmi India Finance,0.01,1,1
+LAXMIDENTL,Laxmi Dental,0.01,1,1
+LEENEE,Lee & Nee Softwares,0.01,1,1
+LCL,Lohia Corp,0.05,1,1
+LAMBODHARA,Lambodhara Textile,0.01,1,1
+LIQUIDIETF,LIQUIDIETF,0.01,1,1
+LANCORHOL,Lancor Holdings,0.01,1,1
+KROSS,Kross,0.01,1,1
+LIQUID,LIQUID,0.01,1,1
+LENSKART,Lenskart Solutions,0.05,1,1
+LAURUSLABS,Laurus Labs,0.1,1,1
+LANDMARK,Landmark Cars,0.05,1,1
+LLOYDSME,Lloyds Metals,0.1,1,1
+LATTEYS,Latteys Industries,0.01,1,1
+LADDERUP,Ladderup Finance,0.01,1,1
+LINDEINDIA,Linde India,0.5,1,1
+LIQUID1,KOTAKLIQ,0.01,1,1
+LARGEMID50,LARGEMID50,0.01,1,1
+LKPSEC,LKP Securities,0.01,1,1
+LGEINDIA,LG Electronics India,0.1,1,1
+LGBBROSLTD,LG Balakrishnan,0.1,1,1
+LAGNAM,Lagnam Spintex,0.01,1,1
+LEXUS,Lexus Granito,0.01,1,1
+LODHA,Lodha Developers,0.1,1,1
+KSL,Kalyani Steels,0.05,1,1
+KRITI,Kriti Industries,0.01,1,1
+LASERPOWER,Laser Power & Infra,0.05,1,1
+LIKHITHA,Likhitha Infra,0.01,1,1
+LICNFNHGP,LICNFNHGP,0.01,1,1
+LIQUIDBETA,LIQUIDBETA,0.01,1,1
+LICMFGOLD,LICMFGOLD,0.05,1,1
+LICNMID100,LICNMID100,0.01,1,1
+KRISHANA,Krishana Phoschem,0.01,1,1
+LEMONTREE,Lemon Tree Hotels,0.01,1,1
+LIQUIDBEES,LIQUIDBEES,0.01,1,1
+LIQUIDADD,DSP BSE Liquid,0.01,1,1
+LAHOTIOV,Lahoti Overseas,0.01,1,1
+LAL,Lorenzini Apparels,0.01,1,1
+LCCINFOTEC,LCC Infotech,0.01,1,1
+LICI,Life Insurance Corp.,0.05,1,1
+LAKSHMIMIL,Lakshmi Mills Co,0.5,1,1
+KSHINTL,KSH International,0.05,1,1
+LIQUIDBETF,LIQUIDBETF,0.01,1,1
+LANDSMILL,Landsmill Green,0.01,1,1
+LEAPIND,Leap India,0.01,1,1
+KWIL,Kwality Wall's India,0.01,1,1
+KUANTUM,Kuantum Papers,0.01,1,1
+LALITHAA,Lalithaa Jewel.Mart,0.05,1,1
+KSCL,Kaveri Seed Co,0.05,1,1
+LASA,Lasa Supergenerics,0.01,1,1
+LEMERITE,Le Merite Exports,0.01,1,1
+LICNETFSEN,LICNETFSEN,0.01,1,1
+LANCER,Lancer ContainerLine,0.01,1,1
+KSHITIJPOL,Kshitij Polyline,0.01,1,1
+KRYSTAL,Krystal Integrated Services Ltd,0.05,1,1
+KRN,KRN Heat Exch Refrig,0.1,1,1
+LIQUIDCASE,LIQUIDCASE,0.01,1,1
+KSB,KSB,0.05,1,1
+LIBERTSHOE,Liberty Shoes,0.01,1,1
+LIQUIDSHRI,LIQUIDSHRI,0.01,1,1
+KUSUMGAR,Kusumgar,0.05,1,1
+KSR,KSR Footwear,0.01,1,1
+LGHL,Laxmi Goldorna,0.01,1,1
+KRISHIVAL,Krishival Foods,0.05,1,1
+LFIC,Lakshmi Fin. & Indl,0.01,1,1
+LMW,LMW,1.0,1,1
+LOTUSEYE,Lotus Eye Hosp,0.01,1,1
+MANBA,Manba Finance,0.01,1,1
+MANORAMA,Manorama Inds,0.1,1,1
+MANAKALUCO,Manaksia Aluminium,0.01,1,1
+LPDC,LPDCL,0.01,1,1
+MAHKTECH,MAHKTECH,0.01,1,1
+MAHAPEXLTD,Maha Rashtra Apex,0.01,1,1
+MAHEPC,Mahindra EPC Irrig,0.01,1,1
+LTGILTCASE,LTGILTCASE,0.01,1,1
+LUXIND,Lux Industries,0.1,1,1
+M&MFIN,Mah & Mah Finl. Serv,0.05,1,1
+MARICO,Marico,0.05,1,1
+MANUFGBEES,MANUFGBEES,0.01,1,1
+MANCREDIT,MCFL,0.01,1,1
+MANGALAM,Mangalam Drugs,0.01,1,1
+MARATHON,Marathon Nextgen,0.05,1,1
+MANAKCOAT,Manaksia CoatedMetal,0.01,1,1
+MAHSEAMLES,Maharashtra Seamless,0.05,1,1
+LUPIN,Lupin,0.1,1,1
+MAHSCOOTER,Maharashtra Scooters,1.0,1,1
+MAHABANK,Bank of Maharashtra,0.01,1,1
+MAGADSUGAR,Magadh Sugar &Energy,0.05,1,1
+LTTS,L&T Technology Serv.,0.1,1,1
+LT,L&T,0.1,1,1
+LORDSCHLO,Lords Chloro Alkali,0.01,1,1
+MAFATIND,Mafatlal Inds.,0.01,1,1
+MAMATA,Mamata Machinery,0.05,1,1
+MANORG,Mangalam Organics,0.05,1,1
+LOWVOLIETF,ICICILOVOL,0.01,1,1
+MANAKSIA,Manaksia,0.01,1,1
+MAFANG,Mirae Asset NYSE FANG+ ETF,0.01,1,1
+LXCHEM,Laxmi Organic Inds.,0.01,1,1
+LTF,L&T Finance,0.05,1,1
+LUMAXTECH,Lumax Auto Tech.,0.1,1,1
+MAPMYINDIA,CE Info Systems,0.1,1,1
+LOWVOL-EQ,LOWVOL,0.01,0,1
+LOYALTEX,Loyal Textile Mills,0.01,1,1
+LUMAXIND,Lumax Industries,0.5,1,1
+MALUPAPER,Malu Paper Mills,0.01,1,1
+MAHLOG,Mahindra Logistics,0.05,1,1
+M&M,Mahindra & Mahindra,0.1,1,1
+MARKOLINES,Markolines Pave Tech,0.01,1,1
+MANOMAY,Manomay Tex India,0.01,1,1
+MANKIND,Mankind Pharma,0.1,1,1
+LOKESHMACH,Lokesh Machines,0.05,1,1
+MANINDS,Man Industries,0.05,1,1
+LOVABLE,Lovable Lingerie,0.01,1,1
+MANINFRA,Man InfraConstruct.,0.01,1,1
+LOWVOL1,KOTAKLOVOL,0.01,1,1
+MANGLMCEM,Mangalam Cement,0.1,1,1
+MANAPPURAM,Manappuram Finance,0.05,1,1
+MARSONS,Marsons,0.01,1,1
+MADHAV,Madhav Marbles,0.01,1,1
+MANALIPETC,Manali Petrochemical,0.01,1,1
+LOTUSCHO,Lotus Chocolate Co,0.05,1,1
+MARALOVER,Maral Overseas,0.01,1,1
+LTM,LTM,0.1,1,1
+MANIPALHOS,Manipal Health Enter,0.05,1,1
+MALLCOM,Mallcom (India),0.05,1,1
+MAHLIFE,Mahindra Lifespace,0.05,1,1
+LTFOODS,LT Foods,0.05,1,1
+LTGILTBEES,LTGILTBEES,0.01,1,1
+MAANALU,Maan Aluminium,0.01,1,1
+MANBRO,KD Green Industries,0.01,1,1
+MAGNUM,Magnum Ventures,0.01,1,1
+MAKERSL,Makers Laboratories,0.01,1,1
+MADHAVIPL,Madhav Infra Proj,0.01,1,1
+MACPOWER,Macpower CNC,0.1,1,1
+MARINE,Marine Electrials,0.05,1,1
+MAITHANALL,Maithan Alloys,0.05,1,1
+MADRASFERT,Madras Fertilizers,0.01,1,1
+MARKSANS,Marksans Pharma,0.05,1,1
+MANAKSTEEL,Manaksia Steels,0.01,1,1
+MAKEINDIA,MAMFGETF,0.01,1,1
+MANYAVAR,Vedant Fashions,0.05,1,1
+MAYURUNIQ,Mayur Uniquoters,0.05,1,1
+MASKINVEST,Mask Investments,0.01,1,1
+MATRIMONY,Matrimony.Com,0.05,1,1
+METALIETF,METALIETF,0.01,1,1
+MGL,Mahanagar Gas,0.1,1,1
+MIDSMALL,MIDSMALL,0.01,1,1
+MID150,MID150,0.01,1,1
+METROPOLIS,Metropolis Health.,0.05,1,1
+MEGASTAR,Megastar Foods,0.05,1,1
+MKEXIM,MK Exim (India),0.01,1,1
+MIDBANKADD,MIDBANKADD,0.01,1,1
+MEDICAPQ,MediCaps,0.01,1,1
+MBLINFRA,MBL Infrastructures,0.01,1,1
+MIDCAPBETA,NIFMID150,0.01,1,1
+MAXESTATES,Max Estates,0.05,1,1
+MILKYMIST,Milky Mist Dairy,0.01,1,1
+MINDTECK,Mindteck (India),0.01,1,1
+MHRIL,Mahindra Holi.&Resor,0.01,1,1
+MCL,M Tek Copper,0.01,1,1
+MEDPLUS,Medplus Health Serv.,0.05,1,1
+MAXIND,Max India,0.01,1,1
+MEDIASSIST,Medi Assist Health,0.05,1,1
+MIDCAPETF,MAM150ETF,0.01,1,1
+METROGLOBL,Metroglobal,0.01,1,1
+MEDICO,Medico Remedies,0.01,1,1
+MAXHEALTH,Max Healthcare Inst.,0.1,1,1
+MIDCAPIETF,ICICIM150,0.01,1,1
+MAWANASUG,Mawana Sugars,0.01,1,1
+MEDANTA,Global Health,0.1,1,1
+MIDCAPADD,MIDCAPADD,0.01,1,1
+MASTERTR,Master Trust,0.01,1,1
+MIIL,Meghna Infracon Inf.,0.05,1,1
+METAL,Mirae Asset Nifty,0.01,1,1
+MITTAL,Mittal Life Style,0.01,1,1
+MERCANTILE,Mercantile Ventures,0.01,1,1
+MIDQ50ADD,DSPQ50ETF,0.01,1,1
+MID150CASE,Zerodha Nifty Midcap,0.01,1,1
+MID150BEES,MID150BEES,0.01,1,1
+MFML,Mahalaxmi Fabric,0.01,1,1
+MINDACORP,Minda Corporation,0.05,1,1
+MCLEODRUSS,Mcleod Russel India,0.01,1,1
+MEESHO,Meesho,0.01,1,1
+MIDWESTLTD,Midwest,0.1,1,1
+MFSL,Max Financial Serv.,0.1,1,1
+MARUTI,Maruti Suzuki India,1.0,1,1
+MCLOUD,Magellanic Cloud,0.01,1,1
+MIRZAINT,Mirza International,0.01,1,1
+MENNPIS,Menon Pistons,0.01,1,1
+MASFIN,MAS Financial Serv.,0.05,1,1
+MIDCAP,KOTAKMID50,0.01,1,1
+METROBRAND,Metro Brands,0.05,1,1
+MBEL,M&B Engineering,0.05,1,1
+MEIL,Mangal Electl.&Inds.,0.05,1,1
+MBAPL,MP Bharat Agro Prod.,0.01,1,1
+MASPTOP50,MASPTOP50,0.01,1,1
+MIDSELIETF,MIDSELIETF,0.01,1,1
+MEDICAMEQ,Medicamen Biotech,0.05,1,1
+MCX,MCX,0.1,1,1
+MAZDOCK,Mazagon Dock Ship.,0.1,1,1
+MERCURYEV,Mercury Ev-Tech,0.01,1,1
+MCCHRLS-B,Mac Charles,0.05,1,1
+MASTEK,Mastek,0.1,1,1
+MKPL,MK Proteins,0.01,1,1
+MIDHANI,Mishra Dhatu Nigam,0.05,1,1
+MONIFTY100,Motilal Oswal Nifty,0.01,1,1
+MOIL,MOIL,0.01,1,1
+MOMENTUM,Aditya Birla Nif200,0.01,1,1
+MODEFENCE,MODEFENCE,0.01,1,1
+MOHEALTH,MOHEALTH,0.01,1,1
+MOOILGAS,Motilal Oswal Nifty Oil & Gas ETF,0.01,1,1
+MONARCH,Monarch Networth,0.05,1,1
+MULTICAP,MULTICAP,0.01,1,1
+MOM100,MOM100,0.01,1,1
+MOSERVICE,Motilal Oswal Nifty,0.01,1,1
+MOTOUR,Motilal Oswal Nifty,0.01,1,1
+MOENERGY,Motilal Oswal Nifty,0.01,1,1
+MOPSE,Motilal Oswal Nifty,0.01,1,1
+MSCI360,MSC1360O,0.01,1,1
+MONQ50,MONQ50,0.01,1,1
+MOINFRA,MOINFRA,0.01,1,1
+MMP,MMP Industries,0.05,1,1
+MRPL,MRPL,0.01,1,1
+MOMNC,MOMNC,0.01,1,1
+MOLBIO,Molbio Diagnostics,0.1,1,1
+MOLDTKPAC,Mold-Tek Packaging,0.05,1,1
+MOHITIND,Mohit Industries,0.01,1,1
+MOM50,Motilal Oswal Mutual,0.01,1,1
+MUFTI,Credo Brands Mktg,0.01,1,1
+MONTECARLO,Monte Carlo Fashions,0.05,1,1
+MMTC,MMTC,0.01,1,1
+MOREALTY,MOREALTY,0.01,1,1
+MOIPO,Motilal Oswal BSE,0.01,1,1
+MNC,KOTAKMNC,0.01,1,1
+MSPL,MSP Steel & Power,0.01,1,1
+MOMOMENTUM,MOMOMENTUM,0.01,1,1
+MOMMIDCAP,MOMMIDCAP,0.01,1,1
+MOGOLD,MOGOLD,0.05,1,1
+MOHITE,Mohite Industries,0.01,1,1
+MODINATUR,Modi Naturals,0.05,1,1
+MOTISONS,Motisons Jewellers,0.01,1,1
+MON100,Motilal-NASDAQ 100,0.01,1,1
+MOLOWVOL,MOLOWVOL,0.01,1,1
+MPSLTD,MPS,0.1,1,1
+MSL,Mangalam Seeds,0.01,1,1
+MOREPENLAB,Morepen Labs,0.01,1,1
+MODIS,Modi's Navnirman,0.05,1,1
+MSCIINDIA,MSCIINDIA,0.01,1,1
+MOMGF,MOMGF,0.01,1,1
+MOTHERSON,Samvardhana Motherson,0.01,1,1
+MOVALUE,Motilal S&P BSE EnVl,0.01,1,1
+MPHASIS,Mphasis,0.1,1,1
+MONEYBOXX,Moneyboxx Finance,0.01,1,1
+MOL,Meghmani,0.01,1,1
+MOMIDMTM,MOMIDMTM,0.01,1,1
+MMWL,Media Matrix,0.01,1,1
+MOGSEC,MO 5 Year G-Sec ETF,0.01,1,1
+MOBIKWIK,One Mobikwik Systems,0.01,1,1
+MSCIADD,MSCIADD,0.01,1,1
+MSUMI,Motherson SumiWiring,0.01,1,1
+MOQUALITY,Motilal Osl S&P BSEQ,0.01,1,1
+MUKKA,Mukka Proteins,0.01,1,1
+MODISONLTD,Modison,0.05,1,1
+MODIRUBBER,Modi Rubber,0.01,1,1
+MOKSH,Moksh Ornaments,0.01,1,1
+MOSMALL250,MOSMALL250,0.01,1,1
+MRF,MRF,5.0,1,1
+MON50EQUAL,MON50EQUAL,0.01,1,1
+MUFIN,Mufin Green Finance,0.01,1,1
+MOALPHA50,MOALPHA50,0.01,1,1
+MOSCHIP,Moschip Tech,0.01,1,1
+MOMENTUM30,MOMENTUM30,0.01,1,1
+MODTHREAD,Modern Threads (I),0.01,1,1
+MTNL,Mahanagar Telephone,0.01,1,1
+MMFL,MM Forgings,0.05,1,1
+MONEXT50,Motilal Oswal Nifty,0.01,1,1
+MOBANK10,MOBANK10,0.01,1,1
+MOM30IETF,MOM30IETF,0.01,1,1
+MOCAPITAL,Motilal Oswal Nifty,0.01,1,1
+MOTILALOFS,MO Financial,0.1,1,1
+MOMENTUM50,MOMENTUM50,0.01,1,1
+MUKESHB,Mukesh Babu Fin,0.01,1,1
+MUKANDLTD,Mukand,0.01,1,1
+MSTCLTD,MSTC,0.05,1,1
+MOSILVER,MOSILVER,0.01,1,1
+MLKFOOD,Milkfood,0.01,1,1
+MONIFTY500,MONIFTY500,0.01,1,1
+MOMETAL,Motilal Oswal Nifty Metal ETF,0.01,1,1
+NAUKRI,Info Edge (India),0.1,1,1
+MURUDCERA,Murudeshwar Ceramics,0.01,1,1
+NEWGEN,Newgen Software Tech,0.05,1,1
+NIF500BETA,NIF500BETA,0.01,1,1
+NBIFIN,NBI Industrial Fin,0.1,1,1
+NGIL,Nakoda Group of Ind.,0.01,1,1
+NEXT50,NEXT50,0.01,1,1
+NICCOPAR,Nicco Parks,0.01,1,1
+NDTV,New Delhi Television,0.01,1,1
+NATCOPHARM,Natco Pharma,0.05,1,1
+NEPHROPLUS,Nephrocare Health,0.05,1,1
+NIFTY1,Kotak Nifty ETF,0.01,1,1
+NIFTYADD,NIFTY50ADD,0.01,1,1
+NIFTY100EW,NIFTY100EW,0.01,1,1
+NEXTMEDIA,Next Mediaworks,0.01,1,1
+MWL,Mangalam Worldwide,0.01,1,1
+NIFTYBEES,NIFTYBEES,0.01,1,1
+NAVKARCORP,Navkar Corporation,0.01,1,1
+NETF,Tata Asset Mngt. Ltd.,0.01,1,1
+MUTHOOTCAP,Muthoot Capital Serv,0.01,1,1
+NIF100IETF,ICICI Prud Nifty 100 ETF,0.01,1,1
+NATIONALUM,NALCO,0.05,1,1
+NCC,NCC,0.01,1,1
+NIBL,NRB Indl. Bearing,0.01,1,1
+MUNJALAU,Munjal Auto Inds.,0.01,1,1
+NAM-INDIA,Nippon LifeInd.Asset,0.1,1,1
+NEOGEN,Neogen Chemicals,0.1,1,1
+NEXT30ADD,DSP BSE Sensex Next,0.01,1,1
+NAVINFLUOR,Navin Fluorine Intl.,0.5,1,1
+NIFTYAXIS,AXIS NIFTY ETF,0.01,1,1
+NDRAUTO,NDR Auto Components,0.05,1,1
+NESTLEIND,Nestle India,0.1,1,1
+MVGJL,Manoj Vaibhav Gems,0.01,1,1
+NIACL,New India Assurance,0.01,1,1
+NAGREEKCAP,Nagreeka Capital,0.01,1,1
+NCLIND,NCL Industries,0.01,1,1
+NATIONSTD,National Standard(I),0.01,1,1
+NATHBIOGEN,Nath Bio-Genes (I),0.01,1,1
+NELCAST,Nelcast,0.01,1,1
+NELCO,NELCO,0.05,1,1
+NDL,Nandan Denim,0.01,1,1
+MUTHOOTMF,Muthoot Microfin,0.01,1,1
+MUTHOOTFIN,Muthoot Finance,0.1,1,1
+NAHARCAP,Nahar Cap & Fin,0.05,1,1
+NAGREEKEXP,Nagreeka Exports,0.01,1,1
+MUNJALSHOW,Munjal Showa,0.01,1,1
+NBCC,NBCC (India),0.01,1,1
+NESCO,Nesco,0.1,1,1
+NFL,National Fertilizers,0.01,1,1
+NATCAPSUQ,Natural Capsules,0.01,1,1
+NECLIFE,Nectar Life Sciences,0.01,1,1
+NEXT50BETA,UTINEXT50,0.01,1,1
+NEULANDLAB,Neuland Laboratories,5.0,1,1
+NDGL,Naga Dhunseri Group,0.1,1,1
+NIF100BEES,Nippon India ETF Nifty 100,0.01,1,1
+NGLFINE,NGL Fine Chem,0.1,1,1
+NEXT50ETF,NEXT50ETF,0.01,1,1
+NIFTYETF,NIFTYETF,0.01,1,1
+NEXT50IETF,ICICINXT50,0.01,1,1
+NAZARA,Nazara Technologies,0.05,1,1
+NIFTYCASE,NIFTYCASE,0.01,1,1
+NHPC,NHPC,0.01,1,1
+NAHARSPING,Nahar Spinning Mills,0.05,1,1
+MVELECTRO,MV Electrosystems,0.05,1,1
+NEXT50ADD,NEXT50ADD,0.01,1,1
+NAVA,Nava,0.05,1,1
+NEAGI,Neelamalai Agro,0.1,1,1
+NACLIND,NACL Industries,0.01,1,1
+NAHARPOLY,Nahar Poly Films,0.01,1,1
+NIFTYIETF,ICICI Prudent.Nifty,0.01,1,1
+NETWEB,Netweb Technologies,0.5,1,1
+NIFTYBETF,NIFTYBETF,0.01,1,1
+NARMADA,Narmada Agrobase,0.01,1,1
+NIBE,NIBE,0.1,1,1
+NAHARINDUS,Nahar Inds Enter,0.01,1,1
+NETWORK18,Network18 Media,0.01,1,1
+NDLVENTURE,NDL Ventures,0.01,1,1
+NAVNETEDUL,Navneet Education,0.01,1,1
+NH,Narayana Hrudayalay.,0.1,1,1
+NIFTYBETA,UTINIFTETF,0.01,1,1
+NOVARTIND,Novartis India,0.1,1,1
+NSIL,Nalwa Sons Invst,0.5,1,1
+ORIENTCER,Orient Abrasives,0.01,1,1
+ORICONENT,Oricon Enterprises,0.01,1,1
+ORIENTALTL,Oriental Trimex,0.01,1,1
+NTCIND,NTC Industries,0.01,1,1
+NOCIL,NOCIL,0.01,1,1
+NOIDATOLL,Noida Toll Bridge Co,0.01,1,1
+ONEGLOBAL,One Global Service,0.05,1,1
+NIITLTD,NIIT,0.01,1,1
+OAL,Oriental Aromatics,0.05,1,1
+NIRAJISPAT,Niraj Ispat Inds,0.05,1,1
+NIFTYQLITY,Aditya Birla Nif200Q,0.01,1,1
+NUVAMA,Nuvama Wealth Mgmnt.,0.1,1,1
+ORIENTHOT,Oriental Hotels,0.01,1,1
+ONESOURCE,Onesource Specialty,0.1,1,1
+NMDC,NMDC,0.01,1,1
+NORTHARC,Northern Arc Capital,0.05,1,1
+ORCHPHARMA,Orchid Pharma,0.05,1,1
+NITCO,Nitco,0.01,1,1
+OMINFRAL,Om Infra,0.01,1,1
+OMNI,Omnitech Engineering,0.05,1,1
+NITIRAJ,Nitiraj Engg,0.01,1,1
+ORIENTBELL,Orient Bell,0.05,1,1
+OIL,Oil India,0.05,1,1
+NILKAMAL,Nilkamal,0.1,1,1
+OPTIFIN,Optimus Finance,0.01,1,1
+ONWARDTEC,Onward Technologies,0.05,1,1
+OMPOWER,Om PowerTransmission,0.01,1,1
+NV20,KOTAKNV20,0.01,1,1
+NUCLEUS,Nucleus Software Exp,0.05,1,1
+NIPPOBATRY,Indo National,0.05,1,1
+NUVOCO,Nuvoco Vistas Corpn.,0.05,1,1
+NPST,Network People Serv.,0.1,1,1
+OILIETF,OILIETF,0.01,1,1
+NIFTYJBLK,NIFTYJBLK,0.01,1,1
+NKIND,NK Industries,0.01,1,1
+NIMBSPROJ,Nimbus Projects,0.01,1,1
+NLCINDIA,NLC India,0.05,1,1
+ONGC,ONGC,0.01,1,1
+NV20IETF,NV20IETF,0.01,1,1
+NITINSPIN,Nitin Spinners,0.05,1,1
+NIVABUPA,Niva Bupa Health Ins,0.01,1,1
+NINSYS,NINtec Systems,0.05,1,1
+NORBTEAEXP,Norben Tea & Exports,0.01,1,1
+OLAELEC,Ola Electric Mobility,0.01,1,1
+NILE,NILE,0.1,1,1
+ODIGMA,Odigma Consult Solut,0.01,1,1
+NILAINFRA,Nila Infrastructures,0.01,1,1
+ORIENTELEC,Orient Electric,0.01,1,1
+NILASPACES,Nila Spaces,0.01,1,1
+NIRLON,Nirlon,0.05,1,1
+ONEPOINT,One Point One Solutions,0.01,1,1
+NTPC,NTPC,0.05,1,1
+OPTIEMUS,Optiemus infracom,0.05,1,1
+ONIXSOLAR,Onix Solar Energy,0.05,1,1
+NYKAA,FSN E-Comm. Ventur.,0.05,1,1
+OBEROIRLTY,Oberoi Realty,0.1,1,1
+ODYCORP,Odyssey Corporation,0.01,1,1
+NRAIL,NR Agarwal Inds.,0.05,1,1
+OMAXE,Omaxe,0.01,1,1
+OLECTRA,Olectra Greentech,0.1,1,1
+NRBBEARING,NRB Bearings,0.05,1,1
+NIRAJ,Niraj Cement Struct,0.01,1,1
+OMAXAUTO,Omax Autos,0.01,1,1
+OBCL,OBCL,0.01,1,1
+NSLNISP,NMDC Steel,0.01,1,1
+ONIDA,Onida Electronics,0.01,1,1
+NIITMTS,NIIT Learning System,0.01,1,1
+ORCHASP,Cybermate Infotek,0.01,1,1
+NTPCGREEN,NTPC Green Energy,0.01,1,1
+NPBET,NPBET,0.01,1,1
+ORIENTCEM,Orient Cement,0.01,1,1
+OFSS,Oracle Finl. Service,1.0,1,1
+NITTAGELA,Nitta Gelatin,0.1,1,1
+NV20BEES,Nippon India ETF NV20,0.01,1,1
+PACIFICI,Pacific Industries,0.01,1,1
+PACEDIGITK,Pace Digitek,0.01,1,1
+PFC,Power Finance Corpn.,0.05,1,1
+PAGEIND,Page Industries,5.0,1,1
+PFOCUS,Prime Focus,0.05,1,1
+PERMAGN,Permanent Magnets,0.05,1,1
+ORIENTPPR,Orient Paper,0.01,1,1
+PARACABLES,Paramount Comm,0.01,1,1
+PALASHSECU,Palash Securities,0.01,1,1
+PGHH,P&G Hygiene & Health,0.5,1,1
+PBMPOLY,PBM Polytex,0.01,1,1
+PARAS,Paras Defence,0.1,1,1
+PARADEEP,Paradeep Phsphts,0.01,1,1
+PAKKA,Pakka,0.01,1,1
+PARAGMILK,Parag Milk Foods,0.05,1,1
+PAR,Par Drugs & Chemical,0.01,1,1
+PATANJALI,Patanjali Foods,0.05,1,1
+PGHL,P&G Health,0.5,1,1
+PARKHOSPS,Park Medi World,0.05,1,1
+ORKLAINDIA,Orkla India,0.05,1,1
+OSWALPUMPS,Oswal Pumps,0.05,1,1
+PCJEWELLER,PC Jeweller,0.01,1,1
+PARNAXLAB,Parnax Lab,0.01,1,1
+PAVNAIND,Pavna Industries,0.01,1,1
+PAISALO,Paisalo Digital,0.01,1,1
+ORISSAMINE,OMDC,0.1,1,1
+PDMJEPAPER,Pudumjee Paper Prod.,0.01,1,1
+ORIENTTECH,Orient Technologies,0.01,1,1
+PANSARI,Pansari Developers,0.05,1,1
+PARKHOTELS,Apeejay Surrendra Park,0.01,1,1
+PANORAMA,Panorama Studios,0.01,1,1
+PANCHMAHQ,Panchmahal Steel,0.05,1,1
+PENIND,Pennar Industries,0.01,1,1
+PERSISTENT,Persistent Systems,0.5,1,1
+PETRONET,Petronet LNG,0.05,1,1
+PAYTM,Paytm,0.1,1,1
+PANACEABIO,Panacea Biotec,0.05,1,1
+PDSL,Pds In,0.05,1,1
+PARASPETRO,Paras Petrofils,0.01,1,1
+PFIZER,Pfizer,0.1,1,1
+OSWALGREEN,Oswal Greentech,0.01,1,1
+PGIL,Pearl Global Inds.,0.1,1,1
+PATELENG,Patel Engineering,0.01,1,1
+PASHUPATI,Pashupati Cotspin,0.01,1,1
+PEARLPOLY,Pearl Polymers,0.01,1,1
+PANAMAPET,Panama Petrochem,0.05,1,1
+OSWALAGRO,Oswal Agro Mills,0.01,1,1
+PFS,PTC Financial Serv,0.01,1,1
+OSWALSEEDS,ShreeOswal Seeds,0.01,1,1
+ORIRAIL,Oriental Rail Infra,0.01,1,1
+PHARMABEES,NETFPHARMA,0.01,1,1
+ORTINGLOBE,Ortin Global,0.01,1,1
+PCBL,PCBL Chemical,0.05,1,1
+PGEL,PG Electroplast,0.05,1,1
+PATELRMART,Patel Retail,0.01,1,1
+PAUSHAKLTD,Paushak,0.05,1,1
+PRECWIRE,Precision Wires,0.05,1,1
+PHOENXINTL,Phoenix Intl,0.01,1,1
+PREMCO,Premco Global,0.05,1,1
+POLICYBZR,PolicyBazaar,0.1,1,1
+PPLPHARMA,Piramal Pharma,0.01,1,1
+PREMIERPOL,Premier Polyfilm,0.01,1,1
+PRECOT,Precot,0.05,1,1
+PROTEAN,Protean e-Gov Tech.,0.05,1,1
+PREMIERENE,Premier Energies,0.1,1,1
+POKARNA,Pokarna,0.05,1,1
+PROZONER,Prozone Realty,0.01,1,1
+PIRAMALFIN,Piramal Finance,0.1,1,1
+PROSTARM,Prostarm Info System,0.01,1,1
+PRAKASH,Prakash Industries,0.01,1,1
+PRSMJOHNSN,Prism Johnson,0.01,1,1
+PNGSREVA,PNGS Reva Diamond,0.05,1,1
+POEL,POCL Enterprises,0.01,1,1
+PNGJL,PN Gadgil Jewellers,0.05,1,1
+PLAZACABLE,Plaza Wires,0.01,1,1
+PRECAM,Precision Camshafts,0.01,1,1
+PRIVISCL,Privi SpecialityChem,0.1,1,1
+PNBGILTS,PNB Gilts,0.01,1,1
+PRAXIS,Praxis Home Retail,0.01,1,1
+POCL,Pondy Oxides,0.05,1,1
+PHOENIXLTD,Phoenix Mills,0.1,1,1
+PIDILITIND,Pidilite Industries,0.1,1,1
+POLYPLEX,Polyplex Corporation,0.1,1,1
+PRAJIND,Praj Industries,0.05,1,1
+POONAWALLA,Poonawalla Fincorp,0.05,1,1
+PKTEA,Peria Karamalai Tea,0.05,1,1
+PRAENG,Prajay Engineers,0.01,1,1
+PIXTRANS,Pix Transmission,0.1,1,1
+POLYMED,Poly Medicure,0.1,1,1
+PRIMO,Primo Chemicals,0.01,1,1
+POWERGRID,Power Grid Corpn.,0.05,1,1
+PRABHA,Prabha Energy,0.01,1,1
+PLATIND,Platinum Industries,0.01,1,1
+POWERMECH,Power Mech Projects,0.1,1,1
+PNC,PNC Media & Ent.,0.01,1,1
+PRIMESECU,Prime Securities,0.05,1,1
+PIGL,Power & Instrument,0.01,1,1
+PSB,Punjab & Sind Bank,0.01,1,1
+PRAKASHSTL,Prakash Steelage,0.01,1,1
+PML,Paul Merchants,0.05,1,1
+PIIND,PI Industries,0.1,1,1
+POWERINDIA,Hitachi Energy,5.0,1,1
+POLYCAB,Polycab India,0.5,1,1
+PODDARMENT,Poddar Pigments,0.05,1,1
+POWERICA,Powerica,0.05,1,1
+PRUDENT,Prudent,0.1,1,1
+PRAVEG,Praveg,0.05,1,1
+POLYSPIN,Polyspin Exports,0.01,1,1
+PIONEEREMB,Pioneer Embroideries,0.01,1,1
+PRISMX,Prismx Global,0.01,1,1
+PONNIERODE,Ponni Sugars (Erode),0.05,1,1
+PRINCEPIPE,Prince Pipes&Fitting,0.05,1,1
+PILITA,PIL ITALICA Life.,0.01,1,1
+PITTIENG,Pitti Engineering,0.1,1,1
+PNCINFRA,PNC Infratech,0.01,1,1
+PRESTIGE,Prestige Estates,0.1,1,1
+PINELABS,Pine Labs,0.01,1,1
+PRICOLLTD,Pricol,0.05,1,1
+PNBHOUSING,PNB Housing Finance,0.1,1,1
+PLASTIBLEN,Plastiblends India,0.01,1,1
+PREMEXPLN,Premier Explosives,0.05,1,1
+PNB,PNB,0.01,1,1
+PILANIINVS,Pilani Investment,0.1,1,1
+PICCADIL,Piccadily Agro Inds.,0.05,1,1
+RADAAN,Radaan Media Works,0.01,1,1
+RADIOCITY,Music Broadcast,0.01,1,1
+RBZJEWEL,RBZ Jewellers,0.01,1,1
+RAMCOSYS,Ramco Systems,0.05,1,1
+RAMAPHO,Rama Phosphates,0.01,1,1
+RADHIKAJWE,Radhika Jeweltech,0.01,1,1
+RAJTV,Raj Television,0.01,1,1
+QUESS,Quess Corp,0.05,1,1
+QNIFTY,Quantum Index,0.01,1,1
+RATEGAIN,RateGain Travel Tech,0.05,1,1
+RAINBOW,Rainbow Children,0.1,1,1
+PWL,Physicswallah,0.01,1,1
+RATNAVEER,Ratnaveer Precision,0.05,1,1
+PVP,PVP Ventures,0.01,1,1
+PVRINOX,PVR Inox,0.1,1,1
+RACLGEAR,RACL Geartech,0.1,1,1
+RAJRATAN,Rajratan Global Wire,0.05,1,1
+PVSL,Popular Vehicles&Ser,0.01,1,1
+QUADFUTURE,Quadrant Future Tek,0.05,1,1
+PTC,PTC India,0.01,1,1
+RAMBHAJO,Advit Jewels,0.01,1,1
+QUINT,Quint Digital,0.01,1,1
+QUALITY30,QUALITY30,0.01,1,1
+RAMCOCEM,Ramco Cements,0.05,1,1
+RBA,Restaurant Brands,0.01,1,1
+PSUBANKADD,DSPPSBKETF,0.01,1,1
+PTCIL,PTC Industries,5.0,1,1
+RACE,Race Eco Chain,0.01,1,1
+RAIN,Rain Industries,0.01,1,1
+PUNJABCHEM,Punjab Chem. & Corp.,0.1,1,1
+RANEHOLDIN,Rane Holdings,0.1,1,1
+QGOLDHALF,Quantum Gold Fund - E T F,0.01,1,1
+RAMKY,Ramky Infrastructure,0.05,1,1
+RAILTEL,Railtel Corp,0.05,1,1
+PSUBANK,Kotak Mahindra Mutual Fun,0.01,1,1
+RAJPALAYAM,Rajapalayam Mills,0.05,1,1
+PSUBNKIETF,PSUBANKICI,0.01,1,1
+RAYMONDREL,Raymond Realty,0.05,1,1
+PVTBANK,PVTBANK,0.01,1,1
+QUAL30IETF,QUAL30IETF,0.01,1,1
+PVTBANKADD,PVTBANKADD,0.01,1,1
+RAJSREESUG,Rajshree Sugars,0.01,1,1
+RAMCOIND,Ramco Industries,0.05,1,1
+PTL,PTL Enterprises,0.01,1,1
+QPOWER,Quality Power Elect.,0.1,1,1
+RANASUG,Rana Sugars,0.01,1,1
+RADICO,Radico Khaitan,0.1,1,1
+PVTBANIETF,PVTBANIETF,0.01,1,1
+PYRAMID,Pyramid Technoplast,0.01,1,1
+RAYMONDLSL,Raymond Lifestyle,0.05,1,1
+PVTBKGROWW,PVTBKGROWW,0.01,1,1
+PURVA,Puravankara,0.01,1,1
+PSUBNKBEES,Nippon India ETF PSU Bank BeES,0.01,1,1
+RATNAMANI,Ratnamani Metal&Tube,0.1,1,1
+RAYMOND,Raymond,0.05,1,1
+RADIANTCMS,Radiant Cash Mgmnt.,0.01,1,1
+RAJMET,Rajnandini Metal,0.01,1,1
+RALLIS,Rallis India,0.01,1,1
+PSPPROJECT,PSP Projects,0.05,1,1
+RAMRAT,Ram Ratna Wires,0.05,1,1
+RBLBANK,RBL Bank,0.05,1,1
+RCF,Rashtriya Chemicals,0.01,1,1
+RAMANEWS,Shree Rama Newsprint,0.01,1,1
+RELIGARE,Religare Enterprises,0.01,1,1
+RHL,Robust Hotels,0.01,1,1
+RKEC,RKEC Projects,0.01,1,1
+RELIANCE,Reliance Industries,0.1,1,1
+RKFORGE,Ramkrishna Forgings,0.05,1,1
+RPSGVENT,RPSG Ventures,0.05,1,1
+REMSONSIND,Remsons Industries,0.01,1,1
+RPTECH,Rashi Peripheral,0.05,1,1
+RITCO,Ritco,0.05,1,1
+ROSSARI,Rossari Biotech,0.05,1,1
+RPEL,Raghav Productivity,0.1,1,1
+ROUTE,Route Mobile,0.05,1,1
+RSL,Rajputana Stainless,0.01,1,1
+RUSTOMJEE,Keystone Realtors,0.05,1,1
+REPCOHOME,Repco Home Finance,0.05,1,1
+RELCHEMQ,Reliance Chemo,0.01,1,1
+RKSWAMY,RK Swamy,0.01,1,1
+ROHLTD,Royal Orchid Hotel,0.05,1,1
+REGENCERAM,Regency Ceramics,0.01,1,1
+RHETAN,Rhetan TMT,0.01,1,1
+RPOWER,Reliance Power,0.01,1,1
+RITES,RITES,0.01,1,1
+RTSPOWR,RTS Power Corpn.,0.01,1,1
+REDTAPE,Redtape,0.01,1,1
+RUCHIRA,Ruchira Papers,0.01,1,1
+RSYSTEMS,R Systems Internatl.,0.01,1,1
+RUCHINFRA,Ruchi Infrastructure,0.01,1,1
+ROTO,Roto Pumps,0.01,1,1
+RUDRA,Rudra Global Infra,0.01,1,1
+RPGLIFE,RPG Life Sciences,0.1,1,1
+RSSOFTWARE,RS Software (India),0.01,1,1
+RMC,RMC Switchgears,0.01,1,1
+REGAAL,Regaal Resources,0.01,1,1
+RGL,Renaissance Global,0.01,1,1
+ROSSTECH,Rossell Techsys,0.1,1,1
+RECLTD,RECL,0.05,1,1
+RRIL,RRIL,0.01,1,1
+RUBICON,Rubicon Research,0.1,1,1
+RENUKA,Shree Renuka Sugars,0.01,1,1
+REPRO,Repro India,0.05,1,1
+RELAXO,Relaxo Footwears,0.05,1,1
+RETAIL,JHS SvendgaardRetail,0.01,1,1
+RNBDENIMS,R & B Denims,0.01,1,1
+ROML,Raj Consumer Care,0.01,1,1
+RICOAUTO,Rico Auto Industries,0.01,1,1
+RIR,RIR Power Electronic,0.01,1,1
+REDINGTON,Redington,0.05,1,1
+RPPINFRA,RPP Infra Projects,0.01,1,1
+RESPONIND,Responsive Inds.,0.01,1,1
+RVNL,Rail Vikas Nigam,0.01,1,1
+RHIM,RHI Magnesita India,0.05,1,1
+RISHABH,Rishabh Instruments,0.05,1,1
+RML,Rane (Madras),0.1,1,1
+RIIL,Reliance Indl. Infra,0.05,1,1
+RVHL,Ravinder Heights,0.01,1,1
+RRKABEL,RR Kabel,0.1,1,1
+ROLEXRINGS,Rolex Rings,0.01,1,1
+RELTD,Ravindra Energy,0.01,1,1
+RTNINDIA,RattanIndia Enterp.,0.01,1,1
+RRECL,RDB Real Estate Cons,0.01,1,1
+ROSSELLIND,Rossell India,0.01,1,1
+RKDL,Ravi Kumar Distill,0.01,1,1
+REFEX,Refex Industries,0.05,1,1
+RTNPOWER,RattanIndia Power,0.01,1,1
+RUSHIL,Rushil Decor,0.01,1,1
+RUPA,Rupa & Company,0.01,1,1
+RELIABLE,Reliable Data Serv.,0.01,1,1
+RUBFILA,Rubfila Intl,0.01,1,1
+SAKAR,Sakar Healthcare,0.05,1,1
+SAYAJIIND,Sayaji Industries,0.01,1,1
+SASKEN,Sasken Technologies,0.1,1,1
+SBIN,State Bank Of India,0.1,1,1
+SBIMIDMOM,SBIMIDMOM,0.01,1,1
+SBIETFCON,SBIETFCON,0.01,1,1
+SAMBHV,Sambhv Steel Tubes,0.01,1,1
+SAPPHIRE,Sapphire Foods,0.01,1,1
+SBICARD,SBI Cards & Payment,0.05,1,1
+S&SPOWER,S&S Power Switchgear,0.05,1,1
+SBIFUNDS,SBI Funds Management,0.05,1,1
+SBIETFQLTY,SBIETFQLTY,0.01,1,1
+SAPPL,Shree AjitPulp&Paper,0.05,1,1
+SBISILVER,SBISILVER,0.01,1,1
+SAGARDEEP,Sagardeep Alloys,0.01,1,1
+SBIETFIT,SBIETFIT,0.01,1,1
+SBC,SBC Exports,0.01,1,1
+SAURASHCEM,Saurashtra Cement,0.01,1,1
+SANGHVIMOV,Sanghvi Movers,0.05,1,1
+SAB,SAB Industries,0.01,1,1
+SARLAPOLY,Sarla Performance,0.01,1,1
+SBINEQWETF,SBINEQWETF,0.01,1,1
+SARVESHWAR,Sarveshwar Foods,0.01,1,1
+SAREGAMA,Saregama India,0.05,1,1
+SANGAMIND,Sangam (India),0.05,1,1
+SALZERELEC,Salzer Electronics,0.05,1,1
+SANATHAN,Sanathan Textiles,0.05,1,1
+SAILIFE,Sai Life Sciences,0.1,1,1
+SCHNEIDER,SchneiderElect.Infra,0.1,1,1
+SAYAJIHOTL,Sayaji Hotels,0.05,1,1
+SAIPARENT,Sai Parenteral's,0.05,1,1
+SCHAND,S Chand And Company,0.01,1,1
+SAKSOFT,Saksoft,0.01,1,1
+SCHAEFFLER,Schaeffler India,0.1,1,1
+SAKHTISUG,Sakthi Sugars,0.01,1,1
+SAGILITY,Sagility,0.01,1,1
+SAICAPI,Sai Capital,0.01,1,1
+SBGLP,Suratwwala Group,0.01,1,1
+SAMHI,Samhi Hotels,0.01,1,1
+SCI,Shipping Corpn.India,0.05,1,1
+SAHYADRI,Sahyadri Industries,0.05,1,1
+SAKUMA,Sakuma Exports,0.01,1,1
+SAMBANDAM,Sambandam Spinning,0.01,1,1
+SALASAR,Salasar Techno,0.01,1,1
+SANOFI,Sanofi India,0.1,1,1
+SAATVIKGL,Saatvik Green Energy,0.05,1,1
+SATIA,Satia Industries,0.01,1,1
+SBILIFE,SBI Life Insurance,0.1,1,1
+SANDUMA,Sandur Manganese,0.01,1,1
+SANDHAR,Sandhar Technologies,0.05,1,1
+SAMMAANCAP,Sammaan Capital,0.01,1,1
+SBISMLETF,SBISMLETF,0.01,1,1
+SALSTEEL,SAL Steel,0.01,1,1
+RVTH,Revathi Equip. Ind.,0.05,1,1
+SAIL,Steel Authority,0.01,1,1
+SBIBPB,SBIBPB,0.01,1,1
+SATIN,Satin Creditcare Net,0.01,1,1
+SBCL,Shivalik Bimetal,0.1,1,1
+SALONA,Salona Cotspin,0.05,1,1
+SADBHAV,Sadbhav Engineering,0.01,1,1
+SBILIQETF,SBILIQETF,0.01,1,1
+SANSTAR,Sanstar,0.01,1,1
+SANOFICONR,Sanofi Cons. Health,0.1,1,1
+SAHLIBHFI,Shalibhadra Finance,0.01,1,1
+SAMPANN,Sampann UtpadanIndia,0.01,1,1
+SBIETFPB,SBIETFPB,0.01,1,1
+SANDESH,Sandesh,0.1,1,1
+SBIVALETF,SBIVALETF,0.01,1,1
+SANSERA,Sansera Engineering,0.1,1,1
+SBINMID150,SBINMID150,0.01,1,1
+SBFC,SBFC Finance,0.01,1,1
+SAFARI,Safari Industries(I),0.1,1,1
+SARDAEN,Sarda Energy & Min.,0.05,1,1
+SAGCEM,Sagar Cements,0.01,1,1
+SAMBHAAV,Sambhaav Media,0.01,1,1
+SENCO,Senco Gold,0.05,1,1
+SEIL,Shanti Educational,0.01,1,1
+SETF10GILT,SBI ETF 10 yr Gilt,0.01,1,1
+SETL,Standard Engg. Tech.,0.05,1,1
+SEDEMAC,Sedemac Mechatronics,0.1,1,1
+SDBL,Som DistilleriesBrew,0.01,1,1
+SEJALLTD,Sejal Glass,0.05,1,1
+SFL,Sheela Foam,0.05,1,1
+SENSEXBETA,UTISENSETF,0.01,1,1
+SELMC,SEL Manufacturing Co,0.01,1,1
+SENSEXIETF,SENSEXIETF,0.01,1,1
+SECMARK,SecMark Consultancy,0.01,1,1
+SEPC,SEPC,0.01,1,1
+SETFNIFBK,SETFBANK,0.01,1,1
+SERVOTECH,Servotech Renewable,0.01,1,1
+SESHAPAPER,Seshasayee Paper,0.01,1,1
+SETFGOLD,SBI MF - SBI Gol,0.01,1,1
+SEKURITIND,Saint-Gobain Sekurit,0.01,1,1
+SETFNIF50,SETFNIFTY,0.01,1,1
+SELECTIPO,SELECTIPO,0.01,1,1
+SECURKLOUD,Securekloud Tech,0.01,1,1
+SETFNN50,SBI ETF Nifty Next 50,0.01,1,1
+SEAMECLTD,Seamec,0.1,1,1
+SENORES,Senores Pharmaceutic,0.1,1,1
+SCILAL,Ship. Corp. Land,0.01,1,1
+SENSEXADD,SENSEXADD,0.01,1,1
+SENSEXETF,SENSEXETF,0.01,1,1
+SENSEXAXIS,AXISPEGP,0.01,1,1
+SCODATUBES,Scoda Tubes,0.01,1,1
+SEMAC,Semac Construction,0.05,1,1
+SHRIPISTON,SPR Auto Tech.,0.1,1,1
+SHREEJISPG,Shreeji Ship.Global,0.05,1,1
+SHRIRAMPPS,Shriram Properties,0.01,1,1
+SHRIRAMFIN,Shriram Finance,0.1,1,1
+SHRIKRISH,Shri Krishna Devcon,0.01,1,1
+SHERVANI,Shervani Indl. Synd.,0.05,1,1
+SHANKESH,Shankesh Jewellers,0.01,1,1
+SHREDIGCEM,Shree DigvijayCement,0.01,1,1
+SHAILY,Shaily,0.1,1,1
+SHINDL,Sharat Industries,0.01,1,1
+SHADOWFAX,Shadowfax Tech.,0.05,1,1
+SGIL,Synergy Green Inds,0.05,1,1
+SHANKARA,Shankara Bldg. Prod.,0.01,1,1
+SHIVACEM,Shiva Cement,0.01,1,1
+SGRL,Shree Ganesh Remedies,0.05,1,1
+SHRADHA,Shradha Realty,0.01,1,1
+SHRJAGP,Shri Jagdamba Polymr,0.05,1,1
+SHRINGARMS,Shringar House Mang.,0.01,1,1
+SGLRES,SGL Resources,0.01,1,1
+SGMART,SG Mart,0.05,1,1
+SGFIN,SG Finserve,0.05,1,1
+SHARDAMOTR,Sharda Motor,0.05,1,1
+SHIVAMAUTO,Shivam Autotech,0.01,1,1
+SHILGRAVQ,Shilp Gravures,0.01,1,1
+SHREYANIND,Shreyans Industries,0.01,1,1
+SHANTIGEAR,Shanthi Gears,0.05,1,1
+SHREECEM,Shree Cement,5.0,1,1
+SHARDACROP,Sharda Cropchem,0.05,1,1
+SHIVAUM,Shiv Aum Steels,0.05,1,1
+SHREERAMA,Shree Rama Tech,0.01,1,1
+SHIVATEX,Shiva Texyarn,0.01,1,1
+SHILPAMED,Shilpa Medicare,0.05,1,1
+SGL,STL Global,0.01,1,1
+SHRADDHA,Shraddha Prime Proj.,0.01,1,1
+SHANTIGOLD,Shanti Gold Intnl.,0.01,1,1
+SHAKTIPUMP,Shakti Pumps (India),0.05,1,1
+SHIPROCKET,Shiprocket,0.01,1,1
+SHAHALLOYS,Shah Alloys,0.01,1,1
+SHOPERSTOP,Shoppers Stop,0.05,1,1
+SHANTI,Shanti Overseas (I),0.01,1,1
+SHALBY,Shalby,0.01,1,1
+SHIVAMILLS,Shiva Mills,0.01,1,1
+SHAREINDIA,Share India,0.01,1,1
+SHAH,Shah Metacorp,0.01,1,1
+SHILCTECH,Shilchar Tech.,0.1,1,1
+SHARIABEES,SHARIABEES,0.01,1,1
+SHBAJRG,Shri BajrangAlliance,0.01,1,1
+SHK,SH Kelkar & Company,0.01,1,1
+SHIVAAGRO,Shiva Global Agro,0.01,1,1
+SHREEPUSHK,Shree Pushkar Chem,0.05,1,1
+SKYGOLD,Sky Gold & Diamonds,0.05,1,1
+SONACOMS,Sona BLW Precision,0.05,1,1
+SILVERADD,DSP Silver ETF,0.01,1,1
+SOLARWORLD,Solarworld Energy So,0.01,1,1
+SMARTWORKS,Smartworks Coworking,0.05,1,1
+SILVER,Aditya BSL Silver ETF,0.01,1,1
+SJVN,SJVN,0.01,1,1
+SOLEX,Solex Energy,0.05,1,1
+SNXT30BEES,SNXT30BEES,0.01,1,1
+SILLYMONKS,Silly Monks Enter,0.01,1,1
+SMSPHARMA,SMS Pharmaceuticals,0.05,1,1
+SILVERBEES,SILVERBEES,0.01,1,1
+SOLARA,Solara Active Pharma,0.05,1,1
+SOMATEX,Soma Textiles & Inds,0.01,1,1
+SOMANYCERA,Somany Ceramics,0.05,1,1
+SKFINDUS,SKF India (Indl.),0.1,1,1
+SMALLGROWW,SMALLGROWW,0.01,1,1
+SICAGEN,Sicagen India,0.01,1,1
+SIRCA,SIRCA Paints India,0.05,1,1
+SOFTTECH,SoftTech,0.05,1,1
+SIGMA,Sigma Solve,0.01,1,1
+SINGERIND,Singer India,0.01,1,1
+SIMPLXREA,Simplex Realty,0.01,1,1
+SIGNATURE,Signatureglobal (I),0.05,1,1
+SIS,SIS,0.05,1,1
+SNXT50BETA,UTISXN50,0.01,1,1
+SILVERBND,SILVERBND,0.01,1,1
+SILVERAG,SILVRETF,0.01,1,1
+SMALLADD,SMALLADD,0.01,1,1
+SILVER1,KOTAKSILVE,0.01,1,1
+SMALLCAP,SMALLCAP,0.01,1,1
+SMLT,Sarthak Metals,0.01,1,1
+SOBHA,Sobha,0.1,1,1
+SILVERCASE,Zerodha Silver ETF,0.01,1,1
+SIMPLEXINF,Simplex Infra,0.05,1,1
+SILINV,SIL Investments,0.05,1,1
+SIKA,Sika Interplant Sys.,0.05,1,1
+SIYSIL,Siyaram Silk Mills,0.05,1,1
+SINDHUTRAD,Sindhu Trade Links,0.01,1,1
+SILVER360,SILVER360,0.01,1,1
+SILVERAXIS,AXISILVER,0.01,1,1
+SILVER001,Quant Silver ETF,0.01,1,1
+SIGNPOST,Signpost India,0.05,1,1
+SKIPPER,Skipper,0.05,1,1
+SML100CASE,SML100CASE,0.01,1,1
+SHYAMTEL,Shyam Telecom,0.01,1,1
+SINTERCOM,Sintercom India,0.01,1,1
+SMLMAH,SML Mahindra,0.5,1,1
+SKYWAYS,Skyways Air Services,0.01,1,1
+SMALLIETF,SMALLIETF,0.01,1,1
+SIEL,Superior Indl.Enterp,0.01,1,1
+SILGO,Silgo Retail,0.01,1,1
+SMCGLOBAL,SMC Global Sec.,0.01,1,1
+SINCLAIR,Sinclairs Hotels,0.01,1,1
+SILVERBETA,SILVERETF,0.01,1,1
+SNOWMAN,Snowman Logistics,0.01,1,1
+SJS,SJS Enterprises,0.1,1,1
+SIL,Standard Industries,0.01,1,1
+SILVERTUC,Silver Touch,0.01,1,1
+SIGACHI,Sigachi Inds,0.01,1,1
+SMALL250,SMALL250,0.01,1,1
+SKMEGGPROD,SKM Egg Products Exp,0.05,1,1
+SHUKRAPHAR,Shukra Pharmaceut.,0.01,1,1
+SILVERIETF,ICICI Prudential Silver ETF,0.01,1,1
+SOMICONVEY,Somi Conveyor Beltg.,0.01,1,1
+SHYAMMETL,Shyam Metalics,0.1,1,1
+SKFINDIA,SKF India,0.1,1,1
+SIEMENS,Siemens,0.1,1,1
+SOLARINDS,Solar Industries Ind,5.0,1,1
+STLNETWORK,STL Networks,0.01,1,1
+STYLEBAAZA,Baazar Style Retail,0.05,1,1
+SPCENET,Spacenet Entr,0.01,1,1
+SUMICHEM,Sumitomo Chem. India,0.05,1,1
+SUNPHARMA,Sun Pharma. Inds.,0.1,1,1
+SUNSHIEL,Sunshield Chemicals,0.1,1,1
+STARTECK,Starteck Finance,0.05,1,1
+STEELCITY,Steel City Sec.,0.01,1,1
+SUDARSCHEM,Sudarshan Chemicals,0.1,1,1
+SULA,Sula Vineyards,0.01,1,1
+STEELXIND,Steel Exchange India,0.01,1,1
+SUNDROP,Sundrop Brands,0.05,1,1
+SPELS,SPEL Semiconductor,0.01,1,1
+SUPERHOUSE,Super house,0.01,1,1
+SUDEEPPHRM,Sudeep Pharma,0.1,1,1
+SOUTHWEST,SW Pinnacle,0.01,1,1
+SRF,SRF,0.1,1,1
+SPORTKING,Sportking India,0.01,1,1
+STEL,STEL Holdings,0.05,1,1
+SUNCLAY,Sundaram-Clayton,0.1,1,1
+STYLAMIND,Stylam Industries,0.1,1,1
+SUMIT,Sumit Woods,0.01,1,1
+SRM,SRM Contractors Ltd,0.05,1,1
+SPARC,Sun Pharma Adv. Res,0.01,1,1
+SRIKPRIND,Sri KPR Industries,0.01,1,1
+SPMLINFRA,SPML Infra,0.01,1,1
+SPIC,Southern Petrochem.,0.01,1,1
+SUPRAJIT,Suprajit Engineering,0.05,1,1
+SUMEDHA,Sumedha Fiscal Serv.,0.01,1,1
+STANLEY,Stanley Lifestyles,0.01,1,1
+SUNDRMFAST,Sundram Fasteners,0.1,1,1
+SONATSOFTW,Sonata Software,0.05,1,1
+SSWL,Steel Strips Wheels,0.05,1,1
+SUNDARMFIN,Sundaram Finance,0.1,1,1
+SUKHJITS,Sukhjit Starch,0.01,1,1
+SOTL,Savita Oil Tech.,0.05,1,1
+SRTL,Shree Ram Twistex,0.01,1,1
+SUNFLAG,Sunflag Iron,0.05,1,1
+SONAMLTD,Sonam,0.01,1,1
+SUNTV,Sun TV Network,0.05,1,1
+SUBEXLTD,Subex,0.01,1,1
+STARPAPER,Star Paper Mills,0.01,1,1
+SONAL,Sonal Mercantile,0.01,1,1
+SUNDARAM,Sundaram Multi Pap,0.01,1,1
+STUDDS,Studds Accessories,0.05,1,1
+SPANDANA,Spandana SphoortyFin,0.01,1,1
+STCINDIA,State Trading Corpn.,0.01,1,1
+SUNRAKSHAK,Sunrakshakk Inds.,0.05,1,1
+SRGHFL,SRG Housing Finance,0.05,1,1
+STARHEALTH,Star Health Insurance,0.05,1,1
+SSDL,Saraswati Saree Dep.,0.01,1,1
+SOUTHBANK,South Indian Bank,0.01,1,1
+STARCEMENT,Star Cement,0.01,1,1
+SPLIL,SPL Industries,0.01,1,1
+STAR,Strides Pharma,0.1,1,1
+SPAL,SP Apparels,0.1,1,1
+SUMMITSEC,Summit Securities,0.1,1,1
+SRHHYPOLTD,Sree Rayalaseema,0.05,1,1
+SUNSHINE,Sunshine Pictures,0.05,1,1
+SUDARCOLOR,Sudarshan Colorants,0.05,1,1
+SPENCERS,Spencer's Retail,0.01,1,1
+STOVEKRAFT,Stove Kraft,0.05,1,1
+SUMEETINDS,Sumeet Industries,0.01,1,1
+STYL,Seshaasai Tech.,0.05,1,1
+STLSTRINF,Steel Strips Infra.,0.01,1,1
+SREEL,Sreeleathers,0.01,1,1
+STEELCAS,Steelcast,0.05,1,1
+SUNLOC,Sunil Healthcare,0.01,1,1
+SRD,Shankar Lal Rampal,0.01,1,1
+SUNTECK,Sunteck Realty,0.05,1,1
+STYRENIX,Styrenix Performance,0.1,1,1
+SPLPETRO,Supreme Petrochem,0.05,1,1
+SUBROS,Subros,0.05,1,1
+SUPREME,Supreme Holdings,0.01,1,1
+TATATECH,Tata Technologies,0.05,1,1
+TAKE,Take,0.01,1,1
+SYRMA,Syrma SGS Technology,0.1,1,1
+SURANAT&P,Surana Tele & Power,0.01,1,1
+TECHNOCRAF,Technocraft Ventures,0.05,1,1
+TATAGOLD,TATAGOLD,0.01,1,1
+SVPGLOB,SVP Global,0.01,1,1
+SVGLOBAL,SV Global Mill,0.01,1,1
+SUPREMEINF,Supreme Infra,0.01,1,1
+TATACAP,Tata Capital,0.05,1,1
+TASTYBITE,Tasty Bite Eatables,1.0,1,1
+SUYOG,Suyog Telematics,0.05,1,1
+SURYALA,Suryalata Spg Mills,0.05,1,1
+SWISSMLTRY,Swiss Military Goods,0.01,1,1
+SWELECTES,Swelect Energy Sys.,0.05,1,1
+SWANCORP,Swan Corp,0.05,1,1
+SURANASOL,Surana Solar,0.01,1,1
+TDPOWERSYS,TD Power Systems,0.05,1,1
+SUVIDHAA,Suvidhaa Infoserve,0.01,1,1
+SWSOLAR,Sterling,0.01,1,1
+TATSILV,TATSILV,0.01,1,1
+SYMPHONY,Symphony,0.05,1,1
+TEAMGTY,Team India Guaranty,0.01,1,1
+TCC,TCC Concept,0.01,1,1
+TECHNOE,Techno Electric,0.05,1,1
+TBZ,TBZ,0.05,1,1
+TECH,Aditya BSL Nifty IT ETF,0.01,1,1
+TARIL,Transformers & Rect.,0.05,1,1
+SUPREMEIND,Supreme Industries,0.1,1,1
+TARMAT,Tarmat,0.01,1,1
+TARC,TARC,0.01,1,1
+SURYALAXMI,Suryalakshmi Cotton,0.01,1,1
+SURAJLTD,Suraj,0.01,1,1
+TATVA,Tatva Chintan,0.1,1,1
+SYNCOMF,Syncom Formulations,0.01,1,1
+TCIEXP,TCI Express,0.05,1,1
+TCS,TCS,0.1,1,1
+SYNGENE,Syngene Internatl.,0.05,1,1
+TATAPOWER,Tata Power,0.05,1,1
+TATACHEM,Tata Chemicals,0.05,1,1
+TARAPUR,Tarapur Transformers,0.01,1,1
+TATAELXSI,Tata Elxsi,0.1,1,1
+TBOTEK,TBO Tek,0.1,1,1
+SURYAROSNI,Surya Roshni,0.01,1,1
+TECHM,Tech Mahindra,0.1,1,1
+TATAINVEST,Tata Invest. Corpn.,0.05,1,1
+TANLA,Tanla Platforms,0.05,1,1
+TAINWALCHM,Tainwala Chemicals,0.01,1,1
+TATASTEEL,Tata Steel,0.01,1,1
+SURAJEST,Suraj Estate Develop,0.01,1,1
+SURAKSHA,Suraksha Diagnostic,0.05,1,1
+TAJGVK,Krishna GVK Luxury,0.05,1,1
+TECHNVISN,TechNVision,0.5,1,1
+SWIGGY,Swiggy,0.05,1,1
+TCI,Transport Corpn.,0.05,1,1
+SUVEN,Suven Life Sciences,0.05,1,1
+TANAA,Taneja Aerospace,0.05,1,1
+TARACHAND,Tara Chand Infra.,0.01,1,1
+TARSONS,Tarsons Products,0.05,1,1
+TEAMLEASE,TeamLease Services,0.1,1,1
+SYMBIOTEC,Symbiotec Pharmalab,0.05,1,1
+SUZLON,Suzlon Energy,0.01,1,1
+TATACONSUM,Tata Consumer Prod.,0.1,1,1
+SWARAJENG,Swaraj Engines,0.1,1,1
+TECILCHEM,Tecil Chemical,0.01,1,1
+SURYODAY,Suryoday Small Fin.,0.01,1,1
+TAALTECH,TAAL Tech,0.1,1,1
+SWARNSAR,Swarnsarita,0.01,1,1
+TATACOMM,Tata Communications,0.1,1,1
+TALBROAUTO,Talbros Automotive,0.05,1,1
+SUPRIYA,Supriya Lifescience,0.05,1,1
+TCPLPACK,TCPL Packaging,0.1,1,1
+TINNARUBR,Tinna Rubber,0.05,1,1
+TIIL,Technocraft Inds.(I),0.1,1,1
+TIRUMALCHM,Thirumalai Chemicals,0.01,1,1
+THEINVEST,Inv Trust of India,0.01,1,1
+TRAVELFOOD,Travel Food Services,0.1,1,1
+TOTAL,Total Transport Sys.,0.01,1,1
+TOP100CASE,Zerodha Nifty 100ETF,0.01,1,1
+TGVSL,TGV SRAAC,0.01,1,1
+THEMISMED,Themis Medicare,0.01,1,1
+THEJO,Thejo Engg,0.1,1,1
+THYROCARE,Thyrocare Tech,0.05,1,1
+TITAGARH,Titagarh Railsystems,0.05,1,1
+TEXRAIL,Texmaco Rail & Engg.,0.01,1,1
+TOLINS,Tolins Tyres,0.01,1,1
+TRITURBINE,Triveni Turbine,0.05,1,1
+THANGAMAYL,Thangamayil Jeweller,0.5,1,1
+TIPSMUSIC,Tips Music,0.05,1,1
+TEXINFRA,Texmaco Infra.&Hold.,0.01,1,1
+TRENT,Trent,0.1,1,1
+THOMASCOOK,Thomas Cook India,0.01,1,1
+TNPETRO,TN Petro Products,0.01,1,1
+TRITONV,Triton Valves,0.1,1,1
+TTL,TT,0.01,1,1
+THAKDEV,Thakkers Developer,0.01,1,1
+TTML,Tata Tele (Maha),0.01,1,1
+TNTELE,TN Telecommunication,0.01,1,1
+TFCILTD,TFCI,0.01,1,1
+TORNTPOWER,Torrent Power,0.1,1,1
+TFL,Transwarranty Fin,0.01,1,1
+TIMEX,Timex Group,0.05,1,1
+TRIVENI,Triveni Engg,0.05,1,1
+THOMASCOTT,Thomas Scott (I),0.05,1,1
+TRUALT,TruAlt Bioenergy,0.05,1,1
+TPLPLASTEH,TPL Plastech,0.01,1,1
+TERAI,Terai Tea Company,0.01,1,1
+TORNTPHARM,Torrent Pharma,0.5,1,1
+TMPV,Tata Motors Passenger,0.05,1,1
+TIMKEN,Timken India,0.1,1,1
+TRACXN,Tracxn Technologies,0.01,1,1
+TURTLEMINT,Turtlemint Fintech,0.01,1,1
+TMB,Tamilnad Mercantile,0.05,1,1
+TIGERLOGS,Tiger Logistics,0.01,1,1
+TRU,TruCap Finance,0.01,1,1
+TMCV,Tata Motors Commercial,0.05,1,1
+TRIGYN,Trigyn Technologies,0.01,1,1
+TOP10ADD,TOP10ADD,0.01,1,1
+TGBHOTELS,TGB Banquets & Hotel,0.01,1,1
+TERASOFT,Tera Software,0.05,1,1
+TEMBO,Tembo Global Inds,0.01,1,1
+TIINDIA,Tube Investments,0.1,1,1
+TITAN,Titan Company,0.5,1,1
+TREL,Transindia Real Est.,0.01,1,1
+TOP15IETF,TOP15IETF,0.01,1,1
+TI,Tilaknagar Inds.,0.05,1,1
+TREJHARA,Trejhara Solutions,0.01,1,1
+TOUCHWOOD,Touchwood Entertain.,0.01,1,1
+TOP20,TOP20,0.01,1,1
+TREEHOUSE,Tree House Education,0.01,1,1
+TEXMOPIPES,Texmo Pipes,0.01,1,1
+TEMPSENS,Tempsens Instrum.(I),0.05,1,1
+TNPL,TN Newsprints &Paper,0.01,1,1
+TIPSFILMS,Tips Films,0.05,1,1
+TRIDENT,Trident,0.01,1,1
+TTKHLTCARE,TTK Healthcare,0.1,1,1
+TTKPRESTIG,TTK Prestige,0.05,1,1
+TNIDETF,TNIDETF,0.01,1,1
+TIMETECHNO,Time Technoplast,0.01,1,1
+TEJASNET,Tejas Networks,0.05,1,1
+THERMAX,Thermax,0.1,1,1
+TSFINV,TSF Investments,0.05,1,1
+TIJARIA,Tijaria Polypipes,0.01,1,1
+TENNIND,Tenneco Clean Air,0.05,1,1
+TRANSRAILL,Transrail Lighting,0.05,1,1
+TRF,TRF,0.01,1,1
+TOKYOPLAST,Tokyo Plast Intnatl.,0.01,1,1
+TOYAMSL,Toyam Sports,0.01,1,1
+TRANSCOR,Transcorp Intnatl.,0.01,1,1
+THELEELA,Leela Palaces Hotels,0.05,1,1
+TEGA,Tega Industries,0.1,1,1
+VASUPRADA,Shri Vasuprada Plant,0.01,1,1
+URBANCO,Urban Company,0.01,1,1
+UBL,United Breweries,0.1,1,1
+VAISHALI,Vaishali Pharma,0.01,1,1
+URJA,Urja Global,0.01,1,1
+UNIECOM,Unicomm. eSolutions,0.01,1,1
+UTKARSHBNK,Utkarsh Small Fin.,0.01,1,1
+UGROCAP,Ugro Capital,0.01,1,1
+VARDMNPOLY,Vardhman Polytex,0.01,1,1
+UTTAMSUGAR,Uttam Sugar Mills,0.05,1,1
+UTIAMC,UTI Asset Management,0.05,1,1
+UNOMINDA,UNO Minda,0.1,1,1
+VALUEAXIS,AXISVALUE,0.01,1,1
+TVSSRICHAK,TVS Srichakra,0.5,1,1
+UNITDSPR,United Spirits,0.1,1,1
+VALUE,Mirae Asset Nifty 500 Value 50 ETF,0.01,1,1
+TVSSCS,TVS Supply Chain Sol,0.01,1,1
+UTLSOLAR,Fujiyama Power Sys.,0.05,1,1
+TVSHLTD,TVS Holdings,1.0,1,1
+UCOBANK,UCO Bank,0.01,1,1
+VAKRANGEE,Vakrangee,0.01,1,1
+UNIENTER,Uniphos Enterprises,0.01,1,1
+UNIONBANK,Union Bank of India,0.01,1,1
+UJJIVANSFB,Ujjivan Small Fin,0.01,1,1
+UNICHEMLAB,Unichem Laboratories,0.05,1,1
+UGARSUGAR,Ugar Sugar Works,0.01,1,1
+UFLEX,Uflex,0.05,1,1
+TVSELECT,TVS Electronics,0.05,1,1
+UDAYJEW,Uday Jewellery Inds.,0.01,1,1
+UNIINFO,Uniinfo Telecom,0.01,1,1
+VAML,Vedanta Alumin Metal,0.05,1,1
+TWCGOLDETF,TWCGOLDETF,0.01,1,1
+UPL,UPL,0.05,1,1
+UDS,Updater Services,0.01,1,1
+UNITEDPOLY,United Polyfab,0.01,1,1
+ULTRACEMCO,UltraTech Cement,1.0,1,1
+TVTODAY,TV Today Network,0.01,1,1
+VAIBHAVGBL,Vaibhav Global,0.01,1,1
+UMESLTD,Usha Martin Edu,0.01,1,1
+UNIVCABLES,Universal Cables,0.1,1,1
+UNITEDTEA,United Nilgiri,0.05,1,1
+UEL,Ujaas Energy,0.01,1,1
+VADILENT,Vadilal Enterprises,1.0,1,1
+VARROC,Varroc Engineering,0.05,1,1
+UPHOT,UP Hotels,0.1,1,1
+TVSMOTOR,TVS Motor Company,0.1,1,1
+TUTIALKA,Tuticorin AlkaliChem,0.01,1,1
+ULTRAMAR,Ultramar & Pigments,0.05,1,1
+USK,Udayshivakumar Infra,0.01,1,1
+VASWANI,Vaswani Industries,0.01,1,1
+UMIYA-MRO,MRO-TEK Network,0.01,1,1
+VAL30IETF,ICICI Prudential Nif,0.01,1,1
+VADILALIND,Vadilal Industries,0.5,1,1
+VASCONEQ,Vascon Engineers,0.01,1,1
+UNIONGOLD,UNIONGOLD,0.05,1,1
+UNIMECH,Unimech Aerospace,0.1,1,1
+UFO,UFO Moviez India,0.01,1,1
+USHAMART,Usha Martin,0.05,1,1
+UNIPARTS,Uniparts India,0.05,1,1
+V2RETAIL,V2 Retail,0.01,1,1
+UNITECH,Unitech,0.01,1,1
+VBL,Varun Beverages,0.05,1,1
+VIKASLIFE,Vikas Lifecare,0.01,1,1
+VIKASECO,Vikas Ecotech,0.01,1,1
+VOITHPAPR,Voith Paper Fabrics,0.1,1,1
+VTL,Vardhman Textiles,0.05,1,1
+VIJAYA,VDC,0.1,1,1
+VINNY,Vinny Overseas,0.01,1,1
+VOEPL,Virtuoso Optoelectro,0.05,1,1
+VISHNU,Vishnu Chemicals,0.05,1,1
+VEDAVAAG,Vedavaag Systems,0.01,1,1
+VIRAT,Virat Industries,0.05,1,1
+VIRTUALG,Virtual Global Edu,0.01,1,1
+VISACHROME,VISA Chrome,0.01,1,1
+VSTTILLERS,VST Tillers Tractors,0.1,1,1
+VMSTMT,VMS TMT,0.01,1,1
+VOLTAS,Voltas,0.1,1,1
+VIMTALABS,Vimta Labs,0.05,1,1
+VIDHIING,Vidhi Specialty,0.05,1,1
+VISHAL,Vishal Fabrics,0.01,1,1
+VINATIORGA,Vinati Organics,0.1,1,1
+VGCL,Vibrant Global Cap.,0.01,1,1
+VIVOBIOT,Vivo Bio Tech,0.01,1,1
+VENKEYS,Venky's (India),0.1,1,1
+VGL,Varvee Global,0.01,1,1
+VEDL,Vedanta,0.05,1,1
+VSTL,Vibhor Steel Tubes,0.01,1,1
+VGUARD,V-Guard Inds.,0.05,1,1
+VMM,Vishal Mega Mart,0.01,1,1
+VIDYAWIRES,Vidya Wires,0.01,1,1
+VOGL,Vedanta Oil & Gas,0.01,1,1
+VPRPL,Vishnu Prakash R,0.01,1,1
+VISL,Vedanta Iron & Steel,0.01,1,1
+VENTIVE,Ventive Hospitality,0.05,1,1
+VRAJ,Vraj Iron & Steel,0.01,1,1
+VINEETLAB,Vineet Laborator,0.01,1,1
+VITAL,Vital Chemtech,0.01,1,1
+VIKRAN,Vikran Engineering,0.01,1,1
+VERTOZ,Vertoz Limited,0.01,1,1
+VIRINCHI,Virinchi,0.01,1,1
+VEEDOL,Veedol Corporation,0.1,1,1
+VIPIND,VIP Industries,0.05,1,1
+VEDPOWER,Vedanta Power,0.01,1,1
+VMART,V-Mart Retail,0.05,1,1
+VRLLOG,VRL Logistics,0.05,1,1
+VINDHYATEL,Vindhya Telelinks,0.1,1,1
+VHL,Vardhman Holdings,0.1,1,1
+VERANDA,Veranda Learning,0.01,1,1
+VESUVIUS,Vesuvius India,0.05,1,1
+VIKRAMSOLR,Vikram Solar,0.01,1,1
+VSSL,Vardhman Spl. Steel,0.05,1,1
+VIPCLOTHNG,VIP Clothing,0.01,1,1
+VISHWARAJ,Vishwaraj Sugar,0.01,1,1
+VLSFINANCE,VLS Finance,0.01,1,1
+VIJSOLX,Vijay Solvex,0.05,1,1
+VOLTAMP,Voltamp Transformers,1.0,1,1
+VINYLINDIA,Vinyl Chemicals (I),0.01,1,1
+VIYASH,Viyash Scientific,0.05,1,1
+VENUSPIPES,Venus Pipes & Tubes,0.1,1,1
+VTMLTD,VTM,0.01,1,1
+VINCOFE,Vintage Coffee,0.01,1,1
+VISAKAIND,Visaka Industries,0.01,1,1
+VSTIND,VST Industries,0.01,1,1
+VIVIDHA,Visagar Polytex,0.01,1,1
+ZENTEC,Zen Technologies,0.1,1,1
+ZODIAC,Zodiac Energy,0.01,1,1
+YESBANK,Yes Bank,0.01,1,1
+YATRA,Yatra Online,0.01,1,1
+ZOTA,Zota Health Care,0.1,1,1
+YATHARTH,Yatharth Hospital,0.1,1,1
+WOCKPHARMA,Wockhardt,0.1,1,1
+ZENITHEXPO,Zenith Exports,0.01,1,1
+ZAGGLE,Zaggle Prepaid Ocean,0.01,1,1
+WEALTH,Wealth First,0.05,1,1
+WARDINMOBI,Wardwizard Innov,0.01,1,1
+WHEELS,Wheels India,0.1,1,1
+WEWIN,We Win,0.01,1,1
+WALCHANNAG,Walchandnagar Inds.,0.01,1,1
+WINDMACHIN,Windsor Machines,0.05,1,1
+ZFSTEERING,ZF Steering Gear,0.05,1,1
+WSI,WS Industries India,0.01,1,1
+YUKEN,Yuken India,0.05,1,1
+WILLAMAGOR,Williamson Magor,0.01,1,1
+WABAG,VA Tech Wabag,0.1,1,1
+ZODIACLOTH,Zodiac Clothing Co,0.01,1,1
+WELSPLSOL,Welspun Specialty,0.01,1,1
+XTRANET,Xtranet Technologies,0.01,1,1
+WELSPUNLIV,Welspun Living,0.01,1,1
+WPIL,WPIL,0.05,1,1
+WHBRADY,WH Brady & Co,0.05,1,1
+ZUARIIND,Zuari Industries,0.05,1,1
+YASHO,Yasho Industries,0.1,1,1
+WANBURY,Wanbury,0.05,1,1
+WEIZMANIND,Weizmann,0.01,1,1
+WEBELSOLAR,Websol Energy System,0.01,1,1
+YOGI,Yogi,0.01,1,1
+WATERBASE,Waterbase,0.01,1,1
+WINDLAS,Windlas Biotech,0.05,1,1
+WELCORP,Welspun Corp,0.1,1,1
+ZENSARTECH,Zensar Technologies,0.05,1,1
+ZENITHSTL,Zenith Steel Pipes,0.01,1,1
+WHIRLPOOL,Whirlpool Of India,0.05,1,1
+WELENT,Welspun Enterprises,0.05,1,1
+WIPL,The Western Indian,0.01,1,1
+ZSARACOM,Saraswati Commercial,1.0,1,1
+XELPMOC,Xelpmoc Design &Tech,0.01,1,1
+XCHANGING,Xchanging Solutions,0.01,1,1
+ZEEMEDIA,Zee Media Corp,0.01,1,1
+WAKEFIT,Wakefit Innovations,0.01,1,1
+ZEEL,Zee Entertainment,0.01,1,1
+WENDT,Wendt (India),0.5,1,1
+WAAREERTL,Waaree Renewables,0.05,1,1
+ZYDUSLIFE,Zydus,0.1,1,1
+XPROINDIA,Xpro India,0.1,1,1
+WIPRO,Wipro,0.01,1,1
+WORTHPERI,Worth Peripherals,0.01,1,1
+ZYDUSWELL,Zydus Wellness,0.05,1,1
+ZIMLAB,Zim Laboratories,0.01,1,1
+WAAREEINDO,Indosolar,0.05,1,1
+WCIL,Western Carriers (I),0.01,1,1
+WESTLIFE,Westlife Foodworld,0.05,1,1
+XTGLOBAL,Xtglobal Infotech,0.01,1,1
+ZUARI,Zuari Agro Chem,0.01,1,1
+ZFCVINDIA,ZF Commercial Vehic.,0.1,1,1
+WSTCSTPAPR,West Coast PaperMill,0.05,1,1
+WEWORK,Wework India Mgmnt.,0.05,1,1
+WONDERLA,Wonderla Holidays,0.05,1,1
+WEL,Wonder Electricals,0.01,1,1
+WAAREEENER,Waaree Energies,0.1,1,1
