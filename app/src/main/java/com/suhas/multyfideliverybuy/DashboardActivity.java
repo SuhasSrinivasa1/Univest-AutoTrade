@@ -217,9 +217,22 @@ public class DashboardActivity extends Activity {
         root.addView(scan, fixedMargins(-1, 54, 0, 0, 0, 14));
 
         LinearLayout champions = card();
-        champions.addView(sectionRow("STRATEGY CHAMPIONS", "5 families"));
-        champions.addView(body(ResearchEngine.strategiesText(this)), margins(0, 12, 0, 0));
+        champions.addView(sectionRow("UNIVEST PLAYBOOK CHAMPIONS", "Top 5 composites"));
+        champions.addView(body(ResearchEngine.playbooksText(this)), margins(0, 12, 0, 0));
+        champions.addView(meta("Playbooks are non-exclusive combinations. One stock can strongly match several at once; multiple agreeing playbooks increase the forecast vote rather than forcing one family label."), margins(0, 8, 0, 0));
         root.addView(champions, margins(0, 0, 0, 14));
+
+        LinearLayout components = card();
+        components.addView(sectionRow("COMPONENT EVIDENCE", "Building blocks"));
+        components.addView(body(ResearchEngine.strategiesText(this)), margins(0, 12, 0, 0));
+        components.addView(meta("These are component scores used inside composite playbooks, not mutually-exclusive strategy families."), margins(0, 8, 0, 0));
+        root.addView(components, margins(0, 0, 0, 14));
+
+        LinearLayout accountability = card();
+        accountability.addView(sectionRow("PRE-UNIVEST PREDICTION SCORECARD", "Out-of-sample"));
+        accountability.addView(body(ResearchEngine.forecastAccountabilityText(this)), margins(0, 12, 0, 0));
+        accountability.addView(meta("Primary test: was the eventual official Univest ENTRY already in a frozen Top 10 before the notification? Historical explanation alone does not count as a prediction."), margins(0, 8, 0, 0));
+        root.addView(accountability, margins(0, 0, 0, 14));
 
         LinearLayout archive = card();
         archive.addView(sectionRow("RECOMMENDATION ARCHIVE", "1–3 month"));
@@ -228,7 +241,7 @@ public class DashboardActivity extends Activity {
 
         LinearLayout dna = card();
         dna.addView(sectionRow("BUY → SELL DNA", "Pattern learning"));
-        dna.addView(body("Compares candle structure, trend, ATR, volume, momentum and later official exit behaviour. Provisional volatility-normalized ranges are replaced as completed campaigns accumulate."), margins(0, 12, 0, 0));
+        dna.addView(body("Captures causality-safe point-in-time ENTRY/EXIT profiles, raw 1m/15m/daily candles, volume, VWAP, momentum, volatility, live quote/depth, market context and matched non-selected controls. Composite playbooks learn recurring combinations rather than one-label families."), margins(0, 12, 0, 0));
         root.addView(dna, margins(0, 0, 0, 14));
 
         LinearLayout lifecycle = card();
@@ -281,6 +294,11 @@ public class DashboardActivity extends Activity {
         activeResearch.addView(sectionRow("ACTIVE RESEARCH TRADES", AppPrefs.isResearchAutoTradeEnabled(this) ? "AUTO" : "MANUAL"));
         activeResearch.addView(body(ResearchTradeEngine.activePositionsText(this)), margins(0, 12, 0, 0));
         root.addView(activeResearch, margins(0, 0, 0, 14));
+
+        LinearLayout forecastScore = card();
+        forecastScore.addView(sectionRow("FORECAST ACCOUNTABILITY", "Before Univest"));
+        forecastScore.addView(body(ResearchEngine.forecastAccountabilityText(this)), margins(0, 12, 0, 0));
+        root.addView(forecastScore, margins(0, 0, 0, 14));
 
         LinearLayout expected = card();
         expected.addView(sectionRow("NEXT EXPECTED RECOMMENDATIONS", "Top 10"));
