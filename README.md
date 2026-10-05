@@ -4,7 +4,7 @@ Dedicated Android repository for the Univest AutoTrade project.
 
 ## Current release
 
-**v2.8.4** — package `com.suhas.multyfideliverybuy`, versionCode **284**.
+**v2.9.0** — package `com.suhas.multyfideliverybuy`, versionCode **290**.
 
 The official execution lane is locked to the official Univest Android package `com.univest.capp` and NSE CASH / CNC delivery.
 
@@ -38,7 +38,13 @@ The green-only rule is intentional but can keep exposure open after Univest has 
 - Portable user-owned history ZIP can be restored/reconnected after uninstall/new-signature installs.
 - Portable history deliberately excludes Groww TOTP/API credentials and access tokens.
 - Off-market Research Lab performs full-NSE research/replay and a descriptive Univest strategy study using observed official calls.
+- Every official ENTRY/EXIT now produces an asynchronous causality-safe point-in-time profile with raw 1m/15m/daily candles, volume/VWAP/momentum/volatility context, quote/depth and circuit data where available.
+- Non-exclusive composite **Univest Playbooks** learn recurring combinations of component signals; one stock may match several playbooks simultaneously.
+- The Top 5 active playbooks are rated by evidence and fair pre-Univest forecast hits; historical champions are retained rather than destructively overwritten.
+- A Top-100 nightly candidate pool supports matched non-selected control groups so broad market conditions are not mistaken for Univest-specific selection logic.
+- Forecast accountability explicitly measures whether the eventual official Univest ENTRY was already in the frozen Top 10/5/3 before the notification.
 - Pre-signal evidence and later outcomes are kept separate to avoid look-ahead contamination.
+- Fundamentals and dedicated first-party NSE/BSE announcement feeds remain explicitly marked unavailable until a point-in-time source is connected; the app does not silently invent those fields.
 
 ## Build
 
