@@ -55,6 +55,17 @@ jobs:
           grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
           grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
+          grep -q "versionCode 290" app/build.gradle
+          grep -q "versionName '2.9.0'" app/build.gradle
+          grep -q 'ResearchPlaybookEngine' app/src/main/java/com/suhas/multyfideliverybuy/ResearchEngine.java
+          grep -q 'NON_EXCLUSIVE_COMPOSITE' app/src/main/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngine.java
+          grep -q 'POINT_IN_TIME_SIGNAL_PROFILE' app/src/main/java/com/suhas/multyfideliverybuy/ResearchSignalProfiler.java
+          grep -q 'appendRawCandles' app/src/main/java/com/suhas/multyfideliverybuy/ResearchEventStore.java
+          grep -q 'matched_controls.jsonl' app/src/main/java/com/suhas/multyfideliverybuy/ResearchStore.java
+          grep -q 'candidate_pool.json' app/src/main/java/com/suhas/multyfideliverybuy/ResearchStore.java
+          grep -q 'PLAYBOOK CHAMPIONS' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -q 'containsCredentials", false' app/src/main/java/com/suhas/multyfideliverybuy/HistoryBackupManager.java
+          grep -q 'ResearchPlaybookEngineTest' app/src/test/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngineTest.java
           grep -q 'GreenOfficialExitTest' app/src/test/java/com/suhas/multyfideliverybuy/GreenOfficialExitTest.java
 
       - name: Unit tests and release build
