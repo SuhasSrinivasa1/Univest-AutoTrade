@@ -57,6 +57,7 @@ final class ResearchEngine {
 
             JSONObject strategies = strategies(c);
             ResearchStore.saveStrategies(c, strategies);
+            ResearchPlaybookEngine.rebuildRegistry(c);
 
             AppPrefs.setResearchStatus(c, "Scanning entire eligible NSE CASH universe…");
             JSONArray predictions = scanEntireNse(c, all);
@@ -274,7 +275,24 @@ final class ResearchEngine {
         }
         // News can modestly re-order the technically qualified shortlist, but cannot rescue an
         // instrument that failed the full-NSE technical/liquidity data scan.
-        candidates.sort((a, b) -> Integer.compare(b.optInt("similarity"), a.optInt("similarity")));
+        // Composite playbooks are non-exclusive: one stock may receive several independent votes.
+        for (JSONObject candidate : candidates) ResearchPlaybookEngine.applyToCandidate(c, candidate);
+        candidates.sort((a, b) -> Double.compare(
+                b.optDouble("ensembleScore", b.optInt("similarity")),
+                a.optDouble("ensembleScore", a.optInt("similarity"))));
+
+        JSONArray pool = new JSONArray();
+        int poolLimit = Math.min(100, candidates.size());
+        String poolTarget = NseTradingCalendar.nextTradingDayKey(now);
+        for (int i = 0; i < poolLimit; i++) {
+            JSONObject p = candidates.get(i);
+            try {
+                p.put("candidatePoolRank", i + 1);
+                p.put("forecastSessionKey", poolTarget);
+            } catch (Exception ignored) {}
+            pool.put(p);
+        }
+        ResearchStore.saveCandidatePool(c, pool);
 
         if (candidates.size() > FINAL_LIMIT)
             candidates = new ArrayList<>(candidates.subList(0, FINAL_LIMIT));
@@ -374,6 +392,11 @@ final class ResearchEngine {
             j.put("prior20High", f.prior20High);
             j.put("volatility20Pct", f.volatility20Pct);
             j.put("dataPoints", f.dataPoints);
+            j.put("volumeBreakoutScore", sc.volumeBreakout);
+            j.put("trendPullbackScore", sc.trendPullback);
+            j.put("momentumScore", sc.momentum);
+            j.put("qualityReratingScore", sc.qualityRerating);
+            j.put("catalystSectorScore", sc.catalystSector);
             j.put("bestStrategy", sc.bestStrategy);
             j.put("bestScore", sc.bestScore);
             j.put("consensus", sc.consensus);
@@ -420,8 +443,15 @@ final class ResearchEngine {
                     .append(" - ").append(j.optInt("similarity")).append("/100 - ")
                     .append(j.optString("strategy"))
                     .append("\nConsensus ").append(j.optInt("consensus")).append("/5 • FROZEN FORECAST")
-                    .append(" • data ").append(j.optInt("dataConfidence")).append("%")
-                    .append(String.format(Locale.US,
+                    .append(" • data ").append(j.optInt("dataConfidence")).append("%");
+            if (!j.optString("bestPlaybook", "").isEmpty()) {
+                b.append("\nPlaybook ").append(j.optString("bestPlaybook"))
+                        .append(" • match ").append(String.format(Locale.US, "%.0f", j.optDouble("playbookScore", 0)))
+                        .append("/100 • votes ").append(j.optInt("playbookVotes", 0))
+                        .append(" • ensemble ").append(String.format(Locale.US, "%.0f",
+                                j.optDouble("ensembleScore", j.optInt("similarity")))).append("/100");
+            }
+            b.append(String.format(Locale.US,
                             "\nBuy %.2f-%.2f • chase %.2f\nReference sell zone %.2f-%.2f",
                             j.optDouble("buyLow"), j.optDouble("buyHigh"), j.optDouble("chaseLimit"),
                             j.optDouble("sellLow"), j.optDouble("sellHigh")))
@@ -434,6 +464,14 @@ final class ResearchEngine {
                 b.append("\nMarket: ").append(j.optString("marketRegimeText"));
         }
         return b.toString();
+    }
+
+    static String playbooksText(Context c) {
+        return ResearchPlaybookEngine.summaryText(c);
+    }
+
+    static String forecastAccountabilityText(Context c) {
+        return ResearchPlaybookEngine.accountabilityText(c);
     }
 
     static String strategiesText(Context c) {
