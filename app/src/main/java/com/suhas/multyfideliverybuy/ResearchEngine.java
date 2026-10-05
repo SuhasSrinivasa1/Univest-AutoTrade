@@ -27,7 +27,7 @@ final class ResearchEngine {
     private static final long DAY = TimeUnit.DAYS.toMillis(1);
     private static final int SCAN_THREADS = 4;
     private static final int FINAL_LIMIT = 10;
-    static final String STRATEGY_VERSION = "R2.8-1";
+    static final String STRATEGY_VERSION = "R2.9-PB1";
     private static final Object SCAN_RATE_LOCK = new Object();
     private static long lastScanRequestAt = 0L;
     private static final long SCAN_REQUEST_SPACING_MS = 150L;
