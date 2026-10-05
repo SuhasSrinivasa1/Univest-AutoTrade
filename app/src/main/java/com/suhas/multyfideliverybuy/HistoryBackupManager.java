@@ -62,10 +62,11 @@ final class HistoryBackupManager {
         try (ZipOutputStream zip = new ZipOutputStream(raw)) {
             JSONObject manifest = new JSONObject();
             manifest.put("format", "UNIVEST_PORTABLE_HISTORY");
-            manifest.put("schemaVersion", 1);
-            manifest.put("appVersion", "2.8.4");
+            manifest.put("schemaVersion", 2);
+            manifest.put("appVersion", "2.9.0");
             manifest.put("createdAt", System.currentTimeMillis());
             manifest.put("containsCredentials", false);
+            manifest.put("researchIncludes", "playbooks, challengers, hall-of-fame evidence, matched controls, point-in-time profiles, raw candles, forecast history");
             addText(zip, "manifest.json", manifest.toString(2));
             addText(zip, "history/event-ledger.json", UnivestHistoryDb.exportJson(c).toString());
 
