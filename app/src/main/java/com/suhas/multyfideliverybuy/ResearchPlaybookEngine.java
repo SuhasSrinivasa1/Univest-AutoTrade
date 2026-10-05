@@ -77,15 +77,25 @@ final class ResearchPlaybookEngine {
     }
 
     static String signature(JSONObject vector) {
+        int[] scores = new int[COMPONENTS.length];
+        for (int i = 0; i < COMPONENTS.length; i++)
+            scores[i] = vector == null ? 0 : vector.optInt(COMPONENTS[i], 0);
+        return signatureFromScores(scores[0], scores[1], scores[2], scores[3], scores[4]);
+    }
+
+    static String signatureFromScores(int volumeBreakout, int trendPullback, int momentum,
+                                      int qualityRerating, int catalystSector) {
+        final int[] scores = {
+                clamp(volumeBreakout), clamp(trendPullback), clamp(momentum),
+                clamp(qualityRerating), clamp(catalystSector)
+        };
         List<Integer> idx = new ArrayList<>();
         for (int i = 0; i < COMPONENTS.length; i++) idx.add(i);
-        Collections.sort(idx, (a, b) -> Integer.compare(
-                vector == null ? 0 : vector.optInt(COMPONENTS[b], 0),
-                vector == null ? 0 : vector.optInt(COMPONENTS[a], 0)));
+        Collections.sort(idx, (a, b) -> Integer.compare(scores[b], scores[a]));
         StringBuilder out = new StringBuilder();
         int kept = 0;
         for (int i : idx) {
-            int score = vector == null ? 0 : vector.optInt(COMPONENTS[i], 0);
+            int score = scores[i];
             if (kept >= 3) break;
             if (score < 45 && kept >= 2) break;
             if (out.length() > 0) out.append(" + ");
@@ -357,12 +367,23 @@ final class ResearchPlaybookEngine {
     }
 
     static double matchScore(JSONObject vector, JSONObject centroid, String signature) {
+        int[] a = new int[COMPONENTS.length];
+        int[] b = new int[COMPONENTS.length];
+        for (int i = 0; i < COMPONENTS.length; i++) {
+            a[i] = (int)Math.round(vector.optDouble(COMPONENTS[i], 0));
+            b[i] = (int)Math.round(centroid.optDouble(COMPONENTS[i], 0));
+        }
+        return matchScore(a, b, signature);
+    }
+
+    static double matchScore(int[] vector, int[] centroid, String signature) {
+        if (vector == null || centroid == null
+                || vector.length < COMPONENTS.length || centroid.length < COMPONENTS.length) return 0;
         double weightedDiff = 0;
         double weights = 0;
         for (int i = 0; i < COMPONENTS.length; i++) {
             double w = signature != null && signature.contains(LABELS[i]) ? 2.0 : 1.0;
-            weightedDiff += Math.abs(vector.optDouble(COMPONENTS[i], 0)
-                    - centroid.optDouble(COMPONENTS[i], 0)) * w;
+            weightedDiff += Math.abs(vector[i] - centroid[i]) * w;
             weights += w;
         }
         return Math.max(0, Math.min(100, 100.0 - weightedDiff / Math.max(1.0, weights)));
