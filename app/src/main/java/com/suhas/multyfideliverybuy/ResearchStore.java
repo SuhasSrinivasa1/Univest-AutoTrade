@@ -29,6 +29,10 @@ final class ResearchStore {
     private static final String STRATEGIES = "strategies.json";
     private static final String INTELLIGENCE = "intelligence.json";
     private static final String POSITIONS = "research_positions.json";
+    private static final String CANDIDATE_POOL = "candidate_pool.json";
+    private static final String PLAYBOOK_REGISTRY = "playbook_registry.json";
+    private static final String MATCHED_CONTROLS = "matched_controls.jsonl";
+    private static final String SIGNAL_PROFILES = "signal_profiles.jsonl";
     private static final Pattern DURATION = Pattern.compile("(?i)(?:duration|holding(?:\\s+period)?|time\\s*horizon)\\s*[:\\-]?\\s*(\\d+(?:\\.\\d+)?)\\s*(?:(?:-|–|—|to)\\s*(\\d+(?:\\.\\d+)?))?\\s*months?");
 
     private ResearchStore() {}
@@ -105,6 +109,34 @@ final class ResearchStore {
     static synchronized JSONArray intelligence(Context c) { return readArray(c, INTELLIGENCE); }
     static synchronized JSONArray positions(Context c) { return readArray(c, POSITIONS); }
     static synchronized void savePositions(Context c, JSONArray a) { writeJson(c, POSITIONS, a == null ? new JSONArray().toString() : a.toString()); }
+
+    static synchronized void saveCandidatePool(Context c, JSONArray a) {
+        writeJson(c, CANDIDATE_POOL, a == null ? new JSONArray().toString() : a.toString());
+    }
+    static synchronized JSONArray candidatePool(Context c) { return readArray(c, CANDIDATE_POOL); }
+
+    static synchronized void savePlaybookRegistry(Context c, JSONObject o) {
+        writeJson(c, PLAYBOOK_REGISTRY, o == null ? new JSONObject().toString() : o.toString());
+    }
+    static synchronized JSONObject playbookRegistry(Context c) { return readObject(c, PLAYBOOK_REGISTRY); }
+
+    static synchronized void appendMatchedControls(Context c, JSONObject o) {
+        try { append(c, MATCHED_CONTROLS, o); }
+        catch (Exception e) { DiagnosticsStore.error(c, "MATCHED_CONTROL_SAVE_FAILED", "",
+                "Unable to save matched non-selected control group.", e); }
+    }
+    static synchronized List<JSONObject> matchedControls(Context c, int limit) {
+        return readJsonLines(c, MATCHED_CONTROLS, Math.max(1, limit));
+    }
+
+    static synchronized void appendSignalProfile(Context c, JSONObject o) {
+        try { append(c, SIGNAL_PROFILES, o); }
+        catch (Exception e) { DiagnosticsStore.error(c, "SIGNAL_PROFILE_SAVE_FAILED",
+                o == null ? "" : o.optString("symbol"), "Unable to save point-in-time signal profile.", e); }
+    }
+    static synchronized List<JSONObject> signalProfiles(Context c, int limit) {
+        return readJsonLines(c, SIGNAL_PROFILES, Math.max(1, limit));
+    }
 
     static double durationMonths(String raw) {
         Matcher m = DURATION.matcher(raw == null ? "" : raw);
