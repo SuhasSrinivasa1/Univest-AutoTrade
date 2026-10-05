@@ -281,7 +281,7 @@ final class ResearchEngine {
                 b.optDouble("ensembleScore", b.optInt("similarity")),
                 a.optDouble("ensembleScore", a.optInt("similarity"))));
 
-        JSONArray pool = new JSONArray();
+        JSONArray candidatePool = new JSONArray();
         int poolLimit = Math.min(100, candidates.size());
         String poolTarget = NseTradingCalendar.nextTradingDayKey(now);
         for (int i = 0; i < poolLimit; i++) {
@@ -290,9 +290,9 @@ final class ResearchEngine {
                 p.put("candidatePoolRank", i + 1);
                 p.put("forecastSessionKey", poolTarget);
             } catch (Exception ignored) {}
-            pool.put(p);
+            candidatePool.put(p);
         }
-        ResearchStore.saveCandidatePool(c, pool);
+        ResearchStore.saveCandidatePool(c, candidatePool);
 
         if (candidates.size() > FINAL_LIMIT)
             candidates = new ArrayList<>(candidates.subList(0, FINAL_LIMIT));
