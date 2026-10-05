@@ -21,6 +21,7 @@ final class ResearchEventStore {
     static final int SCHEMA_VERSION = 2;
     private static final Object LOCK = new Object();
     private static final Map<String, Set<String>> MINUTE_SEEN = new HashMap<>();
+    private static final Map<String, Set<String>> RAW_SEEN = new HashMap<>();
 
     private ResearchEventStore() {}
 
@@ -118,6 +119,46 @@ final class ResearchEventStore {
         ResearchStore.savePredictions(c, predictions);
     }
 
+    static void appendRawCandles(Context c, String symbol, List<GrowwClient.Candle> candles,
+                                 String timeframe, String source, long anchorAt) {
+        if (candles == null || candles.isEmpty() || symbol == null || symbol.trim().isEmpty()) return;
+        String day = NseTradingCalendar.dayKey(anchorAt > 0 ? anchorAt : System.currentTimeMillis());
+        String fileName = "raw-candles-" + day + ".jsonl";
+        synchronized (LOCK) {
+            try {
+                File dir = dir(c);
+                if (!dir.exists()) dir.mkdirs();
+                File file = new File(dir, fileName);
+                Set<String> seen = rawSeenKeys(file, fileName);
+                try (Writer w = new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8)) {
+                    for (GrowwClient.Candle x : candles) {
+                        String key = (timeframe == null ? "" : timeframe) + "|"
+                                + symbol.toUpperCase(Locale.US) + "|" + x.epochSeconds + "|"
+                                + (source == null ? "" : source);
+                        if (!seen.add(key)) continue;
+                        JSONObject row = new JSONObject();
+                        row.put("schemaVersion", SCHEMA_VERSION);
+                        row.put("symbol", symbol.toUpperCase(Locale.US));
+                        row.put("timeframe", timeframe == null ? "" : timeframe);
+                        row.put("source", source == null ? "" : source);
+                        row.put("anchorAt", anchorAt);
+                        row.put("epochSeconds", x.epochSeconds);
+                        row.put("open", x.open);
+                        row.put("high", x.high);
+                        row.put("low", x.low);
+                        row.put("close", x.close);
+                        row.put("volume", x.volume);
+                        w.write(row.toString());
+                        w.write('\n');
+                    }
+                }
+            } catch (Exception e) {
+                DiagnosticsStore.error(c, "RESEARCH_RAW_CANDLE_STORE_FAILED", symbol,
+                        "Unable to persist raw point-in-time candles.", e);
+            }
+        }
+    }
+
     static void appendMinuteCandles(Context c, String symbol, List<GrowwClient.Candle> candles,
                                     String source, long anchorAt) {
         if (candles == null || candles.isEmpty()) return;
@@ -164,6 +205,28 @@ final class ResearchEventStore {
             vol += x.volume;
         }
         return vol > 0 ? pv / vol : 0.0;
+    }
+
+    private static Set<String> rawSeenKeys(File file, String cacheKey) {
+        Set<String> cached = RAW_SEEN.get(cacheKey);
+        if (cached != null) return cached;
+        Set<String> out = new HashSet<>();
+        if (file != null && file.exists()) {
+            try (java.io.BufferedReader r = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(new java.io.FileInputStream(file), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = r.readLine()) != null) {
+                    try {
+                        JSONObject j = new JSONObject(line);
+                        out.add(j.optString("timeframe") + "|"
+                                + j.optString("symbol").toUpperCase(Locale.US) + "|"
+                                + j.optLong("epochSeconds") + "|" + j.optString("source"));
+                    } catch (Throwable ignored) {}
+                }
+            } catch (Throwable ignored) {}
+        }
+        RAW_SEEN.put(cacheKey, out);
+        return out;
     }
 
     private static Set<String> seenKeys(File file, String day) {
