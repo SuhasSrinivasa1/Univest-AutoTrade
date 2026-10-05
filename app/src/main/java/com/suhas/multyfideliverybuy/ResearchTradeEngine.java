@@ -293,8 +293,9 @@ final class ResearchTradeEngine {
             String captureKey = "research_event_window_" + eventType + "_" + symbol + "_"
                     + Integer.toHexString((signal.rawText == null ? "" : signal.rawText).hashCode());
             if (AppPrefs.claimRecent(c, captureKey, 2L * 60L * 1000L)) {
-                new Thread(() -> ResearchEventStore.capturePreEventWindow(c, symbol, eventAt, eventType),
-                        "research-official-event-window").start();
+                // Persisted signal time is immediate; network enrichment is deliberately asynchronous
+                // so Research cannot delay the official order path.
+                ResearchSignalProfiler.captureAsync(c, signal, eventAt);
             }
             JSONObject p = findOpen(c, symbol);
             if (p != null && signal.type == UnivestParser.Type.ENTRY) {
