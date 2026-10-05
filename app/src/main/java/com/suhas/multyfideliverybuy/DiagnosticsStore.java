@@ -161,7 +161,7 @@ final class DiagnosticsStore {
                 addText(zip, "snapshot.json", snapshot(c).toString(2));
                 addText(zip, "README.txt",
                         "Univest AutoTrade diagnostic export\n" +
-                        "v2.8.4 stores diagnostics in daily IST files. The app UI shows only today's trading signals/trades/errors.\n" +
+                        "v2.9.0 stores diagnostics in daily IST files. The app UI shows only today's trading signals/trades/errors.\n" +
                         "Historical notification/runtime/broker logs remain in this export for debugging.\n" +
                         "Groww TOTP token, TOTP secret, generated OTP and access token are never exported.\n");
             }
@@ -172,7 +172,7 @@ final class DiagnosticsStore {
     private static JSONObject snapshot(Context c) {
         JSONObject j = new JSONObject();
         try {
-            j.put("app", "Univest AutoTrade"); j.put("version", "2.8.3"); j.put("versionCode", 284);
+            j.put("app", "Univest AutoTrade"); j.put("version", "2.9.0"); j.put("versionCode", 290);
             j.put("sourcePackageLock", "com.univest.capp"); j.put("productLock", "CNC DELIVERY ONLY");
             j.put("executionMode", AppPrefs.getExecutionMode(c)); j.put("entryBudget", AppPrefs.getUnivestBudget(c));
             j.put("reentryBudget", AppPrefs.getUnivestAddBudget(c)); j.put("downwardAverageBudget", AppPrefs.getAveragingBudget(c));
@@ -201,6 +201,8 @@ final class DiagnosticsStore {
             j.put("researchForecastTargetKey", AppPrefs.getResearchForecastTargetKey(c));
             j.put("researchAccuracy", ResearchTradeEngine.accuracyText(c));
             j.put("researchFailureClusters", ResearchTradeEngine.failureClustersText(c));
+            j.put("researchPlaybooks", ResearchStore.playbookRegistry(c));
+            j.put("preUnivestAccountability", ResearchPlaybookEngine.accountabilityText(c));
             JSONArray states = new JSONArray(); for (UnivestStateStore.State s : UnivestStateStore.all(c)) states.put(s.toJson());
             j.put("states", states);
         } catch (Exception ignored) {}
