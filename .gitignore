@@ -1,0 +1,29 @@
+# Android / Gradle
+.gradle/
+**/build/
+local.properties
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# Signing material and credentials — never commit
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+*.env
+credentials.env
+secrets.properties
+
+# Runtime / exported user data
+*.db
+*.db-shm
+*.db-wal
+Univest-History-Portable-*.zip
+Univest-Debug-*.zip
