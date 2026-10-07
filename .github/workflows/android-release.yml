@@ -52,11 +52,14 @@ jobs:
           grep -q 'placeUnivestCncGreenSell' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'EXIT_DEFERRED_NOT_GREEN' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'UNIVEST_EXIT_EXTERNAL_OR_MANUAL_HOLDING' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          grep -q 'ENTRY_ACCEPTED_FRESH_CYCLE' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          grep -q 'EXIT_LIVE_QUANTITY_REFRESH' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          ! grep -q 'DUPLICATE_EXIT_GUARD_MS' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
           grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
-          grep -q "versionCode 290" app/build.gradle
-          grep -q "versionName '2.9.0'" app/build.gradle
+          grep -q "versionCode 291" app/build.gradle
+          grep -q "versionName '2.9.1'" app/build.gradle
           grep -q 'ResearchPlaybookEngine' app/src/main/java/com/suhas/multyfideliverybuy/ResearchEngine.java
           grep -q 'NON_EXCLUSIVE_COMPOSITE' app/src/main/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngine.java
           grep -q 'POINT_IN_TIME_SIGNAL_PROFILE' app/src/main/java/com/suhas/multyfideliverybuy/ResearchSignalProfiler.java
