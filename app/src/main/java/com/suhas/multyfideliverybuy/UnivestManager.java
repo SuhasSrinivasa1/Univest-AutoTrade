@@ -13,7 +13,6 @@ final class UnivestManager {
     static final int AVERAGE_BUDGET = 5000; // legacy/default value; runtime uses AppPrefs
     static final double AVERAGE_STEP_PCT = 2.0;
     static final int MAX_AVERAGE_LEVELS = 3;
-    private static final long DUPLICATE_EXIT_GUARD_MS = 120000L;
 
     private UnivestManager() {}
 
@@ -40,80 +39,111 @@ final class UnivestManager {
             String msg = "PAPER BUY • " + rupees(entryBudget) + " CNC delivery simulation • no Groww order sent.";
             DiagnosticsStore.paperTrade(context, "PAPER_BUY", symbol, msg);
             status(context, "PAPER MODE • UNIVEST ENTRY • " + symbol + " • simulated " + rupees(entryBudget) + " CNC delivery buy. No Groww order sent.");
-            return; // PAPER never mutates the LIVE campaign state and therefore cannot block a later LIVE order.
+            return;
         }
 
         if (!instrument.buyAllowed) { fail(context, "ENTRY_BUY_BLOCKED", symbol, "Groww instrument master marks buy_allowed=0.", null); return; }
 
-        // Broker truth is authoritative. A stale local ACTIVE state must never block an order when there is no
-        // holding/position and no open BUY at Groww.
+        // Every distinct official "New Equity" notification starts a fresh entry cycle. Existing holdings are
+        // broker truth to carry forward, not a duplicate gate. Only an actually open broker BUY blocks another BUY.
         GrowwClient.PositionSnapshot before = GrowwClient.getCncPosition(context, symbol);
         if (!before.success) { fail(context, "ENTRY_HOLDING_CHECK_FAILED", symbol, before.message, null); return; }
-        if (before.quantity > 0) {
-            UnivestStateStore.State official = UnivestStateStore.get(context, symbol);
-            boolean officialAlreadyActive = official != null && !UnivestStateStore.EXITED.equals(official.phase);
-            boolean researchPreEntry = ResearchTradeEngine.hasResearchLivePosition(context, symbol);
-            if (!(researchPreEntry && !officialAlreadyActive)) {
-                syncExistingHolding(context, symbol, before, instrument);
-                status(context, "UNIVEST ENTRY IGNORED • " + symbol + " • broker already shows CNC holding qty " + before.quantity + ".");
-                DiagnosticsStore.runtime(context, "ENTRY_ALREADY_HELD", symbol, before.message);
-                return;
-            }
-            DiagnosticsStore.runtime(context, "RESEARCH_PREENTRY_UNIVEST_CONFIRMED", symbol,
-                    "Research LIVE lot exists first; official Univest ENTRY is intentionally allowed as an additional configured initial lot.");
-        }
 
         GrowwClient.Result pending = GrowwClient.checkForActiveCncBuyOrder(context, symbol);
         if (pending.unknown) { fail(context, "ENTRY_PENDING_ORDER_CHECK_UNKNOWN", symbol, pending.message, null); return; }
-        if (pending.success) {
-            status(context, "UNIVEST ENTRY IGNORED • " + symbol + " • " + pending.message);
+        if (!freshEntryMayProceed(before.quantity, pending.success)) {
+            status(context, "UNIVEST ENTRY WAITING • " + symbol + " • " + pending.message);
             DiagnosticsStore.runtime(context, "ENTRY_PENDING_BROKER_ORDER", symbol, pending.message);
             return;
         }
 
-        // If local state says ACTIVE/PENDING but broker says flat with no BUY pending, repair it automatically.
-        UnivestStateStore.State stale = UnivestStateStore.get(context, symbol);
-        if (stale != null && !UnivestStateStore.EXITED.equals(stale.phase)) {
-            cancelAveragingLadder(context, stale);
-            stale.phase = UnivestStateStore.EXITED; stale.quantity = 0; stale.principal = 0;
-            stale.lastAction = "State repaired from broker truth: no CNC holding and no open CNC BUY.";
-            UnivestStateStore.put(context, stale);
-            DiagnosticsStore.runtime(context, "STALE_STATE_REPAIRED", symbol, stale.lastAction);
+        UnivestStateStore.State prior = UnivestStateStore.get(context, symbol);
+        if (prior != null) {
+            // A fresh recommendation gets a fresh averaging ladder. Retire the older ladder first so two
+            // recommendation cycles cannot leave overlapping smart BUY triggers behind.
+            cancelAveragingLadder(context, prior);
+            cancelLegacyTrackedOrders(context, prior);
         }
 
-        if (!UnivestStateStore.reserveNewEntry(context, symbol)) {
-            fail(context, "ENTRY_RESERVATION_FAILED", symbol, "Unable to reserve new Univest entry after broker reconciliation.", null); return;
-        }
+        UnivestStateStore.State reservation = prior == null ? new UnivestStateStore.State() : prior;
+        reservation.symbol = symbol;
+        reservation.phase = UnivestStateStore.ENTRY_PENDING;
+        reservation.tickSize = instrument.tickSize;
+        reservation.quantity = Math.max(0, before.quantity);
+        reservation.principal = before.netPrice > 0 ? before.netPrice * Math.max(0, before.quantity) : Math.max(0, reservation.principal);
+        reservation.anchorPrice = 0.0; // set from the fresh BUY fill, not from an older cycle
+        reservation.averageLevel = 0;
+        reservation.reentryUsed = false;
+        reservation.exitOrderId = "";
+        reservation.exitRequestedQty = 0;
+        reservation.lastAction = "Fresh official New Equity recommendation reserved • broker baseline qty "
+                + before.quantity + " • configured initial budget " + rupees(entryBudget) + ".";
+        UnivestStateStore.put(context, reservation);
 
-        DiagnosticsStore.runtime(context, "ENTRY_ACCEPTED", symbol, "Eligible <=3 month Univest recommendation • configured " + rupees(entryBudget) + " CNC delivery budget.");
+        DiagnosticsStore.runtime(context, "ENTRY_ACCEPTED_FRESH_CYCLE", symbol,
+                "Fresh official New Equity recommendation accepted regardless of existing broker holding • baseline qty "
+                        + before.quantity + " • configured " + rupees(entryBudget) + " CNC delivery budget.");
+
         String orderRef = stableRef("UE", symbol, signal.rawText, notificationPostTime);
         GrowwClient.ExecutionResult r = GrowwClient.placeUnivestCncMarketBuy(context, symbol, entryBudget, orderRef);
         if (!r.submitted) {
-            UnivestStateStore.releasePendingEntry(context, symbol, "Groww CNC BUY not submitted: " + r.message);
+            // Restore the local campaign from live broker truth instead of marking an existing holding EXITED.
+            GrowwClient.PositionSnapshot restore = GrowwClient.getCncPosition(context, symbol);
+            if (restore.success && restore.quantity > 0) {
+                syncExistingHolding(context, symbol, restore, instrument);
+                UnivestStateStore.State restored = UnivestStateStore.get(context, symbol);
+                if (restored != null) {
+                    restored.lastAction = "Fresh New Equity BUY was not submitted; existing broker holding preserved. " + r.message;
+                    UnivestStateStore.put(context, restored);
+                }
+            } else {
+                UnivestStateStore.releasePendingEntry(context, symbol, "Fresh New Equity BUY not submitted: " + r.message);
+            }
             fail(context, "ENTRY_NOT_SUBMITTED", symbol, r.message, null);
             DiagnosticsStore.trade(context, "BUY_FAILED", symbol, r.message, r);
             return;
         }
 
-        UnivestStateStore.State state = new UnivestStateStore.State();
-        state.symbol = symbol;
-        state.phase = r.filled && r.filledQuantity > 0 ? UnivestStateStore.ACTIVE : UnivestStateStore.ENTRY_PENDING;
-        state.anchorPrice = r.averagePrice;
+        GrowwClient.PositionSnapshot after = GrowwClient.getCncPosition(context, symbol);
+        UnivestStateStore.State state = UnivestStateStore.get(context, symbol);
+        if (state == null) { state = new UnivestStateStore.State(); state.symbol = symbol; }
         state.tickSize = instrument.tickSize;
-        state.quantity = Math.max(0, r.filledQuantity);
-        state.principal = Math.max(0, r.averagePrice) * Math.max(0, r.filledQuantity);
+        state.phase = r.filled && r.filledQuantity > 0 ? UnivestStateStore.ACTIVE : UnivestStateStore.ENTRY_PENDING;
+        state.anchorPrice = r.averagePrice > 0 ? r.averagePrice : 0.0; // fresh cycle averaging anchor
+        if (after.success && after.quantity >= 0) {
+            state.quantity = after.quantity;
+            state.principal = after.netPrice > 0 ? after.netPrice * Math.max(0, after.quantity)
+                    : Math.max(0, before.netPrice) * Math.max(0, before.quantity)
+                    + Math.max(0, r.averagePrice) * Math.max(0, r.filledQuantity);
+        } else {
+            state.quantity = Math.max(0, before.quantity) + Math.max(0, r.filledQuantity);
+            state.principal = Math.max(0, before.netPrice) * Math.max(0, before.quantity)
+                    + Math.max(0, r.averagePrice) * Math.max(0, r.filledQuantity);
+        }
         state.estimatedBuyCharges = state.principal > 0 ? DeliveryNetTarget.buyCharges(state.principal) : 0;
-        state.averageLevel = 0; state.reentryUsed = false; state.exitOrderId = r.orderId;
+        state.averageLevel = 0;
+        state.reentryUsed = false;
+        state.exitOrderId = r.orderId;
+        state.exitRequestedQty = 0;
         state.lastAction = r.filled
-                ? "Initial " + rupees(entryBudget) + " CNC delivery BUY executed • qty " + r.filledQuantity + " • avg ₹" + money(r.averagePrice)
-                : "CNC BUY submitted; fill not yet confirmed • order " + r.orderId;
+                ? "Fresh " + rupees(entryBudget) + " CNC delivery BUY executed • added qty " + r.filledQuantity
+                    + " • broker total qty " + state.quantity + " • fresh anchor ₹" + money(r.averagePrice)
+                : "Fresh CNC BUY submitted; fill not yet confirmed • order " + r.orderId
+                    + " • broker baseline qty " + before.quantity;
         UnivestStateStore.put(context, state);
 
         if (r.filled && r.averagePrice > 0) armAveragingLadder(context, state, r.orderId);
-        DiagnosticsStore.trade(context, r.filled ? "BUY_EXECUTED" : "BUY_SUBMITTED_FILL_UNCONFIRMED", symbol, state.lastAction, r);
+        DiagnosticsStore.trade(context, r.filled ? "BUY_EXECUTED_FRESH_CYCLE" : "BUY_SUBMITTED_FILL_UNCONFIRMED",
+                symbol, state.lastAction, r);
         long age = r.dispatchAtMillis > 0 && notificationPostTime > 0 ? Math.max(0, r.dispatchAtMillis - notificationPostTime) : -1;
-        status(context, "UNIVEST CNC BUY " + (r.filled ? "EXECUTED" : "SUBMITTED") + " • " + symbol
-                + " • " + rupees(entryBudget) + " budget" + (age >= 0 ? " • source age " + age + " ms" : "") + " • " + r.message);
+        status(context, "UNIVEST FRESH CNC BUY " + (r.filled ? "EXECUTED" : "SUBMITTED") + " • " + symbol
+                + " • " + rupees(entryBudget) + " budget • broker total qty " + state.quantity
+                + (age >= 0 ? " • source age " + age + " ms" : "") + " • " + r.message);
+    }
+
+    static boolean freshEntryMayProceed(int brokerQuantity, boolean activeBrokerBuy) {
+        // brokerQuantity is intentionally not a blocker: a distinct official New Equity call is a new cycle.
+        return !activeBrokerBuy;
     }
 
     static void handleReentry(Context context, UnivestParser.Signal signal, long notificationPostTime) {
@@ -247,11 +277,8 @@ final class UnivestManager {
 
         UnivestStateStore.State state = UnivestStateStore.get(context, symbol);
         boolean hadTrackedCampaign = state != null && !UnivestStateStore.EXITED.equals(state.phase);
-        if (state != null && UnivestStateStore.EXITING_OFFICIAL.equals(state.phase)
-                && System.currentTimeMillis() - state.updatedAt < DUPLICATE_EXIT_GUARD_MS) {
-            DiagnosticsStore.runtime(context, "EXIT_DUPLICATE_GUARDED", symbol,
-                    "Recent official exit is already being processed."); return;
-        }
+        // Do not suppress a later official EXIT merely because this symbol exited earlier today.
+        // The durable queue de-duplicates the same Android event; each distinct EXIT re-reads Groww holdings below.
 
         if (state == null) { state = new UnivestStateStore.State(); state.symbol = symbol; }
         state.phase = UnivestStateStore.EXITING_OFFICIAL;
@@ -276,6 +303,11 @@ final class UnivestManager {
         GrowwClient.ExitSnapshot snap = GrowwClient.getFastExitSnapshot(context, symbol);
         GrowwClient.PositionSnapshot holding = snap.holding;
         DiagnosticsStore.broker(context, "FAST_EXIT_SNAPSHOT", symbol, snap.success, snap.message);
+        if (holding != null && holding.success) {
+            DiagnosticsStore.runtime(context, "EXIT_LIVE_QUANTITY_REFRESH", symbol,
+                    "Fresh Groww CNC quantity read immediately before official sell decision • qty " + holding.quantity
+                            + " • broker avg ₹" + money(holding.netPrice) + ".");
+        }
         if (holding == null || !holding.success) {
             state.lastAction = "Official exit pending: live broker holding could not be confirmed. " + snap.message;
             UnivestStateStore.put(context, state);

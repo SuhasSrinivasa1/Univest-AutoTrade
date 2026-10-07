@@ -16,6 +16,12 @@ public class UnivestStrategyContractTest {
         assertFalse(UnivestStateStore.canReservePhase(UnivestStateStore.ACTIVE));
         assertTrue(UnivestStateStore.canExecuteReservedPhase(UnivestStateStore.ENTRY_PENDING));
     }
+    @Test public void freshNewEquityIgnoresExistingHoldingButNotOpenBrokerBuy() {
+        assertTrue(UnivestManager.freshEntryMayProceed(0, false));
+        assertTrue(UnivestManager.freshEntryMayProceed(25, false));
+        assertFalse(UnivestManager.freshEntryMayProceed(0, true));
+        assertFalse(UnivestManager.freshEntryMayProceed(25, true));
+    }
     @Test public void companyNameNormalizationRemovesLegalSuffixes() {
         assertEquals("TATA MOTORS", InstrumentRepository.normalizedName("Tata Motors Limited"));
         assertEquals("TATA MOTORS", InstrumentRepository.normalizedName("TATA MOTORS LTD."));
