@@ -571,23 +571,6 @@ public class DashboardActivity extends Activity {
         return c;
     }
 
-    static String[] primaryTabLabels() {
-        return new String[]{"Execution", "Research", "Forecast", "Settings"};
-    }
-
-    static String humanCampaignPhase(String phase) {
-        if (UnivestStateStore.ENTRY_PENDING.equals(phase)) return "Buying";
-        if (UnivestStateStore.ACTIVE.equals(phase)) return "Holding";
-        if (UnivestStateStore.WAIT_REENTRY.equals(phase)) return "Waiting";
-        if (UnivestStateStore.FLAT_WAIT_EXIT.equals(phase)) return "Waiting";
-        if (UnivestStateStore.EXITING_PROFIT.equals(phase)
-                || UnivestStateStore.EXITING_OFFICIAL.equals(phase)
-                || UnivestStateStore.EXITING_STOP.equals(phase)) return "Selling";
-        if (UnivestStateStore.EXITED.equals(phase)) return "Closed";
-        if (UnivestStateStore.ERROR.equals(phase)) return "Attention";
-        return "Active";
-    }
-
     private View executionHeroCard() {
         LinearLayout c = card();
         boolean liveArmed = AppPrefs.isLiveMode(this) && AppPrefs.isUnivestEnabled(this);
@@ -627,7 +610,7 @@ public class DashboardActivity extends Activity {
                     || UnivestStateStore.EXITED.equals(s.phase)) continue;
             any = true;
             c.addView(campaignTableRow(s.symbol, String.valueOf(Math.max(0, s.quantity)),
-                    humanCampaignPhase(s.phase), averagingSummary(s), false), margins(0, 8, 0, 0));
+                    UiArchitecture.humanCampaignPhase(s.phase), averagingSummary(s), false), margins(0, 8, 0, 0));
         }
         if (!any) {
             c.addView(meta("No active tracked positions. Groww holdings and open orders remain execution truth."),
@@ -848,7 +831,7 @@ public class DashboardActivity extends Activity {
 
     private void renderBottomNav() {
         bottomNav.removeAllViews();
-        String[] labels = primaryTabLabels();
+        String[] labels = UiArchitecture.primaryTabLabels();
         bottomNav.addView(navItem(R.drawable.ic_univest_nav, labels[0], 0), navParams());
         bottomNav.addView(navItem(R.drawable.ic_strategy_nav, labels[1], 1), navParams());
         bottomNav.addView(navItem(R.drawable.ic_forecast_nav, labels[2], 2), navParams());

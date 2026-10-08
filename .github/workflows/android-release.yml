@@ -77,7 +77,7 @@ jobs:
           grep -Fq 'appHeader("EXECUTION", "Live Univest status & actions")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("RESEARCH", "What the system has learned")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("FORECAST", "What may happen next")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
-          grep -Fq 'return new String[]{"Execution", "Research", "Forecast", "Settings"}' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'return new String[]{"Execution", "Research", "Forecast", "Settings"}' app/src/main/java/com/suhas/multyfideliverybuy/UiArchitecture.java
           grep -Fq 'CURRENT POSITIONS' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'LATEST OFFICIAL ACTION' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           ! grep -q 'FORECAST ACCOUNTABILITY' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
