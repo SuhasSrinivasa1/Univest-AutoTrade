@@ -88,7 +88,7 @@ jobs:
           grep -q 'appendRawCandles' app/src/main/java/com/suhas/multyfideliverybuy/ResearchEventStore.java
           grep -q 'matched_controls.jsonl' app/src/main/java/com/suhas/multyfideliverybuy/ResearchStore.java
           grep -q 'candidate_pool.json' app/src/main/java/com/suhas/multyfideliverybuy/ResearchStore.java
-          grep -q 'PLAYBOOK CHAMPIONS' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -q 'sectionRow("PLAYBOOKS", "Champions + evidence")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -q 'ResearchPlaybookEngineTest' app/src/test/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngineTest.java
           grep -q 'GreenOfficialExitTest' app/src/test/java/com/suhas/multyfideliverybuy/GreenOfficialExitTest.java
           grep -q 'FinalStabilityContractTest' app/src/test/java/com/suhas/multyfideliverybuy/FinalStabilityContractTest.java
