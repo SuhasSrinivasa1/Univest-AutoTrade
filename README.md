@@ -4,7 +4,7 @@ Dedicated Android repository for the Univest AutoTrade project.
 
 ## Current release
 
-**v2.9.0** — package `com.suhas.multyfideliverybuy`, versionCode **290**.
+**v2.9.3** — package `com.suhas.multyfideliverybuy`, versionCode **293**.
 
 The official execution lane is locked to the official Univest Android package `com.univest.capp` and NSE CASH / CNC delivery.
 

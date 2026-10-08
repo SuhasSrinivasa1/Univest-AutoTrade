@@ -57,24 +57,28 @@ final class DurableOfficialSignalQueue {
         Context c = context.getApplicationContext();
         long effectivePost = postTime > 0 ? postTime : System.currentTimeMillis();
         String id = eventIdFor(signal.type.name(), signal.symbol, signal.rawText, effectivePost);
+        boolean newlyQueued = false;
+        long receivedAt = 0L;
         synchronized (FILE_LOCK) {
             List<JSONObject> all = loadLocked(c);
             JSONObject existing = findById(all, id);
             if (existing == null) {
                 JSONObject row = new JSONObject();
                 try {
+                    receivedAt = System.currentTimeMillis();
                     row.put("id", id);
                     row.put("type", signal.type.name());
                     row.put("symbol", cleanSymbol(signal.symbol));
                     row.put("rawText", signal.rawText == null ? "" : signal.rawText);
                     row.put("postTime", effectivePost);
-                    row.put("receivedAt", System.currentTimeMillis());
-                    row.put("updatedAt", System.currentTimeMillis());
+                    row.put("receivedAt", receivedAt);
+                    row.put("updatedAt", receivedAt);
                     row.put("state", RECEIVED);
                     row.put("attempts", 0);
                     row.put("lastError", "");
                     all.add(row);
                     saveLocked(c, compact(all));
+                    newlyQueued = true;
                     DiagnosticsStore.runtime(c, "OFFICIAL_SIGNAL_DURABLY_QUEUED", signal.symbol,
                             signal.type + " persisted before broker execution • queue id " + id + ".");
                 } catch (Exception e) {
@@ -84,6 +88,7 @@ final class DurableOfficialSignalQueue {
                 }
             }
         }
+        if (newlyQueued) OfficialExecutionLatency.received(c, signal, effectivePost, receivedAt);
         OfficialSignalRecoveryScheduler.scheduleNow(c);
         dispatchId(c, id);
         return id;
@@ -194,6 +199,8 @@ final class DurableOfficialSignalQueue {
                 return;
             }
 
+            long handlerAt = System.currentTimeMillis();
+            OfficialExecutionLatency.handlerStarted(c, signal, postTime, handlerAt);
             DiagnosticsStore.runtime(c, "OFFICIAL_SIGNAL_DURABLE_DISPATCH", signal.symbol,
                     signal.type + " durable event entered broker execution handler • queue id " + id + ".");
             UnivestManager.handle(c, signal, postTime);
@@ -208,8 +215,11 @@ final class DurableOfficialSignalQueue {
                     saveLocked(c, compact(all));
                 }
             }
+            OfficialExecutionLatency.completed(c, signal, postTime, System.currentTimeMillis());
             DiagnosticsStore.runtime(c, "OFFICIAL_SIGNAL_DURABLE_COMPLETE", signal.symbol,
                     signal.type + " durable event reached the official execution handler and completed • queue id " + id + ".");
+            DiagnosticsStore.runtime(c, "OFFICIAL_SIGNAL_LATENCY", signal.symbol,
+                    OfficialExecutionLatency.latestSummary(c));
         } catch (Throwable t) {
             String symbol = signal == null ? "" : signal.symbol;
             synchronized (FILE_LOCK) {

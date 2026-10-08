@@ -48,6 +48,11 @@ jobs:
           set -euo pipefail
           grep -q 'com.univest.capp' app/src/main/java/com/suhas/multyfideliverybuy/MultyfiNotificationService.java
           grep -q 'DurableOfficialSignalQueue.enqueueAndDispatch' app/src/main/java/com/suhas/multyfideliverybuy/MultyfiNotificationService.java
+          grep -q 'Each distinct Android' app/src/main/java/com/suhas/multyfideliverybuy/DurableOfficialSignalQueue.java
+          grep -q 'eventTime = postTime' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          ! grep -q 'postTime / 300000' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          ! grep -q 'claimNotificationFingerprint' app/src/main/java/com/suhas/multyfideliverybuy/AppPrefs.java
+          ! grep -q 'claimDailySignal' app/src/main/java/com/suhas/multyfideliverybuy/AppPrefs.java
           grep -q 'OFFICIAL_MARKETABLE_LIMIT_BUFFER_PCT = 0.02' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
           grep -q 'placeUnivestCncGreenSell' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'EXIT_DEFERRED_NOT_GREEN' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
@@ -57,12 +62,18 @@ jobs:
           grep -q 'EXIT_FAST_PATH_START' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'AVERAGING_BLOCKED_BY_CAMPAIGN_PHASE' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'RECONCILE_STALE_SNAPSHOT_DROPPED' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          grep -q 'POST_EXIT_AVERAGING_SWEEP' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          grep -q 'EXIT_POST_CLEANUP_QUANTITY_REFRESH' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          grep -q 'UnivestAveragingRegistry.record' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          grep -q 'OfficialExecutionLatency' app/src/main/java/com/suhas/multyfideliverybuy/DurableOfficialSignalQueue.java
+          grep -q 'settings/non-secret.json' app/src/main/java/com/suhas/multyfideliverybuy/HistoryBackupManager.java
+          grep -q 'containsCredentials", false' app/src/main/java/com/suhas/multyfideliverybuy/HistoryBackupManager.java
           ! grep -q 'DUPLICATE_EXIT_GUARD_MS' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
           grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
-          grep -q "versionCode 292" app/build.gradle
-          grep -q "versionName '2.9.2'" app/build.gradle
+          grep -q "versionCode 293" app/build.gradle
+          grep -q "versionName '2.9.3'" app/build.gradle
           grep -q 'ResearchPlaybookEngine' app/src/main/java/com/suhas/multyfideliverybuy/ResearchEngine.java
           grep -q 'NON_EXCLUSIVE_COMPOSITE' app/src/main/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngine.java
           grep -q 'POINT_IN_TIME_SIGNAL_PROFILE' app/src/main/java/com/suhas/multyfideliverybuy/ResearchSignalProfiler.java
@@ -70,9 +81,18 @@ jobs:
           grep -q 'matched_controls.jsonl' app/src/main/java/com/suhas/multyfideliverybuy/ResearchStore.java
           grep -q 'candidate_pool.json' app/src/main/java/com/suhas/multyfideliverybuy/ResearchStore.java
           grep -q 'PLAYBOOK CHAMPIONS' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
-          grep -q 'containsCredentials", false' app/src/main/java/com/suhas/multyfideliverybuy/HistoryBackupManager.java
           grep -q 'ResearchPlaybookEngineTest' app/src/test/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngineTest.java
           grep -q 'GreenOfficialExitTest' app/src/test/java/com/suhas/multyfideliverybuy/GreenOfficialExitTest.java
+          grep -q 'FinalStabilityContractTest' app/src/test/java/com/suhas/multyfideliverybuy/FinalStabilityContractTest.java
+          grep -q 'RELEASE_KEYSTORE_B64' .github/workflows/android-release.yml
+          test -s RELEASE_SIGNING_CERT.pem
+          grep -Eq '^[0-9a-f]{64}$' RELEASE_SIGNING_CERT_SHA256.txt
+          python - <<'PY'
+          from pathlib import Path
+          workflow = Path('.github/workflows/android-release.yml').read_text()
+          assert ('keytool ' + '-genkeypair') not in workflow
+          assert ('openssl ' + 'rand') not in workflow
+          PY
 
       - name: Unit tests and release build
         shell: bash
@@ -80,8 +100,13 @@ jobs:
           set -o pipefail
           gradle --no-daemon --console=plain clean testReleaseUnitTest assembleRelease | tee test-results.txt
 
-      - name: Sign release APK
+      - name: Prepare release APK
         shell: bash
+        env:
+          RELEASE_KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_B64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           mkdir -p release
@@ -92,40 +117,47 @@ jobs:
 
           APK="$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | head -1)"
           test -n "$APK" && test -s "$APK"
+          ALIGNED="$RUNNER_TEMP/Univest-AutoTrade-v$VERSION_NAME-UNSIGNED-ALIGNED.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 "$APK" "$ALIGNED"
 
-          PASS="$(openssl rand -hex 24)"
-          KS="$RUNNER_TEMP/univest-release.jks"
-          keytool -genkeypair -v \
-            -keystore "$KS" \
-            -storepass "$PASS" \
-            -keypass "$PASS" \
-            -alias univest-release \
-            -keyalg RSA -keysize 4096 -validity 10000 \
-            -dname "CN=Univest AutoTrade $VERSION_NAME, OU=Private Release, O=Univest AutoTrade, L=Bengaluru, ST=Karnataka, C=IN"
+          SIGNING_MODE="unsigned-stable-key-required"
+          if [[ -n "${RELEASE_KEYSTORE_B64:-}" && -n "${RELEASE_STORE_PASSWORD:-}" && -n "${RELEASE_KEY_ALIAS:-}" && -n "${RELEASE_KEY_PASSWORD:-}" ]]; then
+            KS="$RUNNER_TEMP/univest-release.jks"
+            printf '%s' "$RELEASE_KEYSTORE_B64" | base64 -d > "$KS"
+            OUT="release/Univest-AutoTrade-v$VERSION_NAME-SIGNED.apk"
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+              --ks "$KS" \
+              --ks-pass "pass:$RELEASE_STORE_PASSWORD" \
+              --ks-key-alias "$RELEASE_KEY_ALIAS" \
+              --key-pass "pass:$RELEASE_KEY_PASSWORD" \
+              --v1-signing-enabled true \
+              --v2-signing-enabled true \
+              --v3-signing-enabled true \
+              --out "$OUT" "$ALIGNED"
+            rm -f "$KS"
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$OUT" | tee release/APK-SIGNATURE.txt
+            EXPECTED_CERT_SHA256="$(tr -d '[:space:]' < RELEASE_SIGNING_CERT_SHA256.txt | tr 'A-F' 'a-f')"
+            ACTUAL_CERT_SHA256="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' release/APK-SIGNATURE.txt | head -1 | tr -d ':' | tr 'A-F' 'a-f')"
+            test -n "$ACTUAL_CERT_SHA256"
+            test "$ACTUAL_CERT_SHA256" = "$EXPECTED_CERT_SHA256"
+            "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$OUT" | tee release/APK-BADGING.txt
+            sha256sum "$OUT" | tee release/APK-SHA256.txt
+            SIGNING_MODE="stable-secret-backed"
+          else
+            OUT="release/Univest-AutoTrade-v$VERSION_NAME-UNSIGNED-ALIGNED.apk"
+            cp "$ALIGNED" "$OUT"
+            "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$OUT" | tee release/APK-BADGING.txt
+            sha256sum "$OUT" | tee release/APK-SHA256.txt
+            echo "Stable signing secrets are not configured. CI intentionally did NOT generate an ephemeral key." | tee release/APK-SIGNATURE.txt
+          fi
 
-          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 "$APK" "$RUNNER_TEMP/aligned.apk"
-          OUT="release/Univest-AutoTrade-v$VERSION_NAME-SIGNED.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
-            --ks "$KS" \
-            --ks-pass "pass:$PASS" \
-            --ks-key-alias univest-release \
-            --key-pass "pass:$PASS" \
-            --v1-signing-enabled true \
-            --v2-signing-enabled true \
-            --v3-signing-enabled true \
-            --out "$OUT" "$RUNNER_TEMP/aligned.apk"
-          rm -f "$KS"
-
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$OUT" | tee release/APK-SIGNATURE.txt
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$OUT" | tee release/APK-BADGING.txt
           grep -q "package: name='com.suhas.multyfideliverybuy'" release/APK-BADGING.txt
           grep -q "versionCode='$VERSION_CODE'" release/APK-BADGING.txt
           grep -q "versionName='$VERSION_NAME'" release/APK-BADGING.txt
-          sha256sum "$OUT" | tee release/APK-SHA256.txt
           cp test-results.txt release/test-results.txt
 
           zip -qr "release/Univest-AutoTrade-v$VERSION_NAME-source.zip" . \
-            -x '.git/*' '.gradle/*' '*/build/*' 'release/*' '*.jks' '*.keystore' '*.env' 'credentials.env'
+            -x '.git/*' '.gradle/*' '*/build/*' 'release/*' '*.jks' '*.keystore' '*.env' 'credentials.env' '*signing*credentials*'
 
           {
             echo "Univest AutoTrade build: SUCCESS"
@@ -134,7 +166,8 @@ jobs:
             echo "versionName=$VERSION_NAME"
             echo "sourcePackage=com.univest.capp"
             echo "product=NSE CASH / CNC DELIVERY"
-            echo "signing=ephemeral CI identity"
+            echo "signing=$SIGNING_MODE"
+            echo "expectedSignerSha256=$(cat RELEASE_SIGNING_CERT_SHA256.txt)"
           } > "release/Univest-AutoTrade-v$VERSION_NAME-build-report.txt"
 
       - uses: actions/upload-artifact@v4

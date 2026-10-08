@@ -180,21 +180,6 @@ final class AppPrefs {
         prefs.edit().putLong("recent_" + safe, now).apply(); return true;
     }
 
-    // Exact duplicate Android notifications often arrive twice within milliseconds. Suppress execution noise only;
-    // the first copy is still archived.
-    static synchronized boolean claimNotificationFingerprint(Context c, String fingerprint) {
-        return claimRecent(c, "notif_" + fingerprint, 30000L);
-    }
-
-    // Signal idempotency is scoped to the IST trading date and execution mode. PAPER never blocks LIVE.
-    static synchronized boolean claimDailySignal(Context c, String mode, String fingerprint) {
-        String key = "daily_" + istDayKey(System.currentTimeMillis()) + "_" + clean(mode) + "_" + safeKey(fingerprint);
-        SharedPreferences prefs = p(c);
-        if (prefs.getBoolean(key, false)) return false;
-        prefs.edit().putBoolean(key, true).apply();
-        return true;
-    }
-
     static String istDayKey(long ms) {
         SimpleDateFormat f = new SimpleDateFormat("yyyyMMdd", Locale.US);
         f.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata")); return f.format(new Date(ms));

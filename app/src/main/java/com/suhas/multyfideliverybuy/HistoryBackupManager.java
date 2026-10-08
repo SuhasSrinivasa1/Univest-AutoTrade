@@ -62,8 +62,8 @@ final class HistoryBackupManager {
         try (ZipOutputStream zip = new ZipOutputStream(raw)) {
             JSONObject manifest = new JSONObject();
             manifest.put("format", "UNIVEST_PORTABLE_HISTORY");
-            manifest.put("schemaVersion", 2);
-            manifest.put("appVersion", "2.9.2");
+            manifest.put("schemaVersion", 3);
+            manifest.put("appVersion", "2.9.3");
             manifest.put("createdAt", System.currentTimeMillis());
             manifest.put("containsCredentials", false);
             manifest.put("researchIncludes", "playbooks, challengers, hall-of-fame evidence, matched controls, point-in-time profiles, raw candles, forecast history");
@@ -73,6 +73,8 @@ final class HistoryBackupManager {
             JSONArray states = new JSONArray();
             for (UnivestStateStore.State s : UnivestStateStore.all(c)) states.put(s.toJson());
             addText(zip, "state/univest-states.json", states.toString());
+            addText(zip, "state/univest-averaging-registry.json", UnivestAveragingRegistry.exportJson(c).toString());
+            addText(zip, "settings/non-secret.json", PortableSettings.exportJson(c).toString(2));
 
             File research = new File(c.getFilesDir(), "research_lab");
             addDirectory(zip, research, "research_lab/");
@@ -88,6 +90,8 @@ final class HistoryBackupManager {
         if (uri == null) throw new IllegalArgumentException("Missing backup file.");
         JSONObject history = null;
         JSONArray states = null;
+        JSONArray averagingRegistry = null;
+        JSONObject portableSettings = null;
         InputStream raw = c.getContentResolver().openInputStream(uri);
         if (raw == null) throw new IllegalStateException("Cannot open selected history backup.");
         try (ZipInputStream zip = new ZipInputStream(raw)) {
@@ -99,6 +103,10 @@ final class HistoryBackupManager {
                     history = new JSONObject(readText(zip));
                 } else if ("state/univest-states.json".equals(name)) {
                     states = new JSONArray(readText(zip));
+                } else if ("state/univest-averaging-registry.json".equals(name)) {
+                    averagingRegistry = new JSONArray(readText(zip));
+                } else if ("settings/non-secret.json".equals(name)) {
+                    portableSettings = new JSONObject(readText(zip));
                 } else if (name.startsWith("research_lab/")) {
                     restoreFile(c, zip, name.substring("research_lab/".length()),
                             new File(c.getFilesDir(), "research_lab"));
@@ -120,9 +128,16 @@ final class HistoryBackupManager {
                 if (s.symbol != null && !s.symbol.trim().isEmpty()) UnivestStateStore.put(c, s);
             }
         }
+        if (averagingRegistry != null) UnivestAveragingRegistry.importJson(c, averagingRegistry);
+        if (portableSettings != null) PortableSettings.importJson(c, portableSettings);
+        // Applies to both new schema-3 backups and older compatible backups: restore must never resume trading.
+        AppPrefs.setArmed(c, false);
+        AppPrefs.setUnivestEnabled(c, false);
+        AppPrefs.setResearchAutoTradeEnabled(c, false);
+        AppPrefs.clearAccessToken(c);
         rememberUri(c, uri);
         AppPrefs.setHistoryBackupState(c, System.currentTimeMillis(),
-                "History restored • " + imported + " new ledger events • total " + UnivestHistoryDb.count(c));
+                "History/settings restored safely DISARMED • " + imported + " new ledger events • total " + UnivestHistoryDb.count(c));
         return imported;
     }
 

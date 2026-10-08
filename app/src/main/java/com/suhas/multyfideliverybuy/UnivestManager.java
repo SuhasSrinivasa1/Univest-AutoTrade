@@ -4,9 +4,15 @@ import android.content.Context;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 final class UnivestManager {
     static final int ENTRY_BUDGET = 20000;   // legacy/default value; runtime uses AppPrefs
@@ -58,6 +64,7 @@ final class UnivestManager {
             DiagnosticsStore.runtime(context, "ENTRY_PENDING_BROKER_ORDER", symbol, pending.message);
             return;
         }
+        OfficialExecutionLatency.brokerReady(context, signal.type, symbol, notificationPostTime, System.currentTimeMillis());
 
         UnivestStateStore.State prior = UnivestStateStore.get(context, symbol);
         if (prior != null) {
@@ -88,6 +95,7 @@ final class UnivestManager {
 
         String orderRef = stableRef("UE", symbol, signal.rawText, notificationPostTime);
         GrowwClient.ExecutionResult r = GrowwClient.placeUnivestCncMarketBuy(context, symbol, entryBudget, orderRef);
+        OfficialExecutionLatency.orderDispatched(context, signal.type, symbol, notificationPostTime, r.dispatchAtMillis);
         if (!r.submitted) {
             // Restore the local campaign from live broker truth instead of marking an existing holding EXITED.
             GrowwClient.PositionSnapshot restore = GrowwClient.getCncPosition(context, symbol);
@@ -176,6 +184,7 @@ final class UnivestManager {
             status(context, "UNIVEST BACK-IN-RANGE • " + symbol + " • no second BUY: broker already has an open CNC BUY.");
             return;
         }
+        OfficialExecutionLatency.brokerReady(context, signal.type, symbol, notificationPostTime, System.currentTimeMillis());
 
         final boolean missedInitial = before.quantity <= 0;
         final int budget = chooseBackInRangeBudget(before.quantity, false, initialBudget, addBudget);
@@ -206,6 +215,7 @@ final class UnivestManager {
                 kind + " • broker qty " + before.quantity + " • selected budget ₹" + budget + " CNC delivery.");
         String orderRef = stableRef(missedInitial ? "UM" : "UR", symbol, signal.rawText, notificationPostTime);
         GrowwClient.ExecutionResult r = GrowwClient.placeUnivestCncMarketBuy(context, symbol, budget, orderRef);
+        OfficialExecutionLatency.orderDispatched(context, signal.type, symbol, notificationPostTime, r.dispatchAtMillis);
         if (!r.submitted) {
             if (missedInitial) UnivestStateStore.releasePendingEntry(context, symbol, "Missed-entry CNC BUY not submitted: " + r.message);
             fail(context, "REENTRY_NOT_SUBMITTED", symbol, r.message, null);
@@ -296,10 +306,59 @@ final class UnivestManager {
                         + (sourceAge >= 0 ? " • source age " + sourceAge + " ms." : "."));
 
         // Univest EXIT is authoritative for this exact NSE CASH symbol even when the app did not buy it.
-        // Cancel averaging/legacy smart orders immediately so a deferred green exit cannot add exposure.
-        cancelAveragingLadder(context, state);
-        cancelLegacyTrackedOrders(context, state);
-        GrowwClient.Result conflicts = GrowwClient.cancelOpenCncSellOrdersForSymbol(context, symbol);
+        // Snapshot broker truth, cancel conflicting SELLs, and retire known app-created averaging GTTs in parallel.
+        // This preserves the safety barrier without serial network round-trips making EXIT unnecessarily slow.
+        final List<String> exitAverageIds = knownAveragingIds(context, state);
+        final UnivestStateStore.State exitStateForCleanup = state;
+        ExecutorService exitPrepPool = Executors.newFixedThreadPool(3);
+        Future<?> averageCleanup = exitPrepPool.submit(() -> {
+            cancelAveragingIds(context, exitStateForCleanup, exitAverageIds);
+            cancelLegacyTrackedOrders(context, exitStateForCleanup);
+        });
+        Future<GrowwClient.Result> conflictCleanup = exitPrepPool.submit(
+                () -> GrowwClient.cancelOpenCncSellOrdersForSymbol(context, symbol));
+        Future<GrowwClient.ExitSnapshot> snapshotFuture = exitPrepPool.submit(
+                () -> GrowwClient.getFastExitSnapshot(context, symbol));
+
+        GrowwClient.Result conflicts;
+        GrowwClient.ExitSnapshot snap;
+        try {
+            try { averageCleanup.get(); }
+            catch (Exception e) {
+                DiagnosticsStore.error(context, "EXIT_AVERAGING_CLEANUP_EXCEPTION", symbol,
+                        "Averaging cleanup task failed; post-exit cleanup remains armed.", e);
+            }
+            try { conflicts = conflictCleanup.get(); }
+            catch (Exception e) { conflicts = new GrowwClient.Result(false, true, 0, "Conflicting SELL cleanup failed: " + safe(e)); }
+            try { snap = snapshotFuture.get(); }
+            catch (Exception e) { snap = new GrowwClient.ExitSnapshot(false, null, null, 0, "Fast exit snapshot failed: " + safe(e)); }
+        } finally {
+            exitPrepPool.shutdownNow();
+        }
+
+        UnivestStateStore.State refreshedExitState = UnivestStateStore.get(context, symbol);
+        if (refreshedExitState != null) state = refreshedExitState;
+
+        // Averaging cancellation and the first quote/holding snapshot intentionally run in parallel for speed.
+        // Re-read holdings after averaging cleanup finishes so an averaging GTT that triggered during that narrow
+        // window is included in the official full-quantity SELL instead of leaving residual shares behind.
+        GrowwClient.PositionSnapshot postCleanupHolding = GrowwClient.getCncPosition(context, symbol);
+        if (postCleanupHolding.success) {
+            snap = new GrowwClient.ExitSnapshot(
+                    snap != null && snap.quote != null && snap.quote.success,
+                    postCleanupHolding,
+                    snap == null ? null : snap.quote,
+                    snap == null ? 0.0 : snap.executableSellPrice,
+                    (snap == null ? "" : snap.message) + " • post-cleanup holding refresh qty=" + postCleanupHolding.quantity);
+            DiagnosticsStore.runtime(context, "EXIT_POST_CLEANUP_QUANTITY_REFRESH", symbol,
+                    "Final Groww CNC quantity after averaging cleanup • qty " + postCleanupHolding.quantity
+                            + " • broker avg ₹" + money(postCleanupHolding.netPrice) + ".");
+        } else {
+            snap = new GrowwClient.ExitSnapshot(false, postCleanupHolding,
+                    snap == null ? null : snap.quote, snap == null ? 0.0 : snap.executableSellPrice,
+                    "Final post-cleanup holding refresh failed: " + postCleanupHolding.message);
+        }
+
         DiagnosticsStore.broker(context, "CANCEL_CONFLICTING_CNC_SELLS", symbol,
                 conflicts.success || conflicts.unknown, conflicts.message);
         if (!conflicts.success) {
@@ -310,8 +369,8 @@ final class UnivestManager {
             return;
         }
 
-        GrowwClient.ExitSnapshot snap = GrowwClient.getFastExitSnapshot(context, symbol);
         GrowwClient.PositionSnapshot holding = snap.holding;
+        OfficialExecutionLatency.brokerReady(context, signal.type, symbol, notificationPostTime, System.currentTimeMillis());
         DiagnosticsStore.broker(context, "FAST_EXIT_SNAPSHOT", symbol, snap.success, snap.message);
         if (holding != null && holding.success) {
             DiagnosticsStore.runtime(context, "EXIT_LIVE_QUANTITY_REFRESH", symbol,
@@ -328,6 +387,7 @@ final class UnivestManager {
         }
         if (holding.quantity <= 0) {
             markExited(context, state, symbol, "Official Univest exit received; broker shows no CNC holding.");
+            schedulePostExitAveragingSweep(context, symbol, exitAverageIds);
             status(context, "UNIVEST BOOK PROFIT / EXIT • " + symbol + " • no holding found; nothing to sell.");
             DiagnosticsStore.runtime(context, "EXIT_NO_HOLDING", symbol, holding.message); return;
         }
@@ -374,6 +434,7 @@ final class UnivestManager {
         String orderRef = stableRef("UX", symbol, signal.rawText, notificationPostTime);
         GrowwClient.ExecutionResult r = GrowwClient.placeUnivestCncGreenSell(
                 context, symbol, holding.quantity, snap, instrument.tickSize, orderRef);
+        OfficialExecutionLatency.orderDispatched(context, signal.type, symbol, notificationPostTime, r.dispatchAtMillis);
         DiagnosticsStore.trade(context, r.submitted ? "SELL_SUBMITTED" : "SELL_FAILED", symbol, state.lastAction, r);
         if (!r.submitted) {
             state.phase = UnivestStateStore.EXITING_OFFICIAL;
@@ -390,6 +451,7 @@ final class UnivestManager {
         GrowwClient.PositionSnapshot after = GrowwClient.getCncPosition(context, symbol);
         if (r.filled || (after.success && after.quantity == 0)) {
             markExited(context, state, symbol, "Official Univest exit executed • sold full CNC holding in green.");
+            schedulePostExitAveragingSweep(context, symbol, exitAverageIds);
             ResearchTradeEngine.onOfficialExitExecuted(context, symbol, r.averagePrice);
             HistoryBackupManager.forceAutoBackup(context);
             long age = r.dispatchAtMillis > 0 && notificationPostTime > 0
@@ -546,6 +608,7 @@ final class UnivestManager {
         }
         if (broker.quantity <= 0) {
             markExited(context, state, symbol, "Pending official exit reconciled: broker is flat.");
+            schedulePostExitAveragingSweep(context, symbol, UnivestAveragingRegistry.idsForSymbol(context, symbol));
             ResearchTradeEngine.onOfficialExitExecuted(context, symbol, 0);
             HistoryBackupManager.forceAutoBackup(context);
             DiagnosticsStore.runtime(context, "EXIT_RECOVERY_CONFIRMED_FLAT", symbol,
@@ -560,6 +623,7 @@ final class UnivestManager {
                 GrowwClient.PositionSnapshot after = GrowwClient.getCncPosition(context, symbol);
                 if (after.success && after.quantity <= 0) {
                     markExited(context, state, symbol, "Pending official exit reconciled from completed Groww order.");
+                    schedulePostExitAveragingSweep(context, symbol, UnivestAveragingRegistry.idsForSymbol(context, symbol));
                     ResearchTradeEngine.onOfficialExitExecuted(context, symbol, existing.averagePrice);
                     HistoryBackupManager.forceAutoBackup(context);
                     DiagnosticsStore.runtime(context, "EXIT_RECOVERY_ORDER_COMPLETE", symbol,
@@ -630,6 +694,7 @@ final class UnivestManager {
         GrowwClient.PositionSnapshot after = GrowwClient.getCncPosition(context, symbol);
         if (retry.filled || (after.success && after.quantity <= 0)) {
             markExited(context, state, symbol, "Official exit recovered and broker position is flat in green.");
+            schedulePostExitAveragingSweep(context, symbol, UnivestAveragingRegistry.idsForSymbol(context, symbol));
             ResearchTradeEngine.onOfficialExitExecuted(context, symbol, retry.averagePrice);
             HistoryBackupManager.forceAutoBackup(context);
             DiagnosticsStore.runtime(context, "EXIT_RECOVERY_EXECUTED", symbol,
@@ -697,6 +762,7 @@ final class UnivestManager {
                                 + (int)(AVERAGE_STEP_PCT * level) + "% at ₹" + money(trigger)
                                 + " • qty " + qty + " • " + gtt.message);
                 if (gtt.success) {
+                    UnivestAveragingRegistry.record(context, symbol, gtt.smartOrderId, ref);
                     setAvg(current, level, gtt.smartOrderId, trigger);
                     UnivestStateStore.put(context, current);
                 }
@@ -721,25 +787,74 @@ final class UnivestManager {
 
     private static void cancelAveragingLadder(Context context, UnivestStateStore.State s) {
         if (s == null) return;
+        cancelAveragingIds(context, s, knownAveragingIds(context, s));
+    }
+
+    private static List<String> knownAveragingIds(Context context, UnivestStateStore.State s) {
+        Set<String> ids = new LinkedHashSet<>();
+        if (s != null) {
+            for (int level = 1; level <= MAX_AVERAGE_LEVELS; level++) {
+                String id = getAvgId(s, level);
+                if (id != null && !id.isEmpty()) ids.add(id);
+            }
+            ids.addAll(UnivestAveragingRegistry.idsForSymbol(context, s.symbol));
+        }
+        return new ArrayList<>(ids);
+    }
+
+    private static void cancelAveragingIds(Context context, UnivestStateStore.State s, List<String> ids) {
+        if (s == null || ids == null || ids.isEmpty()) return;
         final String symbol = s.symbol;
-        for (int level = 1; level <= MAX_AVERAGE_LEVELS; level++) {
-            String id = getAvgId(s, level);
-            if (id.isEmpty()) continue;
-            GrowwClient.Result r = GrowwClient.cancelCashGtt(context, id);
-            DiagnosticsStore.broker(context, "CANCEL_AVERAGE_GTT_LEVEL_" + level, symbol, r.success || r.unknown, r.message);
+        ExecutorService pool = Executors.newFixedThreadPool(Math.min(3, Math.max(1, ids.size())));
+        List<Future<GrowwClient.Result>> futures = new ArrayList<>();
+        for (String id : ids) futures.add(pool.submit(() -> GrowwClient.cancelCashGtt(context, id)));
+        pool.shutdown();
+
+        for (int i = 0; i < ids.size(); i++) {
+            String id = ids.get(i);
+            GrowwClient.Result r;
+            try { r = futures.get(i).get(); }
+            catch (Exception e) { r = new GrowwClient.Result(false, true, 0, "GTT cancellation task failed: " + safe(e)); }
+            DiagnosticsStore.broker(context, "CANCEL_AVERAGE_GTT", symbol, r.success || r.unknown,
+                    id + " • " + r.message);
             if (r.success) {
+                UnivestAveragingRegistry.remove(context, id);
                 synchronized (campaignLock(symbol)) {
                     UnivestStateStore.State current = UnivestStateStore.get(context, symbol);
-                    if (current != null && id.equals(getAvgId(current, level))) {
-                        setAvg(current, level, "", 0.0);
+                    if (current != null) {
+                        for (int level = 1; level <= MAX_AVERAGE_LEVELS; level++) {
+                            if (id.equals(getAvgId(current, level))) setAvg(current, level, "", 0.0);
+                        }
                         UnivestStateStore.put(context, current);
                     }
                 }
             } else {
                 DiagnosticsStore.error(context, "AVERAGE_GTT_CANCEL_NOT_CONFIRMED", symbol,
-                        "Could not confirm cancellation of averaging GTT " + id + ".", null);
+                        "Could not confirm cancellation of app-created averaging GTT " + id + ".", null);
             }
         }
+    }
+
+    private static void schedulePostExitAveragingSweep(Context context, String symbol, List<String> exitIds) {
+        if (exitIds == null || exitIds.isEmpty()) return;
+        Context app = context.getApplicationContext();
+        List<String> captured = new ArrayList<>(exitIds);
+        new Thread(() -> {
+            int cleared = 0;
+            for (String id : captured) {
+                GrowwClient.Result r = GrowwClient.cancelCashGtt(app, id);
+                if (r.success) {
+                    UnivestAveragingRegistry.remove(app, id);
+                    cleared++;
+                } else {
+                    DiagnosticsStore.error(app, "POST_EXIT_AVERAGING_SWEEP_RETRY", symbol,
+                            "Post-exit cancellation still not confirmed for averaging GTT " + id + ". " + r.message, null);
+                }
+            }
+            DiagnosticsStore.runtime(app, "POST_EXIT_AVERAGING_SWEEP", symbol,
+                    "Post-exit safety sweep rechecked " + captured.size() + " pre-exit averaging GTT id(s); "
+                            + cleared + " confirmed inactive/cancelled. Later fresh BUY campaigns are not touched.");
+        }, "univest-post-exit-gtt-" + symbol).start();
     }
 
     private static String getAvgId(UnivestStateStore.State s, int level) {
@@ -790,17 +905,41 @@ final class UnivestManager {
 
     private static void cancelLegacyTrackedOrders(Context context, UnivestStateStore.State s) {
         if (s == null) return;
-        if (s.activeGttId != null && !s.activeGttId.isEmpty()) {
-            GrowwClient.Result r = GrowwClient.cancelCashGtt(context, s.activeGttId);
-            DiagnosticsStore.broker(context, "CANCEL_TRACKED_GTT_BEFORE_EXIT", s.symbol, r.success || r.unknown, r.message);
-            if (r.success) s.activeGttId = "";
+        final String symbol = s.symbol;
+        final String activeId = s.activeGttId == null ? "" : s.activeGttId;
+        final String stopId = s.protectiveStopGttId == null ? "" : s.protectiveStopGttId;
+
+        GrowwClient.Result activeResult = null;
+        GrowwClient.Result stopResult = null;
+        if (!activeId.isEmpty()) {
+            activeResult = GrowwClient.cancelCashGtt(context, activeId);
+            DiagnosticsStore.broker(context, "CANCEL_TRACKED_GTT_BEFORE_EXIT", symbol,
+                    activeResult.success || activeResult.unknown, activeResult.message);
         }
-        if (s.protectiveStopGttId != null && !s.protectiveStopGttId.isEmpty()) {
-            GrowwClient.Result r = GrowwClient.cancelCashGtt(context, s.protectiveStopGttId);
-            DiagnosticsStore.broker(context, "CANCEL_TRACKED_STOP_BEFORE_EXIT", s.symbol, r.success || r.unknown, r.message);
-            if (r.success) s.protectiveStopGttId = "";
+        if (!stopId.isEmpty()) {
+            stopResult = GrowwClient.cancelCashGtt(context, stopId);
+            DiagnosticsStore.broker(context, "CANCEL_TRACKED_STOP_BEFORE_EXIT", symbol,
+                    stopResult.success || stopResult.unknown, stopResult.message);
         }
-        UnivestStateStore.put(context, s);
+
+        if ((activeResult != null && activeResult.success) || (stopResult != null && stopResult.success)) {
+            synchronized (campaignLock(symbol)) {
+                UnivestStateStore.State current = UnivestStateStore.get(context, symbol);
+                if (current == null) return;
+                if (activeResult != null && activeResult.success && activeId.equals(current.activeGttId)) {
+                    current.activeGttId = "";
+                    current.activeGttKind = "";
+                    current.activeGttQty = 0;
+                    current.activeGttPrice = 0;
+                }
+                if (stopResult != null && stopResult.success && stopId.equals(current.protectiveStopGttId)) {
+                    current.protectiveStopGttId = "";
+                    current.protectiveStopPrice = 0;
+                    current.protectiveStopQty = 0;
+                }
+                UnivestStateStore.put(context, current);
+            }
+        }
     }
 
     private static void markExited(Context c, UnivestStateStore.State s, String symbol, String message) {
@@ -822,10 +961,13 @@ final class UnivestManager {
 
     static String stableRef(String prefix, String symbol, String seed, long postTime) {
         try {
-            long bucket = postTime > 0 ? postTime / 300000L : System.currentTimeMillis() / 300000L;
-            String raw = prefix + "|" + symbol + "|" + seed + "|" + bucket;
+            // Broker idempotency is tied to one concrete Android notification, not a time window.
+            // Replaying the same durable event gets the same reference; a genuine later notification even seconds
+            // later gets a different reference and remains fully eligible for execution.
+            long eventTime = postTime > 0 ? postTime : System.currentTimeMillis();
+            String raw = prefix + "|" + symbol + "|" + seed + "|" + eventTime;
             byte[] d = MessageDigest.getInstance("SHA-256").digest(raw.getBytes(StandardCharsets.UTF_8));
-            StringBuilder h = new StringBuilder(); for (int i = 0; i < 4; i++) h.append(String.format(Locale.US, "%02X", d[i]));
+            StringBuilder h = new StringBuilder(); for (int i = 0; i < 5; i++) h.append(String.format(Locale.US, "%02X", d[i]));
             String day = AppPrefs.istDayKey(postTime > 0 ? postTime : System.currentTimeMillis());
             String p = (prefix == null ? "UV" : prefix.toUpperCase(Locale.US).replaceAll("[^A-Z0-9]", ""));
             if (p.length() > 3) p = p.substring(0, 3);
@@ -835,6 +977,12 @@ final class UnivestManager {
             String out = (prefix + AppPrefs.istDayKey(System.currentTimeMillis()) + Math.abs((symbol + seed).hashCode())).replaceAll("[^A-Za-z0-9]", "");
             return out.length() > 20 ? out.substring(0, 20) : out;
         }
+    }
+
+    private static String safe(Throwable t) {
+        if (t == null) return "unknown";
+        String m = t.getMessage();
+        return m == null || m.trim().isEmpty() ? t.getClass().getSimpleName() : m;
     }
 
     private static String rupees(int v) {

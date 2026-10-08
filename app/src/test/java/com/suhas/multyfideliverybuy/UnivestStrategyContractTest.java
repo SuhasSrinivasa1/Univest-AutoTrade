@@ -45,6 +45,28 @@ public class UnivestStrategyContractTest {
         assertTrue(a.length() >= 8 && a.length() <= 20);
         assertTrue(a.matches("[A-Z0-9]+"));
     }
+    @Test public void brokerReferenceIsExactNotificationScopedNotTimeWindowScoped() {
+        long sellAt = 1791163560000L;
+        long buyFiveSecondsLater = sellAt + 5000L;
+        String sell = UnivestManager.stableRef("UX", "ABC", "book profit", sellAt);
+        String sameSellReplay = UnivestManager.stableRef("UX", "ABC", "book profit", sellAt);
+        String firstBuy = UnivestManager.stableRef("UE", "ABC", "new equity", buyFiveSecondsLater);
+        String secondRealBuyFiveSecondsLater = UnivestManager.stableRef("UE", "ABC", "new equity", buyFiveSecondsLater + 5000L);
+        assertEquals(sell, sameSellReplay);
+        assertNotEquals(sell, firstBuy);
+        assertNotEquals(firstBuy, secondRealBuyFiveSecondsLater);
+    }
+
+    @Test public void buySellBuySellSequenceHasFourIndependentBrokerReferences() {
+        long t = 1791163560000L;
+        java.util.Set<String> refs = new java.util.HashSet<>();
+        refs.add(UnivestManager.stableRef("UE", "ABC", "new equity 1", t));
+        refs.add(UnivestManager.stableRef("UX", "ABC", "book profit 1", t + 5000L));
+        refs.add(UnivestManager.stableRef("UE", "ABC", "new equity 2", t + 10000L));
+        refs.add(UnivestManager.stableRef("UX", "ABC", "book profit 2", t + 15000L));
+        assertEquals(4, refs.size());
+    }
+
     @Test public void totpBase32ValidationRejectsObviouslyBadSecrets() {
         assertTrue(GrowwClient.isValidBase32("JBSWY3DPEHPK3PXP"));
         assertFalse(GrowwClient.isValidBase32("not-valid-***"));

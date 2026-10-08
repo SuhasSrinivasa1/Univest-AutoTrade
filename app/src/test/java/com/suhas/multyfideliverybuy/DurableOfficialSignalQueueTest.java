@@ -17,7 +17,7 @@ public class DurableOfficialSignalQueueTest {
         String first = DurableOfficialSignalQueue.eventIdFor(
                 "ENTRY", "AEGISLOG", "New Advisory Pick\nStock: AEGISLOG\nDuration: 1-3 months", 1791163560000L);
         String later = DurableOfficialSignalQueue.eventIdFor(
-                "ENTRY", "AEGISLOG", "New Advisory Pick\nStock: AEGISLOG\nDuration: 1-3 months", 1791163620000L);
+                "ENTRY", "AEGISLOG", "New Advisory Pick\nStock: AEGISLOG\nDuration: 1-3 months", 1791163565000L);
         assertNotEquals(first, later);
     }
 
