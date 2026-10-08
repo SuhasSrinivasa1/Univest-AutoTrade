@@ -22,6 +22,15 @@ public class UnivestStrategyContractTest {
         assertFalse(UnivestManager.freshEntryMayProceed(0, true));
         assertFalse(UnivestManager.freshEntryMayProceed(25, true));
     }
+    @Test public void averagingIsForbiddenOnceOfficialExitStarts() {
+        assertTrue(UnivestManager.phaseAllowsAveraging(UnivestStateStore.ACTIVE));
+        assertFalse(UnivestManager.phaseAllowsAveraging(UnivestStateStore.ENTRY_PENDING));
+        assertFalse(UnivestManager.phaseAllowsAveraging(UnivestStateStore.EXITING_OFFICIAL));
+        assertFalse(UnivestManager.phaseAllowsAveraging(UnivestStateStore.EXITED));
+        assertTrue(UnivestManager.phaseBlocksCampaignResurrection(UnivestStateStore.EXITING_OFFICIAL));
+        assertTrue(UnivestManager.phaseBlocksCampaignResurrection(UnivestStateStore.EXITED));
+        assertFalse(UnivestManager.phaseBlocksCampaignResurrection(UnivestStateStore.ACTIVE));
+    }
     @Test public void companyNameNormalizationRemovesLegalSuffixes() {
         assertEquals("TATA MOTORS", InstrumentRepository.normalizedName("Tata Motors Limited"));
         assertEquals("TATA MOTORS", InstrumentRepository.normalizedName("TATA MOTORS LTD."));

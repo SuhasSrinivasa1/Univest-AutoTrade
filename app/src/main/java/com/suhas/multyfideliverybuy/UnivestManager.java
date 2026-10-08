@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
 
 final class UnivestManager {
     static final int ENTRY_BUDGET = 20000;   // legacy/default value; runtime uses AppPrefs
@@ -13,6 +14,7 @@ final class UnivestManager {
     static final int AVERAGE_BUDGET = 5000; // legacy/default value; runtime uses AppPrefs
     static final double AVERAGE_STEP_PCT = 2.0;
     static final int MAX_AVERAGE_LEVELS = 3;
+    private static final ConcurrentHashMap<String, Object> CAMPAIGN_LOCKS = new ConcurrentHashMap<>();
 
     private UnivestManager() {}
 
@@ -264,7 +266,9 @@ final class UnivestManager {
     }
 
     static void handleExit(Context context, UnivestParser.Signal signal, long notificationPostTime) {
-        InstrumentRepository.Instrument instrument = resolve(context, signal, "EXIT");
+        // EXIT must never wait for the 12-hour instrument-master network refresh. The packaged/cached NSE
+        // instrument master is enough to resolve the exact symbol and tick size, and Groww remains broker truth.
+        InstrumentRepository.Instrument instrument = resolveCached(context, signal, "EXIT");
         if (instrument == null) return;
         String symbol = instrument.symbol;
 
@@ -275,15 +279,21 @@ final class UnivestManager {
             return;
         }
 
-        UnivestStateStore.State state = UnivestStateStore.get(context, symbol);
-        boolean hadTrackedCampaign = state != null && !UnivestStateStore.EXITED.equals(state.phase);
-        // Do not suppress a later official EXIT merely because this symbol exited earlier today.
-        // The durable queue de-duplicates the same Android event; each distinct EXIT re-reads Groww holdings below.
-
-        if (state == null) { state = new UnivestStateStore.State(); state.symbol = symbol; }
-        state.phase = UnivestStateStore.EXITING_OFFICIAL;
-        state.lastAction = "Official Univest EXIT received • broker-truth full-CNC exit requested.";
-        UnivestStateStore.put(context, state);
+        UnivestStateStore.State state;
+        boolean hadTrackedCampaign;
+        synchronized (campaignLock(symbol)) {
+            state = UnivestStateStore.get(context, symbol);
+            hadTrackedCampaign = state != null && !UnivestStateStore.EXITED.equals(state.phase);
+            if (state == null) { state = new UnivestStateStore.State(); state.symbol = symbol; }
+            // Same-symbol tombstone: no reconciliation/averaging BUY may be armed until a later fresh ENTRY.
+            state.phase = UnivestStateStore.EXITING_OFFICIAL;
+            state.lastAction = "Official Univest EXIT received • broker-truth full-CNC exit requested.";
+            UnivestStateStore.put(context, state);
+        }
+        long sourceAge = notificationPostTime > 0 ? Math.max(0, System.currentTimeMillis() - notificationPostTime) : -1;
+        DiagnosticsStore.runtime(context, "EXIT_FAST_PATH_START", symbol,
+                "Official EXIT locked against averaging before broker calls"
+                        + (sourceAge >= 0 ? " • source age " + sourceAge + " ms." : "."));
 
         // Univest EXIT is authoritative for this exact NSE CASH symbol even when the app did not buy it.
         // Cancel averaging/legacy smart orders immediately so a deferred green exit cannot add exposure.
@@ -424,37 +434,84 @@ final class UnivestManager {
         if (!AppPrefs.isLiveMode(context)) return;
 
         boolean readyForBuys = AppPrefs.isReadyForBuy(context);
-        for (UnivestStateStore.State state : UnivestStateStore.all(context)) {
-            if (state == null || state.symbol == null || state.symbol.isEmpty() || UnivestStateStore.EXITED.equals(state.phase)) continue;
+        for (UnivestStateStore.State observed : UnivestStateStore.all(context)) {
+            if (observed == null || observed.symbol == null || observed.symbol.isEmpty()
+                    || UnivestStateStore.EXITED.equals(observed.phase)) continue;
+            final String symbol = observed.symbol;
             try {
-                if (UnivestStateStore.EXITING_OFFICIAL.equals(state.phase)) {
-                    reconcilePendingOfficialExit(context, state);
+                UnivestStateStore.State before = UnivestStateStore.get(context, symbol);
+                if (before == null || UnivestStateStore.EXITED.equals(before.phase)) continue;
+                if (UnivestStateStore.EXITING_OFFICIAL.equals(before.phase)) {
+                    reconcilePendingOfficialExit(context, before);
                     continue;
                 }
 
-                // Normal campaign maintenance still requires fresh LIVE buy readiness.
                 if (!readyForBuys) continue;
 
-                GrowwClient.PositionSnapshot broker = GrowwClient.getCncPosition(context, state.symbol);
+                GrowwClient.PositionSnapshot broker = GrowwClient.getCncPosition(context, symbol);
                 if (!broker.success) continue;
-                if (broker.quantity <= 0) {
-                    cancelAveragingLadder(context, state);
-                    state.phase = UnivestStateStore.EXITED; state.quantity = 0; state.principal = 0;
-                    state.lastAction = "Broker reconciliation found no CNC holding; campaign reset to EXITED.";
-                    UnivestStateStore.put(context, state);
-                    DiagnosticsStore.runtime(context, "CAMPAIGN_RESET_BROKER_FLAT", state.symbol, state.lastAction);
+
+                UnivestStateStore.State activeForGtt = null;
+                UnivestStateStore.State flatForCleanup = null;
+                synchronized (campaignLock(symbol)) {
+                    UnivestStateStore.State latest = UnivestStateStore.get(context, symbol);
+                    if (latest == null || phaseBlocksCampaignResurrection(latest.phase)) {
+                        DiagnosticsStore.runtime(context, "RECONCILE_STALE_SNAPSHOT_DROPPED", symbol,
+                                "Background broker snapshot ignored because campaign is already "
+                                        + (latest == null ? "missing" : latest.phase) + ".");
+                        continue;
+                    }
+
+                    if (broker.quantity <= 0) {
+                        latest.phase = UnivestStateStore.EXITED;
+                        latest.quantity = 0;
+                        latest.principal = 0;
+                        latest.lastAction = "Broker reconciliation found no CNC holding; campaign reset to EXITED.";
+                        UnivestStateStore.put(context, latest);
+                        flatForCleanup = latest;
+                    } else {
+                        latest.phase = UnivestStateStore.ACTIVE;
+                        latest.quantity = broker.quantity;
+                        if (!(latest.anchorPrice > 0) && broker.netPrice > 0) latest.anchorPrice = broker.netPrice;
+                        if (broker.netPrice > 0) latest.principal = broker.netPrice * broker.quantity;
+                        UnivestStateStore.put(context, latest);
+                        activeForGtt = latest;
+                    }
+                }
+
+                if (flatForCleanup != null) {
+                    cancelAveragingLadder(context, flatForCleanup);
+                    DiagnosticsStore.runtime(context, "CAMPAIGN_RESET_BROKER_FLAT", symbol, flatForCleanup.lastAction);
                     continue;
                 }
-                state.phase = UnivestStateStore.ACTIVE; state.quantity = broker.quantity;
-                if (!(state.anchorPrice > 0) && broker.netPrice > 0) state.anchorPrice = broker.netPrice;
-                if (broker.netPrice > 0) state.principal = broker.netPrice * broker.quantity;
-                updateAverageLevelFromGtts(context, state);
-                UnivestStateStore.put(context, state);
-                if (state.anchorPrice > 0 && AppPrefs.isAveragingEnabled(context)) armAveragingLadder(context, state, state.exitOrderId);
+
+                if (activeForGtt != null) {
+                    updateAverageLevelFromGtts(context, activeForGtt);
+                    synchronized (campaignLock(symbol)) {
+                        UnivestStateStore.State latest = UnivestStateStore.get(context, symbol);
+                        if (latest == null || !phaseAllowsAveraging(latest.phase)) continue;
+                        if (activeForGtt.averageLevel > latest.averageLevel) {
+                            latest.averageLevel = activeForGtt.averageLevel;
+                            UnivestStateStore.put(context, latest);
+                        }
+                        activeForGtt = latest;
+                    }
+                    if (activeForGtt.anchorPrice > 0 && AppPrefs.isAveragingEnabled(context)) {
+                        armAveragingLadder(context, activeForGtt, activeForGtt.exitOrderId);
+                    }
+                }
             } catch (Throwable t) {
-                DiagnosticsStore.error(context, "RECONCILIATION_ERROR", state.symbol, "Campaign reconciliation failed.", t);
+                DiagnosticsStore.error(context, "RECONCILIATION_ERROR", symbol, "Campaign reconciliation failed.", t);
             }
         }
+    }
+
+    static boolean phaseAllowsAveraging(String phase) {
+        return UnivestStateStore.ACTIVE.equals(phase);
+    }
+
+    static boolean phaseBlocksCampaignResurrection(String phase) {
+        return UnivestStateStore.EXITING_OFFICIAL.equals(phase) || UnivestStateStore.EXITED.equals(phase);
     }
 
     static boolean hasPendingOfficialExit(Context context) {
@@ -600,27 +657,50 @@ final class UnivestManager {
 
     private static void armAveragingLadder(Context context, UnivestStateStore.State state, String entrySeed) {
         if (state == null || !AppPrefs.isLiveMode(context) || !AppPrefs.isAveragingEnabled(context) || !(state.anchorPrice > 0)) return;
+        final String symbol = state.symbol;
+        final double expectedAnchor = state.anchorPrice;
         final int averageBudget = AppPrefs.getUnivestAddBudget(context);
         if (averageBudget <= 0) {
-            DiagnosticsStore.runtime(context, "AVERAGING_BUDGET_DISABLED", state.symbol,
+            DiagnosticsStore.runtime(context, "AVERAGING_BUDGET_DISABLED", symbol,
                     "Controlled downward averaging is enabled, but the shared re-entry/averaging budget is ₹0.");
             return;
         }
+
         int levels = Math.min(MAX_AVERAGE_LEVELS, AppPrefs.getAveragingLevels(context));
         for (int level = 1; level <= levels; level++) {
-            if (!getAvgId(state, level).isEmpty()) continue;
-            double raw = state.anchorPrice * (1.0 - (AVERAGE_STEP_PCT * level / 100.0));
-            double trigger = GrowwClient.roundTarget(raw, state.tickSize, false);
-            int qty = (int)Math.floor(averageBudget / trigger);
-            if (qty < 1) {
-                DiagnosticsStore.runtime(context, "AVERAGE_LEVEL_SKIPPED", state.symbol, "-" + (int)(AVERAGE_STEP_PCT * level) + "% level skipped because " + rupees(averageBudget) + " cannot buy one share at trigger ₹" + money(trigger) + ".");
-                continue;
+            synchronized (campaignLock(symbol)) {
+                UnivestStateStore.State current = UnivestStateStore.get(context, symbol);
+                if (current == null || !phaseAllowsAveraging(current.phase)
+                        || Math.abs(current.anchorPrice - expectedAnchor) > 0.0001) {
+                    DiagnosticsStore.runtime(context, "AVERAGING_BLOCKED_BY_CAMPAIGN_PHASE", symbol,
+                            "No averaging BUY armed because current campaign phase is "
+                                    + (current == null ? "missing" : current.phase) + ".");
+                    return;
+                }
+                if (!getAvgId(current, level).isEmpty()) continue;
+
+                double raw = current.anchorPrice * (1.0 - (AVERAGE_STEP_PCT * level / 100.0));
+                double trigger = GrowwClient.roundTarget(raw, current.tickSize, false);
+                int qty = (int)Math.floor(averageBudget / trigger);
+                if (qty < 1) {
+                    DiagnosticsStore.runtime(context, "AVERAGE_LEVEL_SKIPPED", symbol,
+                            "-" + (int)(AVERAGE_STEP_PCT * level) + "% level skipped because " + rupees(averageBudget)
+                                    + " cannot buy one share at trigger ₹" + money(trigger) + ".");
+                    continue;
+                }
+
+                String ref = stableRef("A" + level, symbol,
+                        entrySeed + "|" + level + "|" + money(current.anchorPrice), current.updatedAt);
+                GrowwClient.GttResult gtt = GrowwClient.createUnivestCncBuyGtt(context, symbol, qty, trigger, ref);
+                DiagnosticsStore.broker(context, "AVERAGE_GTT_LEVEL_" + level, symbol, gtt.success || gtt.unknown,
+                        rupees(averageBudget) + " CNC averaging level " + level + " • trigger -"
+                                + (int)(AVERAGE_STEP_PCT * level) + "% at ₹" + money(trigger)
+                                + " • qty " + qty + " • " + gtt.message);
+                if (gtt.success) {
+                    setAvg(current, level, gtt.smartOrderId, trigger);
+                    UnivestStateStore.put(context, current);
+                }
             }
-            String ref = stableRef("A" + level, state.symbol, entrySeed + "|" + level + "|" + money(state.anchorPrice), state.updatedAt);
-            GrowwClient.GttResult gtt = GrowwClient.createUnivestCncBuyGtt(context, state.symbol, qty, trigger, ref);
-            DiagnosticsStore.broker(context, "AVERAGE_GTT_LEVEL_" + level, state.symbol, gtt.success || gtt.unknown,
-                    rupees(averageBudget) + " CNC averaging level " + level + " • trigger -" + (int)(AVERAGE_STEP_PCT * level) + "% at ₹" + money(trigger) + " • qty " + qty + " • " + gtt.message);
-            if (gtt.success) { setAvg(state, level, gtt.smartOrderId, trigger); UnivestStateStore.put(context, state); }
         }
     }
 
@@ -641,13 +721,25 @@ final class UnivestManager {
 
     private static void cancelAveragingLadder(Context context, UnivestStateStore.State s) {
         if (s == null) return;
+        final String symbol = s.symbol;
         for (int level = 1; level <= MAX_AVERAGE_LEVELS; level++) {
-            String id = getAvgId(s, level); if (id.isEmpty()) continue;
+            String id = getAvgId(s, level);
+            if (id.isEmpty()) continue;
             GrowwClient.Result r = GrowwClient.cancelCashGtt(context, id);
-            DiagnosticsStore.broker(context, "CANCEL_AVERAGE_GTT_LEVEL_" + level, s.symbol, r.success || r.unknown, r.message);
-            if (r.success) setAvg(s, level, "", 0.0);
+            DiagnosticsStore.broker(context, "CANCEL_AVERAGE_GTT_LEVEL_" + level, symbol, r.success || r.unknown, r.message);
+            if (r.success) {
+                synchronized (campaignLock(symbol)) {
+                    UnivestStateStore.State current = UnivestStateStore.get(context, symbol);
+                    if (current != null && id.equals(getAvgId(current, level))) {
+                        setAvg(current, level, "", 0.0);
+                        UnivestStateStore.put(context, current);
+                    }
+                }
+            } else {
+                DiagnosticsStore.error(context, "AVERAGE_GTT_CANCEL_NOT_CONFIRMED", symbol,
+                        "Could not confirm cancellation of averaging GTT " + id + ".", null);
+            }
         }
-        UnivestStateStore.put(context, s);
     }
 
     private static String getAvgId(UnivestStateStore.State s, int level) {
@@ -660,6 +752,26 @@ final class UnivestManager {
         if (level == 1) { s.averageGtt1Id = id; s.averageGtt1Price = price; }
         else if (level == 2) { s.averageGtt2Id = id; s.averageGtt2Price = price; }
         else { s.averageGtt3Id = id; s.averageGtt3Price = price; }
+    }
+
+    private static Object campaignLock(String symbol) {
+        String key = symbol == null ? "" : symbol.trim().toUpperCase(Locale.US);
+        return CAMPAIGN_LOCKS.computeIfAbsent(key, ignored -> new Object());
+    }
+
+    private static InstrumentRepository.Instrument resolveCached(Context context, UnivestParser.Signal signal, String action) {
+        List<InstrumentRepository.Instrument> instruments = InstrumentRepository.load(context);
+        InstrumentRepository.Instrument i = InstrumentRepository.resolve(instruments, signal.symbol);
+        if (i != null) {
+            if (!i.symbol.equalsIgnoreCase(signal.symbol)) DiagnosticsStore.runtime(context, "SYMBOL_MAPPED", i.symbol,
+                    "Univest stock text '" + signal.symbol + "' mapped to NSE symbol " + i.symbol + " (" + i.name + ").");
+            return i;
+        }
+        List<String> suggestions = InstrumentRepository.suggestions(instruments, signal.symbol, 5);
+        String msg = action + " symbol mapping failed for Univest stock text '" + signal.symbol
+                + "' using the local instrument master. Candidates: " + suggestions;
+        fail(context, "SYMBOL_MAPPING_FAILED", signal.symbol, msg, null);
+        return null;
     }
 
     private static InstrumentRepository.Instrument resolve(Context context, UnivestParser.Signal signal, String action) {
