@@ -74,21 +74,21 @@ jobs:
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
           grep -q "versionCode 294" app/build.gradle
           grep -q "versionName '2.9.4'" app/build.gradle
-          grep -q 'appHeader("EXECUTION", "Live Univest status & actions")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
-          grep -q 'appHeader("RESEARCH", "What the system has learned")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
-          grep -q 'appHeader("FORECAST", "What may happen next")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
-          grep -q 'return new String[]{"Execution", "Research", "Forecast", "Settings"}' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
-          grep -q 'CURRENT POSITIONS' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
-          grep -q 'LATEST OFFICIAL ACTION' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'appHeader("EXECUTION", "Live Univest status & actions")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'appHeader("RESEARCH", "What the system has learned")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'appHeader("FORECAST", "What may happen next")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'return new String[]{"Execution", "Research", "Forecast", "Settings"}' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'CURRENT POSITIONS' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'LATEST OFFICIAL ACTION' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           ! grep -q 'FORECAST ACCOUNTABILITY' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
-          grep -q 'UIArchitectureContractTest' app/src/test/java/com/suhas/multyfideliverybuy/UIArchitectureContractTest.java
+          grep -Fq 'UIArchitectureContractTest' app/src/test/java/com/suhas/multyfideliverybuy/UIArchitectureContractTest.java
           grep -q 'ResearchPlaybookEngine' app/src/main/java/com/suhas/multyfideliverybuy/ResearchEngine.java
           grep -q 'NON_EXCLUSIVE_COMPOSITE' app/src/main/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngine.java
           grep -q 'POINT_IN_TIME_SIGNAL_PROFILE' app/src/main/java/com/suhas/multyfideliverybuy/ResearchSignalProfiler.java
           grep -q 'appendRawCandles' app/src/main/java/com/suhas/multyfideliverybuy/ResearchEventStore.java
           grep -q 'matched_controls.jsonl' app/src/main/java/com/suhas/multyfideliverybuy/ResearchStore.java
           grep -q 'candidate_pool.json' app/src/main/java/com/suhas/multyfideliverybuy/ResearchStore.java
-          grep -q 'sectionRow("PLAYBOOKS", "Champions + evidence")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'sectionRow("PLAYBOOKS", "Champions + evidence")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -q 'ResearchPlaybookEngineTest' app/src/test/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngineTest.java
           grep -q 'GreenOfficialExitTest' app/src/test/java/com/suhas/multyfideliverybuy/GreenOfficialExitTest.java
           grep -q 'FinalStabilityContractTest' app/src/test/java/com/suhas/multyfideliverybuy/FinalStabilityContractTest.java
