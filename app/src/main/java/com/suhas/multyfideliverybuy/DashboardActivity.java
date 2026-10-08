@@ -154,20 +154,16 @@ public class DashboardActivity extends Activity {
     private View buildUnivestTab() {
         ScrollView scroll = baseScroll();
         LinearLayout root = scrollRoot(scroll);
-        root.addView(appHeader("UNIVEST", "Official signal execution"));
+        root.addView(appHeader("EXECUTION", "Live Univest status & actions"));
 
-        root.addView(healthCard(), margins(0, 20, 0, 14));
+        root.addView(executionHeroCard(), margins(0, 20, 0, 14));
+        root.addView(campaignTableCard(), margins(0, 0, 0, 14));
 
         Button sync = secondaryButton("SYNC BROKER STATUS");
         sync.setOnClickListener(v -> syncBrokerStatus(sync));
         root.addView(sync, fixedMargins(-1, 52, 0, 0, 0, 14));
 
-        root.addView(executionSummaryCard(), margins(0, 0, 0, 14));
-
-        LinearLayout campaigns = card();
-        campaigns.addView(sectionRow("BROKER-RECONCILED STATUS", "Today"));
-        campaigns.addView(body(activeCampaignSummary()), margins(0, 12, 0, 0));
-        root.addView(campaigns, margins(0, 0, 0, 14));
+        root.addView(latestOfficialActionCard(), margins(0, 0, 0, 14));
 
         LinearLayout signals = card();
         signals.addView(sectionRow("TODAY'S UNIVEST SIGNALS", String.valueOf(DiagnosticsStore.todayNotificationCount(this))));
@@ -184,104 +180,82 @@ public class DashboardActivity extends Activity {
     private View buildStrategyTab() {
         ScrollView scroll = baseScroll();
         LinearLayout root = scrollRoot(scroll);
-        root.addView(appHeader("STRATEGY", "Recommendation DNA & champions"));
+        root.addView(appHeader("RESEARCH", "What the system has learned"));
 
         LinearLayout status = card();
-        status.addView(sectionRow("RESEARCH ENGINE", lastResearchTime()));
+        status.addView(sectionRow("RESEARCH STATUS", lastResearchTime()));
         status.addView(body(AppPrefs.getResearchStatus(this)), margins(0, 12, 0, 0));
-        status.addView(meta("Off-market only • target run around 17:30 IST"), margins(0, 8, 0, 0));
-        status.addView(meta("Scheduler: " + ResearchScheduler.statusText(this),
+        status.addView(meta("Schedule: " + ResearchScheduler.statusText(this),
                 AppPrefs.getResearchScheduleMethod(this).startsWith("JOB_") ? GREEN : AMBER), margins(0, 8, 0, 0));
+        status.addView(meta("Stage: " + AppPrefs.getResearchOrchestratorStage(this) + " • "
+                + AppPrefs.getResearchOrchestratorStatus(this)), margins(0, 8, 0, 0));
+        status.addView(meta("Pre-market: " + PreMarketReadiness.statusText(this),
+                AppPrefs.isPreMarketReady(this) ? GREEN : AMBER), margins(0, 8, 0, 0));
         root.addView(status, margins(0, 20, 0, 14));
-
-        LinearLayout orchestration = card();
-        orchestration.addView(sectionRow("RESEARCH ORCHESTRATION", AppPrefs.getResearchOrchestratorStage(this)));
-        orchestration.addView(body(AppPrefs.getResearchOrchestratorStatus(this)), margins(0, 12, 0, 0));
-        orchestration.addView(meta("17:30 full-NSE scan → 08:45+ pre-open freeze → live minute capture → post-close replay. NSE holidays retain the latest forecast."), margins(0, 8, 0, 0));
-        root.addView(orchestration, margins(0, 0, 0, 14));
-
-        LinearLayout accuracy = card();
-        accuracy.addView(sectionRow("RESEARCH ACCURACY", "Shadow + Live"));
-        accuracy.addView(body(ResearchTradeEngine.accuracyText(this)), margins(0, 12, 0, 0));
-        accuracy.addView(meta("Wins require ≥0.5% estimated net profit. Open trades are unresolved, not losses."), margins(0, 8, 0, 0));
-        root.addView(accuracy, margins(0, 0, 0, 14));
-
-        LinearLayout failures = card();
-        failures.addView(sectionRow("REPEATED FAILURE CLUSTERS", "Replay"));
-        failures.addView(body(ResearchTradeEngine.failureClustersText(this)), margins(0, 12, 0, 0));
-        failures.addView(meta("A repeated bucket becomes a Challenger-review candidate; one bad trade never rewrites the Champion."), margins(0, 8, 0, 0));
-        root.addView(failures, margins(0, 0, 0, 14));
 
         Button scan = primaryButton("RUN FULL NSE OFF-MARKET RESEARCH");
         scan.setOnClickListener(v -> runResearchNow(scan));
         root.addView(scan, fixedMargins(-1, 54, 0, 0, 0, 14));
 
-        LinearLayout champions = card();
-        champions.addView(sectionRow("UNIVEST PLAYBOOK CHAMPIONS", "Top 5 composites"));
-        champions.addView(body(ResearchEngine.playbooksText(this)), margins(0, 12, 0, 0));
-        champions.addView(meta("Playbooks are non-exclusive combinations. One stock can strongly match several at once; multiple agreeing playbooks increase the forecast vote rather than forcing one family label."), margins(0, 8, 0, 0));
-        root.addView(champions, margins(0, 0, 0, 14));
+        LinearLayout performance = card();
+        performance.addView(sectionRow("PERFORMANCE & ACCOUNTABILITY", "Historical"));
+        performance.addView(subsectionTitle("Research accuracy"), margins(0, 12, 0, 4));
+        performance.addView(body(ResearchTradeEngine.accuracyText(this)));
+        performance.addView(meta("Wins require ≥0.5% estimated net profit. Open trades remain unresolved, not losses."), margins(0, 6, 0, 10));
+        performance.addView(subsectionTitle("Forecast before Univest"), margins(0, 4, 0, 4));
+        performance.addView(body(ResearchEngine.forecastAccountabilityText(this)));
+        performance.addView(meta("The primary test is whether an eventual official Univest ENTRY was already in the frozen Top 10 before its notification."), margins(0, 6, 0, 10));
+        performance.addView(subsectionTitle("Repeated failure clusters"), margins(0, 4, 0, 4));
+        performance.addView(body(ResearchTradeEngine.failureClustersText(this)));
+        performance.addView(meta("Repeated evidence may promote a Challenger review; one bad trade never rewrites a Champion."), margins(0, 6, 0, 0));
+        root.addView(performance, margins(0, 0, 0, 14));
 
-        LinearLayout components = card();
-        components.addView(sectionRow("COMPONENT EVIDENCE", "Building blocks"));
-        components.addView(body(ResearchEngine.strategiesText(this)), margins(0, 12, 0, 0));
-        components.addView(meta("These are component scores used inside composite playbooks, not mutually-exclusive strategy families."), margins(0, 8, 0, 0));
-        root.addView(components, margins(0, 0, 0, 14));
+        LinearLayout playbooks = card();
+        playbooks.addView(sectionRow("PLAYBOOKS", "Champions + evidence"));
+        playbooks.addView(subsectionTitle("Champion composites"), margins(0, 12, 0, 4));
+        playbooks.addView(body(ResearchEngine.playbooksText(this)));
+        playbooks.addView(meta("Playbooks are non-exclusive: several agreeing playbooks can strengthen the same forecast."), margins(0, 6, 0, 10));
+        playbooks.addView(subsectionTitle("Component evidence"), margins(0, 4, 0, 4));
+        playbooks.addView(body(ResearchEngine.strategiesText(this)));
+        playbooks.addView(meta("Component scores are building blocks inside composite playbooks, not competing strategy tabs."), margins(0, 6, 0, 0));
+        root.addView(playbooks, margins(0, 0, 0, 14));
 
-        LinearLayout accountability = card();
-        accountability.addView(sectionRow("PRE-UNIVEST PREDICTION SCORECARD", "Out-of-sample"));
-        accountability.addView(body(ResearchEngine.forecastAccountabilityText(this)), margins(0, 12, 0, 0));
-        accountability.addView(meta("Primary test: was the eventual official Univest ENTRY already in a frozen Top 10 before the notification? Historical explanation alone does not count as a prediction."), margins(0, 8, 0, 0));
-        root.addView(accountability, margins(0, 0, 0, 14));
-
-        LinearLayout archive = card();
-        archive.addView(sectionRow("RECOMMENDATION ARCHIVE", "1–3 month"));
-        archive.addView(body(ResearchStore.recentRecommendationsText(this, 10)), margins(0, 12, 0, 0));
-        root.addView(archive, margins(0, 0, 0, 14));
-
-        LinearLayout dna = card();
-        dna.addView(sectionRow("BUY → SELL DNA", "Pattern learning"));
-        dna.addView(body("Captures causality-safe point-in-time ENTRY/EXIT profiles, raw 1m/15m/daily candles, volume, VWAP, momentum, volatility, live quote/depth, market context and matched non-selected controls. Composite playbooks learn recurring combinations rather than one-label families."), margins(0, 12, 0, 0));
-        root.addView(dna, margins(0, 0, 0, 14));
-
-        LinearLayout lifecycle = card();
-        lifecycle.addView(sectionRow("OFFICIAL ENTRY → EXIT LIFECYCLES", "Reverse engineering"));
-        lifecycle.addView(body(ResearchEngine.officialLifecycleText(this, 8)), margins(0, 12, 0, 0));
-        root.addView(lifecycle, margins(0, 0, 0, 14));
-
-        LinearLayout study = card();
-        study.addView(sectionRow("NIGHTLY UNIVEST STRATEGY STUDY", "Off-market"));
-        study.addView(body(AppPrefs.getUnivestStrategyStudy(this)), margins(0, 12, 0, 0));
-        study.addView(meta("Descriptive reverse engineering only: it learns recurring observable fingerprints from official calls and keeps pre-signal features separate from later outcomes."), margins(0, 8, 0, 0));
-        root.addView(study, margins(0, 0, 0, 14));
-
-        LinearLayout intel = card();
-        intel.addView(sectionRow("MARKET INTELLIGENCE", "India + Global"));
-        intel.addView(body(ResearchEngine.intelligenceText(this)), margins(0, 12, 0, 0));
-        root.addView(intel, margins(0, 0, 0, 22));
+        LinearLayout history = card();
+        history.addView(sectionRow("HISTORICAL RESEARCH", "Reference"));
+        history.addView(subsectionTitle("Recommendation archive"), margins(0, 12, 0, 4));
+        history.addView(body(ResearchStore.recentRecommendationsText(this, 10)));
+        history.addView(subsectionTitle("BUY → SELL DNA"), margins(0, 14, 0, 4));
+        history.addView(meta("Point-in-time ENTRY/EXIT profiles preserve candles, volume, VWAP, momentum, volatility, market context and matched controls without leaking later outcomes."));
+        history.addView(subsectionTitle("Official entry → exit lifecycles"), margins(0, 14, 0, 4));
+        history.addView(body(ResearchEngine.officialLifecycleText(this, 8)));
+        history.addView(subsectionTitle("Nightly strategy study"), margins(0, 14, 0, 4));
+        history.addView(body(AppPrefs.getUnivestStrategyStudy(this)));
+        history.addView(subsectionTitle("Market intelligence"), margins(0, 14, 0, 4));
+        history.addView(body(ResearchEngine.intelligenceText(this)));
+        root.addView(history, margins(0, 0, 0, 22));
         return scroll;
     }
 
     private View buildForecastTab() {
         ScrollView scroll = baseScroll();
         LinearLayout root = scrollRoot(scroll);
-        root.addView(appHeader("FORECAST", "Next expected Univest-like picks"));
+        root.addView(appHeader("FORECAST", "What may happen next"));
 
         LinearLayout intro = card();
         intro.addView(sectionRow("FORECAST ENGINE", lastResearchTime()));
-        intro.addView(body("Scans the full eligible NSE CASH universe off-market, freezes the Top 10, then monitors those candidates live for entry/exit timing."), margins(0, 12, 0, 0));
+        intro.addView(body("Scans the eligible NSE CASH universe off-market, freezes the Top 10, then monitors those candidates live for entry/exit timing."), margins(0, 12, 0, 0));
         intro.addView(meta(AppPrefs.isResearchAutoTradeEnabled(this)
                 ? "Research AutoTrade ON • qualified Research entries/exits may place real CNC orders"
-                : "Research AutoTrade OFF • entry/exit notifications require your confirmation"), margins(0, 8, 0, 0));
+                : "Research AutoTrade OFF • research entry/exit actions require confirmation"), margins(0, 8, 0, 0));
         root.addView(intro, margins(0, 20, 0, 14));
 
         String actionSymbol = !selectedResearchSymbol.isEmpty() ? selectedResearchSymbol : ResearchTradeEngine.actionSymbol(this);
         String actionType = !selectedResearchAction.isEmpty() ? selectedResearchAction : ResearchTradeEngine.actionType(this);
         if (!actionSymbol.isEmpty() && ("BUY".equals(actionType) || "SELL".equals(actionType))) {
             LinearLayout actionCard = card();
-            actionCard.addView(sectionRow("RESEARCH TRADE ACTION", actionType));
+            actionCard.addView(sectionRow("CURRENT RESEARCH ACTION", actionType));
             actionCard.addView(body(actionSymbol + " • " + ("BUY".equals(actionType)
-                    ? "Entry condition reached. Order uses your configured Initial Entry Budget."
+                    ? "Entry condition reached. Uses the configured Initial Entry Budget."
                     : "Exit model detected a profitable weakening condition.")), margins(0, 10, 0, 0));
             Button actionButton = primaryButton(("BUY".equals(actionType) ? "BUY " + formatRupees(AppPrefs.getUnivestBudget(this))
                     : "SELL RESEARCH LOT") + " • " + actionSymbol);
@@ -290,24 +264,19 @@ public class DashboardActivity extends Activity {
             root.addView(actionCard, margins(0, 0, 0, 14));
         }
 
-        LinearLayout activeResearch = card();
-        activeResearch.addView(sectionRow("ACTIVE RESEARCH TRADES", AppPrefs.isResearchAutoTradeEnabled(this) ? "AUTO" : "MANUAL"));
-        activeResearch.addView(body(ResearchTradeEngine.activePositionsText(this)), margins(0, 12, 0, 0));
-        root.addView(activeResearch, margins(0, 0, 0, 14));
-
-        LinearLayout forecastScore = card();
-        forecastScore.addView(sectionRow("FORECAST ACCOUNTABILITY", "Before Univest"));
-        forecastScore.addView(body(ResearchEngine.forecastAccountabilityText(this)), margins(0, 12, 0, 0));
-        root.addView(forecastScore, margins(0, 0, 0, 14));
-
         LinearLayout expected = card();
         expected.addView(sectionRow("NEXT EXPECTED RECOMMENDATIONS", "Top 10"));
         expected.addView(body(ResearchEngine.predictionsText(this, 10)), margins(0, 12, 0, 0));
         root.addView(expected, margins(0, 0, 0, 14));
 
+        LinearLayout activeResearch = card();
+        activeResearch.addView(sectionRow("ACTIVE RESEARCH TRADES", AppPrefs.isResearchAutoTradeEnabled(this) ? "AUTO" : "MANUAL"));
+        activeResearch.addView(body(ResearchTradeEngine.activePositionsText(this)), margins(0, 12, 0, 0));
+        root.addView(activeResearch, margins(0, 0, 0, 14));
+
         LinearLayout ranges = card();
-        ranges.addView(sectionRow("ENTRY / EXIT RANGE", "Model"));
-        ranges.addView(body("The frozen sell zone is a reference, not a forced target. After entry, the Exit Model waits for ≥0.5% estimated net profit and weakening/exhaustion evidence; temporary drawdowns are tracked as MAE rather than automatically treated as failures."), margins(0, 12, 0, 0));
+        ranges.addView(sectionRow("ENTRY / EXIT MODEL", "How decisions are used"));
+        ranges.addView(body("The frozen sell zone is a reference, not a forced target. After entry, the Exit Model waits for ≥0.5% estimated net profit plus weakening/exhaustion evidence; temporary drawdowns are tracked as MAE rather than automatically treated as failures."), margins(0, 12, 0, 0));
         root.addView(ranges, margins(0, 0, 0, 14));
 
         Button scan = primaryButton("REFRESH FORECAST OFF-MARKET");
@@ -319,7 +288,7 @@ public class DashboardActivity extends Activity {
     private View buildSettingsTab() {
         ScrollView scroll = baseScroll();
         LinearLayout root = scrollRoot(scroll);
-        root.addView(appHeader("SETTINGS", "Connection, safety & maintenance"));
+        root.addView(appHeader("SETTINGS", "Broker, trading, reliability & data"));
 
         LinearLayout connection = card();
         connection.addView(sectionRow("GROWW CONNECTION", AppPrefs.isReadyForBuy(this) ? "READY" : "NOT READY"));
@@ -346,12 +315,11 @@ public class DashboardActivity extends Activity {
         root.addView(connection, margins(0, 20, 0, 14));
 
         LinearLayout safety = card();
-        safety.addView(sectionRow("EXECUTION SAFETY", AppPrefs.getExecutionMode(this)));
+        safety.addView(sectionRow("OFFICIAL UNIVEST TRADING", AppPrefs.getExecutionMode(this)));
 
         Switch live = styledSwitch("LIVE MODE — REAL CNC ORDERS", AppPrefs.isLiveMode(this));
         Switch avg = styledSwitch("CONTROLLED DOWNWARD AVERAGING", AppPrefs.isAveragingEnabled(this));
         Switch arm = styledSwitch("ARM UNIVEST AUTOTRADE", AppPrefs.isUnivestEnabled(this));
-        Switch researchAuto = styledSwitch("RESEARCH AUTOTRADE — REAL MONEY", AppPrefs.isResearchAutoTradeEnabled(this));
 
         safety.addView(budgetSlider(
                 "INITIAL ENTRY BUDGET",
@@ -373,7 +341,6 @@ public class DashboardActivity extends Activity {
         safety.addView(live, margins(0, 2, 0, 0));
         safety.addView(avg, margins(0, 0, 0, 0));
         safety.addView(arm, margins(0, 0, 0, 0));
-        safety.addView(researchAuto, margins(0, 0, 0, 0));
 
         live.setOnCheckedChangeListener((b, checked) -> {
             AppPrefs.setExecutionMode(this, checked ? AppPrefs.MODE_LIVE : AppPrefs.MODE_PAPER);
@@ -395,6 +362,16 @@ public class DashboardActivity extends Activity {
 
         arm.setOnCheckedChangeListener((b, checked) -> onArmRequested(checked));
 
+        safety.addView(meta("Official source only • NSE CASH • CNC delivery"), margins(0, 10, 0, 0));
+        safety.addView(meta(formatRupees(AppPrefs.getUnivestBudget(this)) + " initial • "
+                + formatRupees(AppPrefs.getUnivestAddBudget(this)) + " re-entry / each averaging level • -2% / -4% / -6% ladder"),
+                margins(0, 6, 0, 0));
+        root.addView(safety, margins(0, 0, 0, 14));
+
+        LinearLayout researchTrading = card();
+        researchTrading.addView(sectionRow("RESEARCH TRADING", AppPrefs.isResearchAutoTradeEnabled(this) ? "AUTO" : "MANUAL"));
+        Switch researchAuto = styledSwitch("RESEARCH AUTOTRADE — REAL MONEY", AppPrefs.isResearchAutoTradeEnabled(this));
+        researchTrading.addView(researchAuto, margins(0, 8, 0, 0));
         researchAuto.setOnCheckedChangeListener((b, checked) -> {
             if (!checked) {
                 AppPrefs.setResearchAutoTradeEnabled(this, false);
@@ -409,7 +386,7 @@ public class DashboardActivity extends Activity {
             }
             new AlertDialog.Builder(this)
                     .setTitle("Enable Research AutoTrade?")
-                    .setMessage("Qualified Research entry/exit signals may place real NSE CASH/CNC orders using the same configured budgets. Research execution now reconciles broker fills/GTTs and committed capital, but timing still depends on the Android market-session monitor. Official Univest AutoTrade remains a separate signal source.")
+                    .setMessage("Qualified Research entry/exit signals may place real NSE CASH/CNC orders using the configured budgets. Official Univest AutoTrade remains a separate signal source.")
                     .setNegativeButton("Cancel", (d, w) -> render())
                     .setPositiveButton("Enable", (d, w) -> {
                         AppPrefs.setResearchAutoTradeEnabled(this, true);
@@ -418,15 +395,9 @@ public class DashboardActivity extends Activity {
                         render();
                     }).show();
         });
-
-        safety.addView(researchCapitalGovernor(), margins(0, 12, 0, 0));
-        safety.addView(meta("Research capital governor applies only to Research-originated live entries. Official Univest confirmation remains separately attributed and follows the proven official execution path."), margins(0, 8, 0, 0));
-
-        safety.addView(meta("Official source only • NSE CASH • CNC delivery"), margins(0, 10, 0, 0));
-        safety.addView(meta(formatRupees(AppPrefs.getUnivestBudget(this)) + " initial • "
-                + formatRupees(AppPrefs.getUnivestAddBudget(this)) + " re-entry / each averaging level • -2% / -4% / -6% ladder"),
-                margins(0, 6, 0, 0));
-        root.addView(safety, margins(0, 0, 0, 14));
+        researchTrading.addView(researchCapitalGovernor(), margins(0, 12, 0, 0));
+        researchTrading.addView(meta("Research capital controls apply only to Research-originated entries. Official Univest execution remains separately attributed."), margins(0, 8, 0, 0));
+        root.addView(researchTrading, margins(0, 0, 0, 14));
 
         LinearLayout scheduler = card();
         boolean scheduleOk = AppPrefs.getResearchScheduleMethod(this).startsWith("JOB_");
@@ -466,7 +437,6 @@ public class DashboardActivity extends Activity {
         device.addView(meta("For reliable Univest notifications, keep notification access enabled and allow unrestricted background activity. These controls do not change trading rules."), margins(0, 8, 0, 0));
         device.addView(meta("Durable official queue: " + DurableOfficialSignalQueue.statusText(this),
                 DurableOfficialSignalQueue.pendingCount(this) == 0 ? GREEN : AMBER), margins(0, 8, 0, 0));
-        device.addView(meta("Latest execution latency: " + OfficialExecutionLatency.latestSummary(this)), margins(0, 8, 0, 0));
 
         Button battery = secondaryButton(batteryFree ? "BATTERY EXEMPTION ALREADY ACTIVE" : "ALLOW UNRESTRICTED BATTERY");
         battery.setEnabled(!batteryFree);
@@ -529,7 +499,7 @@ public class DashboardActivity extends Activity {
 
         LinearLayout about = card();
         about.addView(sectionRow("ABOUT", "Orchestrated Research"));
-        about.addView(body("Univest AutoTrade v2.9.3"), margins(0, 10, 0, 0));
+        about.addView(body("Univest AutoTrade v2.9.4"), margins(0, 10, 0, 0));
         about.addView(meta("Package: com.suhas.multyfideliverybuy"), margins(0, 6, 0, 0));
         about.addView(meta("Official Univest execution and Research decisions remain separately attributed; Research→Univest same-symbol confirmation is intentionally additive."), margins(0, 6, 0, 0));
         root.addView(about, margins(0, 0, 0, 22));
@@ -548,7 +518,7 @@ public class DashboardActivity extends Activity {
         left.addView(text(subtitle, 12, SUBTEXT, false), margins(0, 3, 0, 0));
         row.addView(left, new LinearLayout.LayoutParams(0, -2, 1f));
 
-        TextView version = text("v2.9.3", 11, TEAL, true);
+        TextView version = text("v2.9.4", 11, TEAL, true);
         version.setGravity(Gravity.CENTER);
         version.setPadding(dp(10), dp(6), dp(10), dp(6));
         GradientDrawable chip = new GradientDrawable();
@@ -599,6 +569,124 @@ public class DashboardActivity extends Activity {
         });
         c.addView(manage, fixedMargins(-1, 50, 0, 12, 0, 0));
         return c;
+    }
+
+    static String[] primaryTabLabels() {
+        return new String[]{"Execution", "Research", "Forecast", "Settings"};
+    }
+
+    static String humanCampaignPhase(String phase) {
+        if (UnivestStateStore.ENTRY_PENDING.equals(phase)) return "Buying";
+        if (UnivestStateStore.ACTIVE.equals(phase)) return "Holding";
+        if (UnivestStateStore.WAIT_REENTRY.equals(phase)) return "Waiting";
+        if (UnivestStateStore.FLAT_WAIT_EXIT.equals(phase)) return "Waiting";
+        if (UnivestStateStore.EXITING_PROFIT.equals(phase)
+                || UnivestStateStore.EXITING_OFFICIAL.equals(phase)
+                || UnivestStateStore.EXITING_STOP.equals(phase)) return "Selling";
+        if (UnivestStateStore.EXITED.equals(phase)) return "Closed";
+        if (UnivestStateStore.ERROR.equals(phase)) return "Attention";
+        return "Active";
+    }
+
+    private View executionHeroCard() {
+        LinearLayout c = card();
+        boolean liveArmed = AppPrefs.isLiveMode(this) && AppPrefs.isUnivestEnabled(this);
+        c.addView(sectionRow("OFFICIAL UNIVEST", liveArmed ? "LIVE • ARMED" : "DISARMED"));
+        c.addView(statusPill(liveArmed ? "LIVE ORDERS ENABLED" : "SAFE / DISARMED",
+                liveArmed ? GREEN : BLUE), margins(0, 12, 0, 0));
+
+        LinearLayout badges = new LinearLayout(this);
+        badges.setOrientation(LinearLayout.HORIZONTAL);
+        badges.addView(badge("Groww", AppPrefs.isReadyForBuy(this)));
+        badges.addView(badge("Notifications", notificationAccessEnabled()), badgeLp());
+        c.addView(badges, margins(0, 12, 0, 0));
+
+        c.addView(meta(AppPrefs.getExecutionMode(this) + " mode • "
+                + activeCampaignCount() + " active position" + (activeCampaignCount() == 1 ? "" : "s")
+                + " • " + DiagnosticsStore.todayNotificationCount(this) + " signals today"), margins(0, 10, 0, 0));
+        c.addView(meta(formatRupees(AppPrefs.getUnivestBudget(this)) + " fresh entry • "
+                + formatRupees(AppPrefs.getUnivestAddBudget(this)) + " each re-entry / averaging leg"), margins(0, 6, 0, 0));
+
+        Button manage = secondaryButton("MANAGE TRADING SETTINGS");
+        manage.setOnClickListener(v -> {
+            selectedTab = 3;
+            render();
+        });
+        c.addView(manage, fixedMargins(-1, 50, 0, 12, 0, 0));
+        return c;
+    }
+
+    private View campaignTableCard() {
+        LinearLayout c = card();
+        c.addView(sectionRow("CURRENT POSITIONS", String.valueOf(activeCampaignCount())));
+        List<UnivestStateStore.State> states = UnivestStateStore.all(this);
+        boolean any = false;
+        c.addView(campaignTableRow("Stock", "Qty", "State", "Averaging", true), margins(0, 12, 0, 0));
+        for (UnivestStateStore.State s : states) {
+            if (s == null || s.symbol == null || s.symbol.isEmpty()
+                    || UnivestStateStore.EXITED.equals(s.phase)) continue;
+            any = true;
+            c.addView(campaignTableRow(s.symbol, String.valueOf(Math.max(0, s.quantity)),
+                    humanCampaignPhase(s.phase), averagingSummary(s), false), margins(0, 8, 0, 0));
+        }
+        if (!any) {
+            c.addView(meta("No active tracked positions. Groww holdings and open orders remain execution truth."),
+                    margins(0, 12, 0, 0));
+        } else {
+            c.addView(meta("State labels are simplified for readability; raw broker and campaign diagnostics remain available in exports."),
+                    margins(0, 10, 0, 0));
+        }
+        return c;
+    }
+
+    private View latestOfficialActionCard() {
+        LinearLayout c = card();
+        long t = AppPrefs.getUnivestStatusTime(this);
+        c.addView(sectionRow("LATEST OFFICIAL ACTION", t > 0 ? clock(t) : "No action yet"));
+        c.addView(body(AppPrefs.getUnivestStatus(this)), margins(0, 10, 0, 0));
+        c.addView(meta("Execution latency: " + OfficialExecutionLatency.latestSummary(this)), margins(0, 8, 0, 0));
+        c.addView(meta("Signal queue: " + DurableOfficialSignalQueue.statusText(this),
+                DurableOfficialSignalQueue.pendingCount(this) == 0 ? GREEN : AMBER), margins(0, 6, 0, 0));
+        return c;
+    }
+
+    private View campaignTableRow(String stock, String qty, String state, String averaging, boolean header) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        int color = header ? SUBTEXT : TEXT;
+        int size = header ? 11 : 12;
+        row.addView(tableCell(stock, size, color, header, Gravity.START), new LinearLayout.LayoutParams(0, -2, 1.15f));
+        row.addView(tableCell(qty, size, color, header, Gravity.END), new LinearLayout.LayoutParams(0, -2, 0.65f));
+        row.addView(tableCell(state, size, color, header, Gravity.START), new LinearLayout.LayoutParams(0, -2, 1.15f));
+        row.addView(tableCell(averaging, size, color, header, Gravity.END), new LinearLayout.LayoutParams(0, -2, 1.35f));
+        return row;
+    }
+
+    private TextView tableCell(String value, int size, int color, boolean bold, int gravity) {
+        TextView v = text(value, size, color, bold);
+        v.setGravity(gravity);
+        v.setPadding(dp(2), dp(4), dp(2), dp(4));
+        return v;
+    }
+
+    private String averagingSummary(UnivestStateStore.State s) {
+        if (s == null) return "—";
+        if (UnivestStateStore.EXITING_OFFICIAL.equals(s.phase)
+                || UnivestStateStore.EXITING_PROFIT.equals(s.phase)
+                || UnivestStateStore.EXITING_STOP.equals(s.phase)) return "Cancelled";
+        if (!AppPrefs.isAveragingEnabled(this)) return "Off";
+        int armed = 0;
+        if (s.averageGtt1Id != null && !s.averageGtt1Id.isEmpty()) armed++;
+        if (s.averageGtt2Id != null && !s.averageGtt2Id.isEmpty()) armed++;
+        if (s.averageGtt3Id != null && !s.averageGtt3Id.isEmpty()) armed++;
+        if (armed > 0) return armed + "/3 armed";
+        if (s.averageLevel > 0) return "Level " + s.averageLevel;
+        return "Ready";
+    }
+
+    private TextView subsectionTitle(String value) {
+        return text(value, 12, TEAL, true);
     }
 
     private void syncBrokerStatus(Button button) {
@@ -760,10 +848,11 @@ public class DashboardActivity extends Activity {
 
     private void renderBottomNav() {
         bottomNav.removeAllViews();
-        bottomNav.addView(navItem(R.drawable.ic_univest_nav, "Univest", 0), navParams());
-        bottomNav.addView(navItem(R.drawable.ic_strategy_nav, "Strategy", 1), navParams());
-        bottomNav.addView(navItem(R.drawable.ic_forecast_nav, "Forecast", 2), navParams());
-        bottomNav.addView(navItem(R.drawable.ic_settings_nav, "Settings", 3), navParams());
+        String[] labels = primaryTabLabels();
+        bottomNav.addView(navItem(R.drawable.ic_univest_nav, labels[0], 0), navParams());
+        bottomNav.addView(navItem(R.drawable.ic_strategy_nav, labels[1], 1), navParams());
+        bottomNav.addView(navItem(R.drawable.ic_forecast_nav, labels[2], 2), navParams());
+        bottomNav.addView(navItem(R.drawable.ic_settings_nav, labels[3], 3), navParams());
     }
 
     private View navItem(int iconRes, String label, int tab) {
@@ -907,7 +996,7 @@ public class DashboardActivity extends Activity {
         i.setType("application/zip");
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.3.zip");
+        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.4.zip");
         startActivityForResult(i, REQUEST_HISTORY_CREATE);
     }
 

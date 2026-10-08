@@ -63,7 +63,7 @@ final class HistoryBackupManager {
             JSONObject manifest = new JSONObject();
             manifest.put("format", "UNIVEST_PORTABLE_HISTORY");
             manifest.put("schemaVersion", 3);
-            manifest.put("appVersion", "2.9.3");
+            manifest.put("appVersion", "2.9.4");
             manifest.put("createdAt", System.currentTimeMillis());
             manifest.put("containsCredentials", false);
             manifest.put("researchIncludes", "playbooks, challengers, hall-of-fame evidence, matched controls, point-in-time profiles, raw candles, forecast history");

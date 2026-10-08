@@ -4,7 +4,15 @@ Dedicated Android repository for the Univest AutoTrade project.
 
 ## Current release
 
-**v2.9.3** — package `com.suhas.multyfideliverybuy`, versionCode **293**.
+**v2.9.4** — package `com.suhas.multyfideliverybuy`, versionCode **294**.
+
+### Calm UI architecture
+
+- **Execution** is the single home for live official Univest state, current positions, latest action and latency.
+- **Research** is the single home for historical learning, accuracy, playbooks, failure clusters and lifecycle analysis.
+- **Forecast** is forward-looking only: current action, Top 10 candidates, active Research trades and decision model.
+- **Settings** separates broker connection, official Univest trading, Research trading, reliability, data and diagnostics.
+- The v2.9.3 broker/signal execution semantics are intentionally unchanged in this UI-focused release.
 
 The official execution lane is locked to the official Univest Android package `com.univest.capp` and NSE CASH / CNC delivery.
 
