@@ -72,8 +72,8 @@ jobs:
           grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
           grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
-          grep -q "versionCode 295" app/build.gradle
-          grep -q "versionName '2.9.5'" app/build.gradle
+          grep -q "versionCode 296" app/build.gradle
+          grep -q "versionName '2.9.6'" app/build.gradle
           grep -Fq 'appHeader("EXECUTION", "Live Univest status & actions")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("RESEARCH", "What the system has learned")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("FORECAST", "What may happen next")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
@@ -101,6 +101,9 @@ jobs:
           grep -q 'ResearchIntradayScanner.refresh' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
           grep -q 'DAILY_RECOMMENDATION_CAP = 5' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
           grep -q 'UNIVEST 30-DAY BENCHMARK' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'UNIVEST AVG UPSIDE' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'FORECAST AVG UPSIDE' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'rolling30DayAverageUpsidePct' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
           grep -q 'ResearchBenchmarkContractTest' app/src/test/java/com/suhas/multyfideliverybuy/ResearchBenchmarkContractTest.java
           grep -q 'FrozenStrategyPolicyTest' app/src/test/java/com/suhas/multyfideliverybuy/FrozenStrategyPolicyTest.java
           ! grep -q 'Math.abs(at - priorAt) <= 30000L' app/src/main/java/com/suhas/multyfideliverybuy/ResearchStore.java

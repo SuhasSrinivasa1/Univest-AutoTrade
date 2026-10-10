@@ -4,13 +4,14 @@ Dedicated Android repository for the Univest AutoTrade project.
 
 ## Current release
 
-**v2.9.5** — package `com.suhas.multyfideliverybuy`, versionCode **295**.
+**v2.9.6** — package `com.suhas.multyfideliverybuy`, versionCode **296**.
 
 ### Reverse-engineering benchmark + frozen strategy policy
 
 - Official notification BUY/SELL execution, fresh-entry semantics, green-only exits and downward averaging are unchanged from the v2.9.3/v2.9.4 stable execution lane.
 - Every official Univest ENTRY now receives a standardized 40-parameter point-in-time Research fingerprint; unavailable fundamentals/sector inputs remain explicitly missing rather than fabricated.
 - Completed official ENTRY→EXIT cohorts produce a rolling 30-day benchmark for average/median upside and trading-session duration.
+- Execution shows Univest and Forecast 30-day average upside side by side; each uses whatever completed 30-day sample exists and displays 0.0% when no completed sample exists.
 - Research success is benchmarked against current official Univest upside with a primary two-trading-session window; Session 3 is diagnostic only.
 - Generic composite strategies stop drifting after promotion: up to 10 immutable frozen Champions are retained, and once at least 5 exist the generic decision core uses frozen strategies only.
 - Per-stock strategy memory remains adaptive indefinitely but has deliberately small influence so 100s/1000s of stock-specific histories do not overfit the global model.
@@ -22,7 +23,7 @@ Dedicated Android repository for the Univest AutoTrade project.
 - **Research** is the single home for historical learning, accuracy, playbooks, failure clusters and lifecycle analysis.
 - **Forecast** is forward-looking only: current action, live Top 5 recommendation/watch slots, active Research trades and decision model.
 - **Settings** separates broker connection, official Univest trading, Research trading, reliability, data and diagnostics.
-- The v2.9.3 stable broker/signal execution semantics remain intentionally unchanged; v2.9.5 changes only Research/forecasting, benchmark, strategy-governance and presentation code.
+- The v2.9.3 stable broker/signal execution semantics remain intentionally unchanged; v2.9.6 keeps official execution unchanged and adds the compact 30-day upside comparison to Execution.
 
 The official execution lane is locked to the official Univest Android package `com.univest.capp` and NSE CASH / CNC delivery.
 

@@ -157,6 +157,7 @@ public class DashboardActivity extends Activity {
         root.addView(appHeader("EXECUTION", "Live Univest status & actions"));
 
         root.addView(executionHeroCard(), margins(0, 20, 0, 14));
+        root.addView(executionUpsideMetricsRow(), margins(0, 0, 0, 14));
         root.addView(campaignTableCard(), margins(0, 0, 0, 14));
 
         Button sync = secondaryButton("SYNC BROKER STATUS");
@@ -524,7 +525,7 @@ public class DashboardActivity extends Activity {
 
         LinearLayout about = card();
         about.addView(sectionRow("ABOUT", "Orchestrated Research"));
-        about.addView(body("Univest AutoTrade v2.9.5"), margins(0, 10, 0, 0));
+        about.addView(body("Univest AutoTrade v2.9.6"), margins(0, 10, 0, 0));
         about.addView(meta("Package: com.suhas.multyfideliverybuy"), margins(0, 6, 0, 0));
         about.addView(meta("Official Univest execution and Research decisions remain separately attributed; Research→Univest same-symbol confirmation is intentionally additive."), margins(0, 6, 0, 0));
         root.addView(about, margins(0, 0, 0, 22));
@@ -543,7 +544,7 @@ public class DashboardActivity extends Activity {
         left.addView(text(subtitle, 12, SUBTEXT, false), margins(0, 3, 0, 0));
         row.addView(left, new LinearLayout.LayoutParams(0, -2, 1f));
 
-        TextView version = text("v2.9.5", 11, TEAL, true);
+        TextView version = text("v2.9.6", 11, TEAL, true);
         version.setGravity(Gravity.CENTER);
         version.setPadding(dp(10), dp(6), dp(10), dp(6));
         GradientDrawable chip = new GradientDrawable();
@@ -621,6 +622,37 @@ public class DashboardActivity extends Activity {
             render();
         });
         c.addView(manage, fixedMargins(-1, 50, 0, 12, 0, 0));
+        return c;
+    }
+
+    private View executionUpsideMetricsRow() {
+        JSONObject univest = UnivestBenchmark.snapshot(this);
+        double univestAverage = univest.optDouble("averageUpsidePct", 0);
+        int univestSample = univest.optInt("completed", 0);
+        double forecastAverage = ResearchTradeEngine.rolling30DayAverageUpsidePct(this);
+        int forecastSample = ResearchTradeEngine.rolling30DayClosedCount(this);
+
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+
+        LinearLayout.LayoutParams left = new LinearLayout.LayoutParams(0, -2, 1f);
+        left.setMargins(0, 0, dp(6), 0);
+        LinearLayout.LayoutParams right = new LinearLayout.LayoutParams(0, -2, 1f);
+        right.setMargins(dp(6), 0, 0, 0);
+
+        row.addView(upsideMetricCard("UNIVEST AVG UPSIDE", univestAverage, univestSample), left);
+        row.addView(upsideMetricCard("FORECAST AVG UPSIDE", forecastAverage, forecastSample), right);
+        return row;
+    }
+
+    private LinearLayout upsideMetricCard(String title, double value, int sample) {
+        LinearLayout c = card();
+        c.addView(text(title, 10, SUBTEXT, true));
+        String valueText = Math.abs(value) < 0.0001
+                ? "0.0%"
+                : String.format(Locale.US, "%+.1f%%", value);
+        c.addView(text(valueText, 22, value >= 0 ? GREEN : RED, true), margins(0, 6, 0, 0));
+        c.addView(meta("Rolling 30D • " + sample + " closed"), margins(0, 4, 0, 0));
         return c;
     }
 
@@ -1004,7 +1036,7 @@ public class DashboardActivity extends Activity {
         i.setType("application/zip");
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.5.zip");
+        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.6.zip");
         startActivityForResult(i, REQUEST_HISTORY_CREATE);
     }
 

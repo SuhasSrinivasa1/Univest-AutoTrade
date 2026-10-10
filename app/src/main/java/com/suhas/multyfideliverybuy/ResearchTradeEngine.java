@@ -1030,6 +1030,46 @@ final class ResearchTradeEngine {
         } catch (Exception ignored) {}
     }
 
+    static double rolling30DayAverageUpsidePct(Context c) {
+        return rollingAverageClosedUpsidePct(ResearchStore.positions(c), System.currentTimeMillis(), 30);
+    }
+
+    static int rolling30DayClosedCount(Context c) {
+        return rollingClosedCount(ResearchStore.positions(c), System.currentTimeMillis(), 30);
+    }
+
+    static double rollingAverageClosedUpsidePct(JSONArray positions, long now, int windowDays) {
+        if (positions == null || positions.length() == 0) return 0;
+        long cutoff = now - Math.max(1, windowDays) * 24L * 60L * 60L * 1000L;
+        double sum = 0;
+        int count = 0;
+        for (int i = 0; i < positions.length(); i++) {
+            JSONObject p = positions.optJSONObject(i);
+            if (p == null || !"CLOSED".equals(p.optString("state"))) continue;
+            long exitAt = p.optLong("exitAt", 0L);
+            if (exitAt <= 0 || exitAt < cutoff || exitAt > now) continue;
+            double net = p.optDouble("netPct", Double.NaN);
+            if (!Double.isFinite(net)) continue;
+            sum += net;
+            count++;
+        }
+        return count == 0 ? 0 : sum / count;
+    }
+
+    static int rollingClosedCount(JSONArray positions, long now, int windowDays) {
+        if (positions == null || positions.length() == 0) return 0;
+        long cutoff = now - Math.max(1, windowDays) * 24L * 60L * 60L * 1000L;
+        int count = 0;
+        for (int i = 0; i < positions.length(); i++) {
+            JSONObject p = positions.optJSONObject(i);
+            if (p == null || !"CLOSED".equals(p.optString("state"))) continue;
+            long exitAt = p.optLong("exitAt", 0L);
+            if (exitAt > 0 && exitAt >= cutoff && exitAt <= now
+                    && Double.isFinite(p.optDouble("netPct", Double.NaN))) count++;
+        }
+        return count;
+    }
+
     static String benchmarkScorecardText(Context c) {
         JSONObject ub = UnivestBenchmark.snapshot(c);
         JSONArray a = ResearchStore.positions(c);
@@ -1037,15 +1077,18 @@ final class ResearchTradeEngine {
         int evaluated = 0, wins = 0, realized = 0, realizedWins = 0;
         double returnSum = 0, sessionSum = 0;
         for (int i = 0; i < a.length(); i++) {
-            JSONObject p = a.optJSONObject(i); if (p == null || p.optLong("entryAt", 0) < cutoff) continue;
-            String o = p.optString("benchmarkOpportunityOutcome", "");
-            if (!o.isEmpty() && !"OPEN".equals(o)) {
-                evaluated++; if ("BENCHMARK_WIN".equals(o)) wins++;
+            JSONObject p = a.optJSONObject(i); if (p == null) continue;
+            if (p.optLong("entryAt", 0) >= cutoff) {
+                String o = p.optString("benchmarkOpportunityOutcome", "");
+                if (!o.isEmpty() && !"OPEN".equals(o)) {
+                    evaluated++; if ("BENCHMARK_WIN".equals(o)) wins++;
+                }
             }
-            if ("CLOSED".equals(p.optString("state"))) {
+            long exitAt = p.optLong("exitAt", 0);
+            if ("CLOSED".equals(p.optString("state")) && exitAt >= cutoff && exitAt <= System.currentTimeMillis()) {
                 realized++;
                 double net = p.optDouble("netPct", 0);
-                int sessions = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(p.optLong("entryAt", 0), p.optLong("exitAt", 0)));
+                int sessions = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(p.optLong("entryAt", 0), exitAt));
                 returnSum += net; sessionSum += sessions;
                 if ("BENCHMARK_WIN".equals(p.optString("benchmarkRealizedOutcome"))) realizedWins++;
             }
