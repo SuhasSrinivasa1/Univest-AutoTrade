@@ -6,12 +6,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -174,8 +176,23 @@ final class UnivestBenchmark {
 
     static int inclusiveTradingSessions(long entryAt, long exitAt) {
         if (entryAt <= 0 || exitAt < entryAt) return 0;
-        if (NseTradingCalendar.dayKey(entryAt).equals(NseTradingCalendar.dayKey(exitAt))) return 1;
-        return 1 + NseTradingCalendar.tradingSessionsElapsed(entryAt, exitAt);
+        String exitKey = NseTradingCalendar.dayKey(exitAt);
+        Calendar day = Calendar.getInstance(TimeZone.getTimeZone("Asia/Kolkata"));
+        day.setTimeInMillis(entryAt);
+        day.set(Calendar.HOUR_OF_DAY, 12);
+        day.set(Calendar.MINUTE, 0);
+        day.set(Calendar.SECOND, 0);
+        day.set(Calendar.MILLISECOND, 0);
+
+        int sessions = 0;
+        int guard = 0;
+        while (guard++ < 400) {
+            long t = day.getTimeInMillis();
+            if (NseTradingCalendar.isTradingDay(t)) sessions++;
+            if (exitKey.equals(NseTradingCalendar.dayKey(t))) break;
+            day.add(Calendar.DAY_OF_MONTH, 1);
+        }
+        return Math.max(1, sessions);
     }
 
     static String classifyBenchmarkOutcome(double realizedOrOpportunityPct, double targetPct, int holdingSessions) {
