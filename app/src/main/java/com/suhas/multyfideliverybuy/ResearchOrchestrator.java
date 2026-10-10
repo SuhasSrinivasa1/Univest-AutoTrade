@@ -81,9 +81,8 @@ final class ResearchOrchestrator {
                             "Pre-open freeze window was missed; ranking frozen at first live orchestrator tick without re-ranking.");
                 }
                 AppPrefs.setResearchOrchestrator(c, STAGE_LIVE,
-                        "Live Research monitor active • frozen forecast + one-minute path capture + entry/exit evaluation.");
-                JSONArray predictions = ResearchStore.predictions(c);
-                ResearchEventStore.captureTopCandidates(c, predictions, now, 10);
+                        "Live Research monitor active • tiered intraday rerank + one-minute path capture + entry/exit evaluation.");
+                ResearchIntradayScanner.refresh(c, now);
                 ResearchTradeEngine.evaluateLive(c);
                 return;
             }
@@ -96,7 +95,7 @@ final class ResearchOrchestrator {
                 }
                 AppPrefs.setResearchOrchestrator(c, STAGE_PREOPEN,
                         today.equals(AppPrefs.getResearchPreopenFreezeKey(c))
-                                ? "08:45+ pre-open forecast frozen for today's session. Live layer will not rewrite the frozen ranking."
+                                ? "08:45+ pre-open baseline frozen for today's session. Intraday Research may rerank the EOD shortlist using only live point-in-time data."
                                 : "No forecast targeted to today's session; waiting for the next EOD full-NSE scan.");
                 return;
             }
@@ -146,7 +145,9 @@ final class ResearchOrchestrator {
             snap.put("sessionKey", sessionKey);
             snap.put("frozenAt", now);
             snap.put("candidateCount", a.length());
-            snap.put("rankingImmutableDuringSession", true);
+            snap.put("rankingImmutableDuringSession", false);
+            snap.put("baselineImmutable", true);
+            snap.put("intradayRerankAllowed", true);
         } catch (Exception ignored) {}
         ResearchEventStore.appendDecisionSnapshot(c, "PREOPEN_FORECAST_FREEZE", snap);
         DiagnosticsStore.runtime(c, "RESEARCH_PREOPEN_FROZEN", "",

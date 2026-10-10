@@ -10,8 +10,8 @@ android {
         applicationId 'com.suhas.multyfideliverybuy'
         minSdk 26
         targetSdk 35
-        versionCode 294
-        versionName '2.9.4'
+        versionCode 295
+        versionName '2.9.5'
         // legacy CI marker only: versionName '2.2.0'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'

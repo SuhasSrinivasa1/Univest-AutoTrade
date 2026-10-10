@@ -193,6 +193,29 @@ public class DashboardActivity extends Activity {
                 AppPrefs.isPreMarketReady(this) ? GREEN : AMBER), margins(0, 8, 0, 0));
         root.addView(status, margins(0, 20, 0, 14));
 
+        LinearLayout benchmark = card();
+        benchmark.addView(sectionRow("UNIVEST 30-DAY BENCHMARK", "Official only"));
+        benchmark.addView(body(UnivestBenchmark.summaryText(this)), margins(0, 12, 0, 0));
+        benchmark.addView(meta("Benchmark uses signal-time market prices from official Univest ENTRY/EXIT profiles; Research trades do not contaminate it."), margins(0, 8, 0, 0));
+        root.addView(benchmark, margins(0, 0, 0, 14));
+
+        LinearLayout dna = card();
+        dna.addView(sectionRow("UNIVEST ENTRY DNA", "40-point snapshot"));
+        dna.addView(body(ResearchEntryFingerprint.coverageSummary(this)), margins(0, 12, 0, 0));
+        dna.addView(meta("Daily, 15-minute, 1-minute/live, market/sector, fundamentals slots and catalyst/time context are captured point-in-time. Missing fundamentals/sector data stays explicitly missing rather than being guessed."), margins(0, 8, 0, 0));
+        root.addView(dna, margins(0, 0, 0, 14));
+
+        LinearLayout frozen = card();
+        frozen.addView(sectionRow("FROZEN GENERIC STRATEGIES", "5–10 target"));
+        frozen.addView(body(ResearchPlaybookEngine.frozenSummaryText(this)), margins(0, 12, 0, 0));
+        frozen.addView(meta("Once a generic Champion freezes, its decision centroid never moves again. Per-stock memory remains adaptive and is capped to a small influence to avoid overfitting."), margins(0, 8, 0, 0));
+        root.addView(frozen, margins(0, 0, 0, 14));
+
+        LinearLayout scorecard = card();
+        scorecard.addView(sectionRow("OUR SCORECARD VS UNIVEST", "Rolling 30 days"));
+        scorecard.addView(body(ResearchTradeEngine.benchmarkScorecardText(this)), margins(0, 12, 0, 0));
+        root.addView(scorecard, margins(0, 0, 0, 14));
+
         Button scan = primaryButton("RUN FULL NSE OFF-MARKET RESEARCH");
         scan.setOnClickListener(v -> runResearchNow(scan));
         root.addView(scan, fixedMargins(-1, 54, 0, 0, 0, 14));
@@ -201,10 +224,10 @@ public class DashboardActivity extends Activity {
         performance.addView(sectionRow("PERFORMANCE & ACCOUNTABILITY", "Historical"));
         performance.addView(subsectionTitle("Research accuracy"), margins(0, 12, 0, 4));
         performance.addView(body(ResearchTradeEngine.accuracyText(this)));
-        performance.addView(meta("Wins require ≥0.5% estimated net profit. Open trades remain unresolved, not losses."), margins(0, 6, 0, 10));
+        performance.addView(meta("Legacy ≥0.5% profitability remains visible for continuity; the primary Research objective is now the rolling Univest benchmark within two trading sessions."), margins(0, 6, 0, 10));
         performance.addView(subsectionTitle("Forecast before Univest"), margins(0, 4, 0, 4));
         performance.addView(body(ResearchEngine.forecastAccountabilityText(this)));
-        performance.addView(meta("The primary test is whether an eventual official Univest ENTRY was already in the frozen Top 10 before its notification."), margins(0, 6, 0, 10));
+        performance.addView(meta("The causal test is whether an eventual official Univest ENTRY was already ranked before its notification; intraday snapshots are timestamped so later information cannot leak backward."), margins(0, 6, 0, 10));
         performance.addView(subsectionTitle("Repeated failure clusters"), margins(0, 4, 0, 4));
         performance.addView(body(ResearchTradeEngine.failureClustersText(this)));
         performance.addView(meta("Repeated evidence may promote a Challenger review; one bad trade never rewrites a Champion."), margins(0, 6, 0, 0));
@@ -214,7 +237,7 @@ public class DashboardActivity extends Activity {
         playbooks.addView(sectionRow("PLAYBOOKS", "Champions + evidence"));
         playbooks.addView(subsectionTitle("Champion composites"), margins(0, 12, 0, 4));
         playbooks.addView(body(ResearchEngine.playbooksText(this)));
-        playbooks.addView(meta("Playbooks are non-exclusive: several agreeing playbooks can strengthen the same forecast."), margins(0, 6, 0, 10));
+        playbooks.addView(meta("Playbooks are non-exclusive. Generic winners freeze permanently after enough evidence; stock-specific affinity keeps learning separately."), margins(0, 6, 0, 10));
         playbooks.addView(subsectionTitle("Component evidence"), margins(0, 4, 0, 4));
         playbooks.addView(body(ResearchEngine.strategiesText(this)));
         playbooks.addView(meta("Component scores are building blocks inside composite playbooks, not competing strategy tabs."), margins(0, 6, 0, 0));
@@ -243,7 +266,9 @@ public class DashboardActivity extends Activity {
 
         LinearLayout intro = card();
         intro.addView(sectionRow("FORECAST ENGINE", lastResearchTime()));
-        intro.addView(body("Scans the eligible NSE CASH universe off-market, freezes the Top 10, then monitors those candidates live for entry/exit timing."), margins(0, 12, 0, 0));
+        intro.addView(body("Scans the eligible NSE CASH universe off-market, keeps a broad candidate pool, then reranks the strongest candidates about every 15 minutes as point-in-time intraday evidence develops."), margins(0, 12, 0, 0));
+        intro.addView(meta(ResearchIntradayScanner.statusText(this)), margins(0, 8, 0, 0));
+        intro.addView(meta("Up to five high-conviction Research recommendations may trigger in a session. Five is a maximum, never a quota; weak days may produce fewer."), margins(0, 6, 0, 0));
         intro.addView(meta(AppPrefs.isResearchAutoTradeEnabled(this)
                 ? "Research AutoTrade ON • qualified Research entries/exits may place real CNC orders"
                 : "Research AutoTrade OFF • research entry/exit actions require confirmation"), margins(0, 8, 0, 0));
@@ -265,8 +290,8 @@ public class DashboardActivity extends Activity {
         }
 
         LinearLayout expected = card();
-        expected.addView(sectionRow("NEXT EXPECTED RECOMMENDATIONS", "Top 10"));
-        expected.addView(body(ResearchEngine.predictionsText(this, 10)), margins(0, 12, 0, 0));
+        expected.addView(sectionRow("LIVE RECOMMENDATIONS / WATCHLIST", "Top 5"));
+        expected.addView(body(ResearchEngine.predictionsText(this, 5)), margins(0, 12, 0, 0));
         root.addView(expected, margins(0, 0, 0, 14));
 
         LinearLayout activeResearch = card();
@@ -276,7 +301,7 @@ public class DashboardActivity extends Activity {
 
         LinearLayout ranges = card();
         ranges.addView(sectionRow("ENTRY / EXIT MODEL", "How decisions are used"));
-        ranges.addView(body("The frozen sell zone is a reference, not a forced target. After entry, the Exit Model waits for ≥0.5% estimated net profit plus weakening/exhaustion evidence; temporary drawdowns are tracked as MAE rather than automatically treated as failures."), margins(0, 12, 0, 0));
+        ranges.addView(body("Official Univest BUY/SELL and downward averaging are unchanged. Research recommendations are judged against the rolling 30-day Univest upside benchmark with a two-session primary evaluation window; Session 3 is diagnostic only, not a success extension."), margins(0, 12, 0, 0));
         root.addView(ranges, margins(0, 0, 0, 14));
 
         Button scan = primaryButton("REFRESH FORECAST OFF-MARKET");
@@ -499,7 +524,7 @@ public class DashboardActivity extends Activity {
 
         LinearLayout about = card();
         about.addView(sectionRow("ABOUT", "Orchestrated Research"));
-        about.addView(body("Univest AutoTrade v2.9.4"), margins(0, 10, 0, 0));
+        about.addView(body("Univest AutoTrade v2.9.5"), margins(0, 10, 0, 0));
         about.addView(meta("Package: com.suhas.multyfideliverybuy"), margins(0, 6, 0, 0));
         about.addView(meta("Official Univest execution and Research decisions remain separately attributed; Research→Univest same-symbol confirmation is intentionally additive."), margins(0, 6, 0, 0));
         root.addView(about, margins(0, 0, 0, 22));
@@ -518,7 +543,7 @@ public class DashboardActivity extends Activity {
         left.addView(text(subtitle, 12, SUBTEXT, false), margins(0, 3, 0, 0));
         row.addView(left, new LinearLayout.LayoutParams(0, -2, 1f));
 
-        TextView version = text("v2.9.4", 11, TEAL, true);
+        TextView version = text("v2.9.5", 11, TEAL, true);
         version.setGravity(Gravity.CENTER);
         version.setPadding(dp(10), dp(6), dp(10), dp(6));
         GradientDrawable chip = new GradientDrawable();
@@ -979,7 +1004,7 @@ public class DashboardActivity extends Activity {
         i.setType("application/zip");
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.4.zip");
+        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.5.zip");
         startActivityForResult(i, REQUEST_HISTORY_CREATE);
     }
 

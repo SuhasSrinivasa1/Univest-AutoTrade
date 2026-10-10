@@ -72,8 +72,8 @@ jobs:
           grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
           grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
-          grep -q "versionCode 294" app/build.gradle
-          grep -q "versionName '2.9.4'" app/build.gradle
+          grep -q "versionCode 295" app/build.gradle
+          grep -q "versionName '2.9.5'" app/build.gradle
           grep -Fq 'appHeader("EXECUTION", "Live Univest status & actions")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("RESEARCH", "What the system has learned")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("FORECAST", "What may happen next")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
@@ -92,6 +92,18 @@ jobs:
           grep -q 'ResearchPlaybookEngineTest' app/src/test/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngineTest.java
           grep -q 'GreenOfficialExitTest' app/src/test/java/com/suhas/multyfideliverybuy/GreenOfficialExitTest.java
           grep -q 'FinalStabilityContractTest' app/src/test/java/com/suhas/multyfideliverybuy/FinalStabilityContractTest.java
+          grep -q 'WINDOW_DAYS = 30' app/src/main/java/com/suhas/multyfideliverybuy/UnivestBenchmark.java
+          grep -q 'PRIMARY_MAX_SESSIONS = 2' app/src/main/java/com/suhas/multyfideliverybuy/UnivestBenchmark.java
+          grep -q 'parameterCount", PARAMETERS.length' app/src/main/java/com/suhas/multyfideliverybuy/ResearchEntryFingerprint.java
+          grep -q 'FROZEN_TARGET = 10' app/src/main/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngine.java
+          grep -q 'decisionCoreFrozen' app/src/main/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngine.java
+          grep -q 'StockStrategyMemory.applyToCandidate' app/src/main/java/com/suhas/multyfideliverybuy/ResearchEngine.java
+          grep -q 'ResearchIntradayScanner.refresh' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
+          grep -q 'DAILY_RECOMMENDATION_CAP = 5' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
+          grep -q 'UNIVEST 30-DAY BENCHMARK' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -q 'ResearchBenchmarkContractTest' app/src/test/java/com/suhas/multyfideliverybuy/ResearchBenchmarkContractTest.java
+          grep -q 'FrozenStrategyPolicyTest' app/src/test/java/com/suhas/multyfideliverybuy/FrozenStrategyPolicyTest.java
+          ! grep -q 'Math.abs(at - priorAt) <= 30000L' app/src/main/java/com/suhas/multyfideliverybuy/ResearchStore.java
           grep -q 'RELEASE_KEYSTORE_B64' .github/workflows/android-release.yml
           test -s RELEASE_SIGNING_CERT.pem
           grep -Eq '^[0-9a-f]{64}$' RELEASE_SIGNING_CERT_SHA256.txt

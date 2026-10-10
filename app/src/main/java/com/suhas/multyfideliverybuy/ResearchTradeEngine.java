@@ -22,6 +22,7 @@ final class ResearchTradeEngine {
     static final double MIN_NET_WIN_PCT = 0.50;
     static final int ENTRY_SCORE_MIN = 80;
     static final int ENTRY_CONSENSUS_MIN = 2;
+    static final int DAILY_RECOMMENDATION_CAP = 5;
     private static final String CHANNEL = "research_trade_signals";
 
     private ResearchTradeEngine() {}
@@ -37,7 +38,7 @@ final class ResearchTradeEngine {
             String today = NseTradingCalendar.dayKey(System.currentTimeMillis());
             if (!today.equals(AppPrefs.getResearchForecastTargetKey(c))) {
                 DiagnosticsStore.runtime(c, "RESEARCH_STALE_FORECAST_SKIP", "",
-                        "No frozen Research forecast targets today's NSE session; no new Research entries evaluated.");
+                        "No Research forecast targets today's NSE session; no new Research entries evaluated.");
                 monitorOpenPositions(c);
                 return;
             }
@@ -47,7 +48,9 @@ final class ResearchTradeEngine {
             boolean auto = AppPrefs.isResearchAutoTradeEnabled(c);
             int maxTracked = auto ? AppPrefs.getResearchMaxPositions(c) : 10;
             int active = activeCount(c);
-            for (int i = 0; i < predictions.length() && i < 20 && active < maxTracked; i++) {
+            int recommendedToday = researchEntriesToday(c);
+            for (int i = 0; i < predictions.length() && i < 20 && active < maxTracked
+                    && recommendedToday < DAILY_RECOMMENDATION_CAP; i++) {
                 JSONObject p = predictions.optJSONObject(i);
                 if (p == null) continue;
                 String symbol = p.optString("symbol", "").trim().toUpperCase(Locale.US);
@@ -59,6 +62,10 @@ final class ResearchTradeEngine {
                         String retry = executeBuy(c, symbol, true);
                         DiagnosticsStore.runtime(c, "RESEARCH_AUTO_RETRY", symbol, retry);
                     }
+                    continue;
+                }
+                if (hasResearchEntryToday(c, symbol)) {
+                    logSkip(c, symbol, "ALREADY_RECOMMENDED_TODAY", "Research already issued a recommendation for this symbol today.");
                     continue;
                 }
 
@@ -86,14 +93,17 @@ final class ResearchTradeEngine {
                 if (sellLow > ltp) {
                     double potentialNet = DeliveryNetTarget.estimatedNetProfit(ltp, shadowQty, sellLow);
                     double potentialPct = potentialNet / Math.max(1.0, ltp * shadowQty) * 100.0;
-                    if (potentialPct < MIN_NET_WIN_PCT) {
-                        logSkip(c, symbol, "INSUFFICIENT_NET_EDGE", "Reference sell zone offers only " + one(potentialPct) + "% estimated net.");
+                    double requiredEdge = Math.max(MIN_NET_WIN_PCT, UnivestBenchmark.targetUpsidePct(c));
+                    if (potentialPct < requiredEdge) {
+                        logSkip(c, symbol, "INSUFFICIENT_BENCHMARK_EDGE", "Reference sell zone offers only " + one(potentialPct)
+                                + "% estimated net vs current Univest benchmark target " + one(requiredEdge) + "%.");
                         continue;
                     }
                 }
 
                 JSONObject pos = openShadow(c, p, ltp, i + 1);
                 active++;
+                recommendedToday++;
                 postEntryReady(c, pos);
 
                 if (auto && AppPrefs.isLiveMode(c) && AppPrefs.isReadyForBuy(c)) {
@@ -444,6 +454,7 @@ final class ResearchTradeEngine {
                 JSONObject p = a.optJSONObject(i);
                 if (p == null) continue;
                 replayMinutePath(c, p);
+                updateBenchmarkEvaluation(c, p);
                 if ("CLOSED".equals(p.optString("state"))) {
                     double net = p.optDouble("netPct", 0);
                     double mae = p.optDouble("maePct", 0);
@@ -467,9 +478,9 @@ final class ResearchTradeEngine {
                     p.put("failureBucket", failureBucket);
                 } else {
                     int horizon = Math.max(1, p.optInt("evaluationHorizonSessions",
-                            evaluationHorizonSessions(p.optString("strategy"))));
-                    int elapsed = NseTradingCalendar.tradingSessionsElapsed(
-                            p.optLong("entryAt", 0L), System.currentTimeMillis());
+                            UnivestBenchmark.PRIMARY_MAX_SESSIONS));
+                    int elapsed = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(
+                            p.optLong("entryAt", 0L), System.currentTimeMillis()));
                     p.put("evaluationSessionsElapsed", elapsed);
                     p.put("evaluationHorizonSessions", horizon);
                     if (elapsed >= horizon && "OPEN".equals(p.optString("evaluationState", "OPEN"))) {
@@ -719,6 +730,9 @@ final class ResearchTradeEngine {
                     .append(one(p.optDouble("mfePct", 0))).append("%")
                     .append("\nExit model: ").append(p.optString("exitState", "HOLD"))
                     .append(" • attribution: ").append(p.optString("signalAttribution", "RESEARCH_ONLY"))
+                    .append("\nBenchmark target +").append(one(p.optDouble("benchmarkTargetUpsidePct", MIN_NET_WIN_PCT)))
+                    .append("% ≤").append(p.optInt("benchmarkMaxSessions", UnivestBenchmark.PRIMARY_MAX_SESSIONS))
+                    .append(" sessions • ").append(p.optString("benchmarkOpportunityOutcome", "OPEN"))
                     .append("\n").append(p.optString("lastReason", "Monitoring entry/exit conditions."));
         }
         return b.length() == 0 ? "No active Research trades. Entry-ready candidates will appear here." : b.toString();
@@ -778,8 +792,15 @@ final class ResearchTradeEngine {
             p.put("signalAttribution", hasOfficialEntryBefore(c, prediction.optString("symbol"), now)
                     ? "UNIVEST_THEN_RESEARCH_CONFIRMED" : "RESEARCH_ONLY");
             p.put("exitState", "HOLD");
-            p.put("evaluationHorizonSessions", evaluationHorizonSessions(prediction.optString("strategy")));
+            JSONObject benchmark = UnivestBenchmark.snapshot(c);
+            p.put("benchmarkTargetUpsidePct", benchmark.optDouble("targetUpsidePct", MIN_NET_WIN_PCT));
+            p.put("benchmarkReferenceAverageUpsidePct", benchmark.optDouble("averageUpsidePct", 0));
+            p.put("benchmarkReferenceAverageHoldingSessions", benchmark.optDouble("averageHoldingSessions", 0));
+            p.put("benchmarkReferenceSample", benchmark.optInt("completed", 0));
+            p.put("benchmarkMaxSessions", UnivestBenchmark.PRIMARY_MAX_SESSIONS);
+            p.put("evaluationHorizonSessions", UnivestBenchmark.PRIMARY_MAX_SESSIONS);
             p.put("evaluationState", "OPEN");
+            p.put("benchmarkOpportunityOutcome", "OPEN");
             p.put("lastReason", "Entry trigger reached inside frozen Research buy/chase range.");
         } catch (Exception ignored) {}
         JSONArray a = ResearchStore.positions(c); a.put(p); ResearchStore.savePositions(c, a);
@@ -941,6 +962,10 @@ final class ResearchTradeEngine {
                     ? "SAME_DAY" : "MULTI_DAY");
             double mfe = p.optDouble("mfePct", 0);
             p.put("mfeCapturePct", mfe > 0 ? Math.max(0, Math.min(100, net / mfe * 100.0)) : 0);
+            double target = p.optDouble("benchmarkTargetUpsidePct", UnivestBenchmark.targetUpsidePct(c));
+            int sessions = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(p.optLong("entryAt", now), now));
+            p.put("benchmarkRealizedHoldingSessions", sessions);
+            p.put("benchmarkRealizedOutcome", UnivestBenchmark.classifyBenchmarkOutcome(net, target, sessions));
             DiagnosticsStore.runtime(c, "RESEARCH_TRADE_CLOSED_RECONCILED", p.optString("symbol"),
                     exitType + " • net " + one(net) + "% • " + reason);
             ResearchEventStore.appendDecisionSnapshot(c, "RESEARCH_TRADE_CLOSED_RECONCILED", p);
@@ -949,9 +974,7 @@ final class ResearchTradeEngine {
     }
 
     private static int evaluationHorizonSessions(String strategy) {
-        if ("VOLUME_BREAKOUT".equals(strategy) || "MOMENTUM_CONTINUATION".equals(strategy)) return 3;
-        if ("TREND_PULLBACK".equals(strategy)) return 5;
-        return 10;
+        return UnivestBenchmark.PRIMARY_MAX_SESSIONS;
     }
 
     private static double estimatedNetPct(JSONObject p, double sellPrice) {
@@ -995,12 +1018,95 @@ final class ResearchTradeEngine {
                     ? "SAME_DAY" : "MULTI_DAY");
             double mfe = p.optDouble("mfePct", 0);
             p.put("mfeCapturePct", mfe > 0 ? Math.max(0, Math.min(100, net / mfe * 100.0)) : 0);
+            double target = p.optDouble("benchmarkTargetUpsidePct", UnivestBenchmark.targetUpsidePct(c));
+            int sessions = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(p.optLong("entryAt", now), now));
+            p.put("benchmarkRealizedHoldingSessions", sessions);
+            p.put("benchmarkRealizedOutcome", UnivestBenchmark.classifyBenchmarkOutcome(net, target, sessions));
             replaceInArray(a, index, p);
             DiagnosticsStore.runtime(c, "RESEARCH_TRADE_CLOSED", p.optString("symbol"),
                     exitType + " • net " + one(net) + "% • " + reason);
             ResearchEventStore.appendDecisionSnapshot(c, "RESEARCH_TRADE_CLOSED", p);
             AppPrefs.setResearchAction(c, "", "");
         } catch (Exception ignored) {}
+    }
+
+    static String benchmarkScorecardText(Context c) {
+        JSONObject ub = UnivestBenchmark.snapshot(c);
+        JSONArray a = ResearchStore.positions(c);
+        long cutoff = System.currentTimeMillis() - 30L * 24L * 60L * 60L * 1000L;
+        int evaluated = 0, wins = 0, realized = 0, realizedWins = 0;
+        double returnSum = 0, sessionSum = 0;
+        for (int i = 0; i < a.length(); i++) {
+            JSONObject p = a.optJSONObject(i); if (p == null || p.optLong("entryAt", 0) < cutoff) continue;
+            String o = p.optString("benchmarkOpportunityOutcome", "");
+            if (!o.isEmpty() && !"OPEN".equals(o)) {
+                evaluated++; if ("BENCHMARK_WIN".equals(o)) wins++;
+            }
+            if ("CLOSED".equals(p.optString("state"))) {
+                realized++;
+                double net = p.optDouble("netPct", 0);
+                int sessions = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(p.optLong("entryAt", 0), p.optLong("exitAt", 0)));
+                returnSum += net; sessionSum += sessions;
+                if ("BENCHMARK_WIN".equals(p.optString("benchmarkRealizedOutcome"))) realizedWins++;
+            }
+        }
+        double researchAvg = realized > 0 ? returnSum / realized : 0;
+        double researchSessions = realized > 0 ? sessionSum / realized : 0;
+        boolean beatsReturn = realized > 0 && researchAvg >= ub.optDouble("averageUpsidePct", Double.POSITIVE_INFINITY);
+        boolean beatsTime = realized > 0 && researchSessions <= ub.optDouble("averageHoldingSessions", 0);
+        return "Univest 30D • avg upside " + one(ub.optDouble("averageUpsidePct")) + "% • avg hold "
+                + String.format(Locale.US, "%.2f", ub.optDouble("averageHoldingSessions")) + " sessions • sample " + ub.optInt("completed")
+                + "\nResearch 30D • avg realized " + one(researchAvg) + "% • avg hold " + String.format(Locale.US, "%.2f", researchSessions)
+                + " sessions • closed " + realized
+                + "\nBenchmark opportunities " + wins + "/" + evaluated + " • realized benchmark wins " + realizedWins + "/" + realized
+                + "\nObjective status • return " + (beatsReturn ? "BEATING" : "NOT YET BEATING")
+                + " • duration " + (beatsTime ? "BEATING" : "NOT YET BEATING");
+    }
+
+    private static void updateBenchmarkEvaluation(Context c, JSONObject p) {
+        if (p == null || p.optBoolean("benchmarkEvaluationLocked", false)) return;
+        long entryAt = p.optLong("entryAt", 0L);
+        if (entryAt <= 0) return;
+        long end = "CLOSED".equals(p.optString("state")) && p.optLong("exitAt", 0L) > 0
+                ? p.optLong("exitAt") : System.currentTimeMillis();
+        int sessions = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(entryAt, end));
+        double target = p.optDouble("benchmarkTargetUpsidePct", UnivestBenchmark.targetUpsidePct(c));
+        double mfe = p.optDouble("mfePct", 0);
+        try {
+            p.put("benchmarkEvaluationSessions", sessions);
+            if (mfe >= target && sessions <= UnivestBenchmark.PRIMARY_MAX_SESSIONS) {
+                p.put("benchmarkOpportunityOutcome", "BENCHMARK_WIN");
+                p.put("benchmarkOpportunityPct", mfe);
+                p.put("benchmarkEvaluationLocked", true);
+            } else if ("CLOSED".equals(p.optString("state"))) {
+                p.put("benchmarkOpportunityOutcome", mfe > 0 ? "PROFITABLE_MISS" : "FAIL");
+                p.put("benchmarkOpportunityPct", mfe);
+                p.put("benchmarkEvaluationLocked", true);
+            } else if (sessions >= UnivestBenchmark.PRIMARY_MAX_SESSIONS) {
+                p.put("benchmarkOpportunityOutcome", mfe > 0 ? "PROFITABLE_MISS" : "FAIL");
+                p.put("benchmarkOpportunityPct", mfe);
+                p.put("benchmarkEvaluationLocked", true);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private static int researchEntriesToday(Context c) {
+        JSONArray a = ResearchStore.positions(c); String today = NseTradingCalendar.dayKey(System.currentTimeMillis()); int n = 0;
+        for (int i = 0; i < a.length(); i++) {
+            JSONObject p = a.optJSONObject(i);
+            if (p != null && today.equals(NseTradingCalendar.dayKey(p.optLong("entryAt", 0)))) n++;
+        }
+        return n;
+    }
+
+    private static boolean hasResearchEntryToday(Context c, String symbol) {
+        JSONArray a = ResearchStore.positions(c); String today = NseTradingCalendar.dayKey(System.currentTimeMillis());
+        for (int i = 0; i < a.length(); i++) {
+            JSONObject p = a.optJSONObject(i);
+            if (p != null && symbol.equalsIgnoreCase(p.optString("symbol"))
+                    && today.equals(NseTradingCalendar.dayKey(p.optLong("entryAt", 0)))) return true;
+        }
+        return false;
     }
 
     static String failureClustersText(Context c) {

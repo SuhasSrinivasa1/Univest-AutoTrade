@@ -276,7 +276,10 @@ final class ResearchEngine {
         // News can modestly re-order the technically qualified shortlist, but cannot rescue an
         // instrument that failed the full-NSE technical/liquidity data scan.
         // Composite playbooks are non-exclusive: one stock may receive several independent votes.
-        for (JSONObject candidate : candidates) ResearchPlaybookEngine.applyToCandidate(c, candidate);
+        for (JSONObject candidate : candidates) {
+            ResearchPlaybookEngine.applyToCandidate(c, candidate);
+            StockStrategyMemory.applyToCandidate(c, candidate);
+        }
         candidates.sort((a, b) -> Double.compare(
                 b.optDouble("ensembleScore", b.optInt("similarity")),
                 a.optDouble("ensembleScore", a.optInt("similarity"))));
@@ -433,7 +436,7 @@ final class ResearchEngine {
 
     static String predictionsText(Context c, int limit) {
         JSONArray a = ResearchStore.predictions(c);
-        if (a.length() == 0) return "No frozen full-NSE forecast completed yet.";
+        if (a.length() == 0) return "No Research forecast completed yet.";
         StringBuilder b = new StringBuilder();
         for (int i = 0; i < a.length() && i < limit; i++) {
             JSONObject j = a.optJSONObject(i);
@@ -442,7 +445,7 @@ final class ResearchEngine {
             b.append(i + 1).append(". ").append(j.optString("symbol"))
                     .append(" - ").append(j.optInt("similarity")).append("/100 - ")
                     .append(j.optString("strategy"))
-                    .append("\nConsensus ").append(j.optInt("consensus")).append("/5 • FROZEN FORECAST")
+                    .append("\nConsensus ").append(j.optInt("consensus")).append("/5 • ").append(j.optString("freezeType", "EOD_FROZEN"))
                     .append(" • data ").append(j.optInt("dataConfidence")).append("%");
             if (!j.optString("bestPlaybook", "").isEmpty()) {
                 b.append("\nPlaybook ").append(j.optString("bestPlaybook"))
@@ -450,7 +453,20 @@ final class ResearchEngine {
                         .append("/100 • votes ").append(j.optInt("playbookVotes", 0))
                         .append(" • ensemble ").append(String.format(Locale.US, "%.0f",
                                 j.optDouble("ensembleScore", j.optInt("similarity")))).append("/100");
+                if (j.optInt("frozenPlaybookVotes", 0) > 0)
+                    b.append(" • frozen votes ").append(j.optInt("frozenPlaybookVotes"));
             }
+            if (j.optInt("stockAffinityEvidence", 0) >= 2)
+                b.append("\nStock memory ").append(String.format(Locale.US, "%.0f", j.optDouble("stockAffinityScore", 0)))
+                        .append("/100 from ").append(j.optInt("stockAffinityEvidence")).append(" official entries");
+            if (j.optInt("playbookOfficialCompleted", 0) > 0)
+                b.append("\nSimilar official outcomes • avg ")
+                        .append(String.format(Locale.US, "%+.1f%%", j.optDouble("playbookAvgOfficialUpsidePct", 0)))
+                        .append(" • ≤2 sessions ").append(String.format(Locale.US, "%.0f%%", j.optDouble("playbookOfficialByTwoSessionsPct", 0)))
+                        .append(" • n=").append(j.optInt("playbookOfficialCompleted"));
+            if (j.has("benchmarkTargetUpsidePct"))
+                b.append("\nBenchmark target ≥+").append(String.format(Locale.US, "%.1f", j.optDouble("benchmarkTargetUpsidePct")))
+                        .append("% within ≤").append(j.optInt("benchmarkMaxSessions", 2)).append(" sessions");
             b.append(String.format(Locale.US,
                             "\nBuy %.2f-%.2f • chase %.2f\nReference sell zone %.2f-%.2f",
                             j.optDouble("buyLow"), j.optDouble("buyHigh"), j.optDouble("chaseLimit"),

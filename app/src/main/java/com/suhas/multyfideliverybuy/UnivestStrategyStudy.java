@@ -63,6 +63,13 @@ final class UnivestStrategyStudy {
                 .append(String.format(Locale.US, "%.1f", meanDays)).append(" days");
         if (bestHour >= 0) s.append(" • most common observed entry hour ")
                 .append(String.format(Locale.US, "%02d:00–%02d:59 IST", bestHour, bestHour));
+        JSONObject benchmark = UnivestBenchmark.snapshot(c);
+        if (benchmark.optInt("completed", 0) > 0) {
+            s.append(" • rolling-30D official avg upside ")
+                    .append(String.format(Locale.US, "%+.1f%%", benchmark.optDouble("averageUpsidePct")))
+                    .append(" • avg hold ")
+                    .append(String.format(Locale.US, "%.2f sessions", benchmark.optDouble("averageHoldingSessions")));
+        }
         s.append(". Nightly Research replay keeps pre-signal features separate from later MFE/MAE/exit outcomes.");
 
         String summary = s.toString();

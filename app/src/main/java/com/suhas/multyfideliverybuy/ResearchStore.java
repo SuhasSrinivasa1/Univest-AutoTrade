@@ -33,6 +33,7 @@ final class ResearchStore {
     private static final String PLAYBOOK_REGISTRY = "playbook_registry.json";
     private static final String MATCHED_CONTROLS = "matched_controls.jsonl";
     private static final String SIGNAL_PROFILES = "signal_profiles.jsonl";
+    private static final String STOCK_MEMORY = "stock_strategy_memory.json";
     private static final Pattern DURATION = Pattern.compile("(?i)(?:duration|holding(?:\\s+period)?|time\\s*horizon)\\s*[:\\-]?\\s*(\\d+(?:\\.\\d+)?)\\s*(?:(?:-|–|—|to)\\s*(\\d+(?:\\.\\d+)?))?\\s*months?");
 
     private ResearchStore() {}
@@ -43,14 +44,6 @@ final class ResearchStore {
             String symbol = signal.symbol == null ? "" : signal.symbol.trim().toUpperCase(Locale.US);
             long at = postTime > 0 ? postTime : System.currentTimeMillis();
             String raw = signal.rawText == null ? "" : signal.rawText.trim();
-            List<JSONObject> recent = readJsonLines(context, SIGNALS, 30);
-            for (int i = recent.size() - 1; i >= 0; i--) {
-                JSONObject prior = recent.get(i);
-                if (!signal.type.name().equals(prior.optString("type"))) continue;
-                if (!symbol.equalsIgnoreCase(prior.optString("symbol"))) continue;
-                long priorAt = prior.optLong("signalAt", 0L);
-                if (Math.abs(at - priorAt) <= 30000L && raw.equals(prior.optString("raw", "").trim())) return;
-            }
             try {
                 InstrumentRepository.Instrument i = InstrumentRepository.resolve(InstrumentRepository.load(context), signal.symbol);
                 if (i != null) symbol = i.symbol;
@@ -138,6 +131,11 @@ final class ResearchStore {
         return readJsonLines(c, SIGNAL_PROFILES, Math.max(1, limit));
     }
 
+    static synchronized JSONObject stockStrategyMemory(Context c) { return readObject(c, STOCK_MEMORY); }
+    static synchronized void saveStockStrategyMemory(Context c, JSONObject o) {
+        writeJson(c, STOCK_MEMORY, o == null ? new JSONObject().toString() : o.toString());
+    }
+
     static double durationMonths(String raw) {
         Matcher m = DURATION.matcher(raw == null ? "" : raw);
         if (!m.find()) return 0;
@@ -156,11 +154,11 @@ final class ResearchStore {
             if(!"ENTRY".equals(j.optString("type"))) continue;
             if(b.length()>0)b.append("\n\n");
             b.append(j.optString("symbol","?")).append(" • ")
-             .append(j.optDouble("durationMonths",0)>0?trim(j.optDouble("durationMonths"))+" month horizon":"eligible 1–3 month")
+             .append(j.optDouble("durationMonths",0)>0?trim(j.optDouble("durationMonths"))+" month stated horizon":"official fresh recommendation")
              .append("\n").append(AppPrefs.istDayKey(j.optLong("signalAt",0)));
             n++;
         }
-        return b.length()==0?"No eligible 1–3 month recommendations archived yet.":b.toString();
+        return b.length()==0?"No official fresh recommendations archived yet.":b.toString();
     }
 
     private static String trim(double v){ return Math.abs(v-Math.rint(v))<0.001?String.valueOf((int)Math.rint(v)):String.format(Locale.US,"%.1f",v); }

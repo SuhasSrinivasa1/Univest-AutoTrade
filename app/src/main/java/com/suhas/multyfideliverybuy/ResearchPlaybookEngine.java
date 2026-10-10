@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -21,8 +23,17 @@ import java.util.Map;
  * playbooks are ranked primarily by evidence and genuine pre-Univest forecast hits.
  */
 final class ResearchPlaybookEngine {
-    static final int SCHEMA_VERSION = 1;
-    static final int ACTIVE_LIMIT = 5;
+    static final int SCHEMA_VERSION = 2;
+    static final int ACTIVE_LIMIT = 10;
+    static final int FROZEN_TARGET = 10;
+    static final int MIN_FROZEN_FOR_STABLE_DECISIONS = 5;
+    static final int FREEZE_MIN_EVIDENCE = 30;
+    static final int FREEZE_MIN_VALIDATION = 12;
+    static final int FREEZE_MIN_UNIQUE_SYMBOLS = 8;
+    static final double FREEZE_MIN_TOP10_RATE = 0.50;
+    static final double FREEZE_MIN_RATING = 72.0;
+    static final int FREEZE_MIN_COMPLETED_OUTCOMES = 8;
+    static final double FREEZE_MIN_TWO_SESSION_RATE = 60.0;
     private static final String[] COMPONENTS = {
             "volumeBreakout", "trendPullback", "momentum", "qualityRerating", "catalystSector"
     };
@@ -109,97 +120,172 @@ final class ResearchPlaybookEngine {
         Context c = context.getApplicationContext();
         JSONObject previous = ResearchStore.playbookRegistry(c);
         Map<String, Aggregate> groups = new LinkedHashMap<>();
-        List<JSONObject> history = ResearchStore.forecastHistory(c, 400);
+        List<JSONObject> history = ResearchStore.forecastHistory(c, 500);
 
         for (JSONObject row : ResearchStore.featureSnapshots(c)) {
-            if (!"OFFICIAL_UNIVEST_ENTRY".equals(row.optString("source"))) continue;
+            if (!"OFFICIAL_UNIVEST_ENTRY".equals(row.optString("source"))
+                    || !"ENTRY".equals(row.optString("signalType", "ENTRY"))) continue;
             long signalAt = row.optLong("signalAt", 0L);
             if (signalAt <= 0) continue;
             JSONObject v = componentVector(row);
             String sig = signature(v);
             Aggregate a = groups.get(sig);
-            if (a == null) {
-                a = new Aggregate(sig);
-                groups.put(sig, a);
-            }
-            a.add(v);
+            if (a == null) { a = new Aggregate(sig); groups.put(sig, a); }
+            a.add(v, row.optString("symbol", ""), row.optString("marketRegimeStatus", "NOT_CONNECTED"));
             ForecastHit hit = forecastHit(history, row.optString("symbol", ""), signalAt);
             if (hit.eligible) {
                 a.validationEvents++;
                 if (hit.rank > 0 && hit.rank <= 10) a.top10Hits++;
                 if (hit.rank > 0 && hit.rank <= 5) a.top5Hits++;
                 if (hit.rank > 0 && hit.rank <= 3) a.top3Hits++;
-                if (hit.rank > 0) {
-                    a.rankSum += hit.rank;
-                    a.rankHits++;
-                }
-                if (hit.leadMinutes >= 0) {
-                    a.leadMinutesSum += hit.leadMinutes;
-                    a.leadCount++;
-                }
+                if (hit.rank > 0) { a.rankSum += hit.rank; a.rankHits++; }
+                if (hit.leadMinutes >= 0) { a.leadMinutesSum += hit.leadMinutes; a.leadCount++; }
             }
         }
 
-        JSONArray all = new JSONArray();
         List<JSONObject> ranked = new ArrayList<>();
+        Map<String,JSONObject> currentById = new LinkedHashMap<>();
         for (Aggregate a : groups.values()) {
-            JSONObject p = a.toJson();
-            ranked.add(p);
+            JSONObject row = a.toJson();
+            JSONObject perf = UnivestBenchmark.performanceForSignature(c, row.optString("signature"));
+            try { row.put("officialOutcomePerformance", perf); } catch (Exception ignored) {}
+            ranked.add(row);
+            currentById.put(row.optString("id"), row);
         }
         Collections.sort(ranked, (a, b) -> {
             int r = Double.compare(b.optDouble("rating", 0), a.optDouble("rating", 0));
             if (r != 0) return r;
             return Integer.compare(b.optInt("evidence", 0), a.optInt("evidence", 0));
         });
-        for (JSONObject p : ranked) all.put(p);
 
-        JSONArray active = new JSONArray();
-        for (int i = 0; i < ranked.size() && i < ACTIVE_LIMIT; i++) active.put(ranked.get(i));
-
-        JSONArray hall = previous.optJSONArray("hallOfFame");
-        if (hall == null) hall = new JSONArray();
-        JSONArray priorActive = previous.optJSONArray("activeTop5");
-        if (priorActive != null) {
-            for (int i = 0; i < priorActive.length(); i++) {
-                JSONObject old = priorActive.optJSONObject(i);
-                if (old == null || !"CHAMPION".equals(old.optString("status"))) continue;
-                String id = old.optString("id");
-                if (!containsId(active, id) && !containsId(hall, id)) hall.put(old);
+        JSONArray frozen = new JSONArray();
+        JSONArray priorFrozen = previous.optJSONArray("frozenChampions");
+        if (priorFrozen != null) {
+            for (int i = 0; i < priorFrozen.length() && frozen.length() < FROZEN_TARGET; i++) {
+                JSONObject old = priorFrozen.optJSONObject(i);
+                if (old == null) continue;
+                JSONObject kept = copy(old);
+                JSONObject live = currentById.get(kept.optString("id"));
+                try {
+                    kept.put("status", "FROZEN_CHAMPION");
+                    kept.put("decisionCoreFrozen", true);
+                    if (live != null) {
+                        kept.put("monitorEvidence", live.optInt("evidence"));
+                        kept.put("monitorValidationEvents", live.optInt("validationEvents"));
+                        kept.put("monitorTop10Hits", live.optInt("top10Hits"));
+                        kept.put("monitorRating", live.optDouble("rating"));
+                        kept.put("monitorUniqueSymbols", live.optInt("uniqueSymbolCount"));
+                        kept.put("monitorUpdatedAt", System.currentTimeMillis());
+                    }
+                    frozen.put(kept);
+                } catch (Exception ignored) {}
             }
         }
+
+        JSONObject currentBenchmark = UnivestBenchmark.snapshot(c);
+        for (JSONObject row : ranked) {
+            if (frozen.length() >= FROZEN_TARGET) break;
+            String id = row.optString("id");
+            if (containsId(frozen, id)) continue;
+            if (!freezeEligible(row.optInt("evidence"), row.optInt("validationEvents"),
+                    row.optInt("top10Hits"), row.optInt("uniqueSymbolCount"), row.optDouble("rating"))) continue;
+            JSONObject perf = row.optJSONObject("officialOutcomePerformance");
+            if (perf == null || !freezeOutcomeEligible(perf.optInt("completed"),
+                    perf.optDouble("averageUpsidePct"), perf.optDouble("byTwoSessionsPct"),
+                    currentBenchmark.optDouble("averageUpsidePct", 0))) continue;
+            JSONObject locked = copy(row);
+            try {
+                locked.put("status", "FROZEN_CHAMPION");
+                locked.put("decisionCoreFrozen", true);
+                locked.put("frozenAt", System.currentTimeMillis());
+                locked.put("frozenEvidence", row.optInt("evidence"));
+                locked.put("frozenValidationEvents", row.optInt("validationEvents"));
+                locked.put("frozenRating", row.optDouble("rating"));
+                locked.put("freezeReason", "Enough independent evidence, pre-Univest validation and symbol diversity. Core centroid will not move again.");
+                frozen.put(locked);
+                DiagnosticsStore.runtime(c, "PLAYBOOK_FROZEN", id,
+                        "Generic Research playbook frozen permanently: " + row.optString("signature"));
+            } catch (Exception ignored) {}
+        }
+
+        JSONArray all = new JSONArray();
+        for (JSONObject row : ranked) all.put(row);
+
+        JSONArray decision = new JSONArray();
+        for (int i = 0; i < frozen.length() && decision.length() < ACTIVE_LIMIT; i++) decision.put(frozen.optJSONObject(i));
+        // While fewer than five immutable generic champions exist, challengers may supplement decisions.
+        // Once five are frozen, the generic decision core stops learning and uses frozen playbooks only.
+        if (frozen.length() < MIN_FROZEN_FOR_STABLE_DECISIONS) {
+            for (JSONObject row : ranked) {
+                if (decision.length() >= ACTIVE_LIMIT) break;
+                if (!containsId(decision, row.optString("id"))) decision.put(row);
+            }
+        }
+
+        JSONArray activeTop5 = new JSONArray();
+        for (int i = 0; i < decision.length() && i < 5; i++) activeTop5.put(decision.optJSONObject(i));
+        JSONArray hall = previous.optJSONArray("hallOfFame");
+        if (hall == null) hall = new JSONArray();
 
         JSONObject root = new JSONObject();
         try {
             root.put("schemaVersion", SCHEMA_VERSION);
             root.put("updatedAt", System.currentTimeMillis());
-            root.put("objective", "Predict official Univest ENTRY before the notification arrives");
+            root.put("objective", "Predict official Univest ENTRY before notification and preserve proven generic patterns without endless drift");
             root.put("componentModel", "NON_EXCLUSIVE_COMPOSITE");
-            root.put("activeTop5", active);
+            root.put("frozenTarget", FROZEN_TARGET);
+            root.put("minimumFrozenForStableDecisionCore", MIN_FROZEN_FOR_STABLE_DECISIONS);
+            root.put("frozenChampions", frozen);
+            root.put("decisionPlaybooks", decision);
+            root.put("activeTop5", activeTop5);
             root.put("allPlaybooks", all);
             root.put("hallOfFame", hall);
         } catch (Exception ignored) {}
         ResearchStore.savePlaybookRegistry(c, root);
         DiagnosticsStore.runtime(c, "PLAYBOOK_REGISTRY_REBUILT", "",
-                "Composite Univest playbooks rebuilt • " + ranked.size() + " discovered • "
-                        + active.length() + " active.");
+                "Composite playbooks audited • " + ranked.size() + " discovered • "
+                        + frozen.length() + "/" + FROZEN_TARGET + " immutable generic champions • "
+                        + decision.length() + " decision playbooks.");
         return root;
+    }
+
+    static boolean freezeEligible(int evidence, int validationEvents, int top10Hits,
+                                  int uniqueSymbols, double rating) {
+        double rate = validationEvents > 0 ? top10Hits / (double)validationEvents : 0;
+        return evidence >= FREEZE_MIN_EVIDENCE
+                && validationEvents >= FREEZE_MIN_VALIDATION
+                && uniqueSymbols >= FREEZE_MIN_UNIQUE_SYMBOLS
+                && rate >= FREEZE_MIN_TOP10_RATE
+                && rating >= FREEZE_MIN_RATING;
+    }
+
+    static boolean freezeOutcomeEligible(int completed, double averageUpsidePct,
+                                         double byTwoSessionsPct, double benchmarkAverageUpsidePct) {
+        double requiredUpside = Math.max(0.50, benchmarkAverageUpsidePct * 0.80);
+        return completed >= FREEZE_MIN_COMPLETED_OUTCOMES
+                && averageUpsidePct >= requiredUpside
+                && byTwoSessionsPct >= FREEZE_MIN_TWO_SESSION_RATE;
     }
 
     static void applyToCandidate(Context c, JSONObject candidate) {
         if (candidate == null) return;
         JSONObject registry = ResearchStore.playbookRegistry(c);
-        JSONArray active = registry.optJSONArray("activeTop5");
+        JSONArray active = registry.optJSONArray("decisionPlaybooks");
+        if (active == null || active.length() == 0) active = registry.optJSONArray("activeTop5");
         if (active == null || active.length() == 0) return;
 
         JSONObject v = componentVector(candidate);
         double best = 0;
         String bestId = "";
         String bestSig = "";
+        JSONObject bestOutcomePerformance = null;
         int votes = 0;
+        int frozenVotes = 0;
         int usableEvidence = 0;
         double weighted = 0;
         double weight = 0;
         JSONArray matches = new JSONArray();
+        String regime = candidate.optString("marketRegimeStatus", "NOT_CONNECTED");
 
         for (int i = 0; i < active.length(); i++) {
             JSONObject p = active.optJSONObject(i);
@@ -207,23 +293,27 @@ final class ResearchPlaybookEngine {
             JSONObject centroid = p.optJSONObject("centroid");
             if (centroid == null) continue;
             double match = matchScore(v, centroid, p.optString("signature", ""));
-            int evidence = p.optInt("evidence", 0);
+            boolean frozen = "FROZEN_CHAMPION".equals(p.optString("status"));
+            if (frozen && !"NOT_CONNECTED".equals(regime) && regime.equals(p.optString("dominantRegime", "")))
+                match = Math.min(100, match + 3.0);
+            int evidence = frozen ? p.optInt("frozenEvidence", p.optInt("evidence", 0)) : p.optInt("evidence", 0);
             usableEvidence += evidence;
-            double w = Math.max(1.0, Math.min(25.0, evidence)) * Math.max(0.25, p.optDouble("rating", 0) / 100.0);
-            weighted += match * w;
-            weight += w;
-            if (match >= 75.0) votes++;
+            double w = Math.max(1.0, Math.min(25.0, evidence))
+                    * Math.max(0.25, p.optDouble("rating", p.optDouble("frozenRating", 0)) / 100.0)
+                    * (frozen ? 1.15 : 1.0);
+            weighted += match * w; weight += w;
+            if (match >= 75.0) { votes++; if (frozen) frozenVotes++; }
             if (match > best) {
-                best = match;
-                bestId = p.optString("id");
-                bestSig = p.optString("signature");
+                best = match; bestId = p.optString("id"); bestSig = p.optString("signature");
+                bestOutcomePerformance = p.optJSONObject("officialOutcomePerformance");
             }
             try {
                 JSONObject m = new JSONObject();
                 m.put("id", p.optString("id"));
                 m.put("signature", p.optString("signature"));
                 m.put("match", one(match));
-                m.put("rating", p.optDouble("rating", 0));
+                m.put("rating", p.optDouble("rating", p.optDouble("frozenRating", 0)));
+                m.put("frozen", frozen);
                 matches.put(m);
             } catch (Exception ignored) {}
         }
@@ -237,10 +327,16 @@ final class ResearchPlaybookEngine {
         try {
             candidate.put("playbookScore", one(playbook));
             candidate.put("playbookVotes", votes);
+            candidate.put("frozenPlaybookVotes", frozenVotes);
             candidate.put("bestPlaybookId", bestId);
             candidate.put("bestPlaybook", bestSig);
             candidate.put("playbookMatches", matches);
             candidate.put("ensembleScore", one(ensemble));
+            if (bestOutcomePerformance != null) {
+                candidate.put("playbookOfficialCompleted", bestOutcomePerformance.optInt("completed", 0));
+                candidate.put("playbookAvgOfficialUpsidePct", bestOutcomePerformance.optDouble("averageUpsidePct", 0));
+                candidate.put("playbookOfficialByTwoSessionsPct", bestOutcomePerformance.optDouble("byTwoSessionsPct", 0));
+            }
         } catch (Exception ignored) {}
     }
 
@@ -295,36 +391,41 @@ final class ResearchPlaybookEngine {
 
     static String summaryText(Context c) {
         JSONObject r = ResearchStore.playbookRegistry(c);
-        JSONArray a = r.optJSONArray("activeTop5");
+        JSONArray frozen = r.optJSONArray("frozenChampions");
+        JSONArray a = r.optJSONArray("decisionPlaybooks");
         if (a == null || a.length() == 0)
-            return "No composite playbooks learned yet. They will emerge from official Univest ENTRY snapshots.";
+            return "No composite playbooks learned yet. Generic strategies will freeze only after enough independent evidence.";
         StringBuilder b = new StringBuilder();
+        b.append("Frozen generic strategies ").append(frozen == null ? 0 : frozen.length())
+                .append("/").append(FROZEN_TARGET)
+                .append(" • stock-specific memory remains adaptive across ").append(StockStrategyMemory.trackedStockCount(c)).append(" stocks");
         for (int i = 0; i < a.length(); i++) {
-            JSONObject p = a.optJSONObject(i);
-            if (p == null) continue;
+            JSONObject p = a.optJSONObject(i); if (p == null) continue;
             if (b.length() > 0) b.append("\n\n");
             b.append(i + 1).append(". ").append(p.optString("signature"))
-                    .append("\nRating ").append(String.format(Locale.US, "%.0f", p.optDouble("rating", 0))).append("/100")
+                    .append("\nRating ").append(String.format(Locale.US, "%.0f", p.optDouble("rating", p.optDouble("frozenRating", 0)))).append("/100")
                     .append(" • ").append(p.optString("status"))
-                    .append(" • evidence ").append(p.optInt("evidence"));
-            int v = p.optInt("validationEvents", 0);
-            if (v > 0) {
-                b.append("\nPre-Univest validation ").append(v)
-                        .append(" • Top10 ").append(p.optInt("top10Hits")).append("/")
-                        .append(v)
-                        .append(" • Top5 ").append(p.optInt("top5Hits")).append("/")
-                        .append(v)
-                        .append(" • Top3 ").append(p.optInt("top3Hits")).append("/")
-                        .append(v);
-                if (p.optDouble("avgRank", 0) > 0)
-                    b.append(" • avg hit rank ").append(String.format(Locale.US, "%.1f", p.optDouble("avgRank")));
-                if (p.optDouble("avgLeadMinutes", 0) > 0)
-                    b.append(" • avg lead ").append(formatLead(p.optDouble("avgLeadMinutes")));
-            } else {
-                b.append("\nNo eligible frozen-forecast validation events yet.");
-            }
+                    .append(" • evidence ").append(p.optInt("evidence", p.optInt("frozenEvidence", 0)));
+            if ("FROZEN_CHAMPION".equals(p.optString("status")))
+                b.append(" • CORE LOCKED");
+            int v = p.optInt("validationEvents", p.optInt("frozenValidationEvents", 0));
+            if (v > 0) b.append("\nPre-Univest validation ").append(v)
+                    .append(" • Top10 ").append(p.optInt("top10Hits", p.optInt("monitorTop10Hits", 0))).append("/").append(v)
+                    .append(" • unique stocks ").append(p.optInt("uniqueSymbolCount", p.optInt("monitorUniqueSymbols", 0)))
+                    .append(" • regime ").append(p.optString("dominantRegime", "mixed/unknown"));
         }
         return b.toString();
+    }
+
+    static String frozenSummaryText(Context c) {
+        JSONObject r = ResearchStore.playbookRegistry(c);
+        JSONArray frozen = r.optJSONArray("frozenChampions");
+        int n = frozen == null ? 0 : frozen.length();
+        return n + "/" + FROZEN_TARGET + " generic strategies frozen permanently. "
+                + (n >= MIN_FROZEN_FOR_STABLE_DECISIONS
+                ? "Generic decision core is now locked; new evidence audits performance but does not move centroids."
+                : "Challengers may supplement decisions until at least " + MIN_FROZEN_FOR_STABLE_DECISIONS + " independent generic champions qualify.")
+                + " Stock-specific memory continues adapting separately.";
     }
 
     static String accountabilityText(Context c) {
@@ -427,6 +528,11 @@ final class ResearchPlaybookEngine {
         return out;
     }
 
+    private static JSONObject copy(JSONObject x) {
+        try { return x == null ? new JSONObject() : new JSONObject(x.toString()); }
+        catch (Exception e) { return new JSONObject(); }
+    }
+
     private static boolean containsId(JSONArray a, String id) {
         if (a == null || id == null || id.isEmpty()) return false;
         for (int i = 0; i < a.length(); i++) {
@@ -462,11 +568,16 @@ final class ResearchPlaybookEngine {
         double leadMinutesSum;
         int leadCount;
         final double[] sums = new double[COMPONENTS.length];
+        final Set<String> symbols = new HashSet<>();
+        final Map<String,Integer> regimes = new LinkedHashMap<>();
 
         Aggregate(String signature) { this.signature = signature; }
 
-        void add(JSONObject v) {
+        void add(JSONObject v, String symbol, String regime) {
             evidence++;
+            if (symbol != null && !symbol.trim().isEmpty()) symbols.add(symbol.trim().toUpperCase(Locale.US));
+            String r = regime == null || regime.trim().isEmpty() ? "NOT_CONNECTED" : regime.trim();
+            regimes.put(r, regimes.containsKey(r) ? regimes.get(r) + 1 : 1);
             for (int i = 0; i < COMPONENTS.length; i++) sums[i] += v.optDouble(COMPONENTS[i], 0);
         }
 
@@ -484,25 +595,36 @@ final class ResearchPlaybookEngine {
                 double evidenceScore = Math.min(40.0, evidence * 4.0);
                 double rating = Math.min(100.0, evidenceScore + prediction);
                 String status;
-                if (validationEvents >= 10 && rating >= 70) status = "CHAMPION";
+                if (freezeEligible(evidence, validationEvents, top10Hits, symbols.size(), rating)) status = "FREEZE_READY";
                 else if (validationEvents >= 5 || evidence >= 10) status = "CHALLENGER";
                 else if (evidence >= 3) status = "DEVELOPING";
                 else status = "EXPERIMENTAL";
 
+                String dominantRegime = "NOT_CONNECTED"; int dominantCount = 0;
+                JSONObject regimeCounts = new JSONObject();
+                for (Map.Entry<String,Integer> e : regimes.entrySet()) {
+                    regimeCounts.put(e.getKey(), e.getValue());
+                    if (e.getValue() > dominantCount) { dominantCount = e.getValue(); dominantRegime = e.getKey(); }
+                }
                 p.put("id", idFor(signature));
                 p.put("signature", signature);
                 p.put("evidence", evidence);
+                p.put("uniqueSymbolCount", symbols.size());
                 p.put("validationEvents", validationEvents);
                 p.put("top10Hits", top10Hits);
                 p.put("top5Hits", top5Hits);
                 p.put("top3Hits", top3Hits);
+                p.put("top10HitRate", validationEvents > 0 ? one(100.0 * top10Hits / validationEvents) : 0);
                 p.put("avgRank", rankHits > 0 ? one(rankSum / (double)rankHits) : 0);
                 p.put("avgLeadMinutes", leadCount > 0 ? one(leadMinutesSum / leadCount) : 0);
                 p.put("rating", one(rating));
                 p.put("status", status);
                 p.put("centroid", centroid);
+                p.put("dominantRegime", dominantRegime);
+                p.put("regimeCounts", regimeCounts);
             } catch (Exception ignored) {}
             return p;
         }
     }
+
 }

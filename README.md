@@ -4,15 +4,25 @@ Dedicated Android repository for the Univest AutoTrade project.
 
 ## Current release
 
-**v2.9.4** — package `com.suhas.multyfideliverybuy`, versionCode **294**.
+**v2.9.5** — package `com.suhas.multyfideliverybuy`, versionCode **295**.
+
+### Reverse-engineering benchmark + frozen strategy policy
+
+- Official notification BUY/SELL execution, fresh-entry semantics, green-only exits and downward averaging are unchanged from the v2.9.3/v2.9.4 stable execution lane.
+- Every official Univest ENTRY now receives a standardized 40-parameter point-in-time Research fingerprint; unavailable fundamentals/sector inputs remain explicitly missing rather than fabricated.
+- Completed official ENTRY→EXIT cohorts produce a rolling 30-day benchmark for average/median upside and trading-session duration.
+- Research success is benchmarked against current official Univest upside with a primary two-trading-session window; Session 3 is diagnostic only.
+- Generic composite strategies stop drifting after promotion: up to 10 immutable frozen Champions are retained, and once at least 5 exist the generic decision core uses frozen strategies only.
+- Per-stock strategy memory remains adaptive indefinitely but has deliberately small influence so 100s/1000s of stock-specific histories do not overfit the global model.
+- Intraday Research reranks the strongest EOD candidate pool roughly every 15 minutes and may issue at most five high-conviction recommendations per session; five is never forced as a quota.
 
 ### Calm UI architecture
 
 - **Execution** is the single home for live official Univest state, current positions, latest action and latency.
 - **Research** is the single home for historical learning, accuracy, playbooks, failure clusters and lifecycle analysis.
-- **Forecast** is forward-looking only: current action, Top 10 candidates, active Research trades and decision model.
+- **Forecast** is forward-looking only: current action, live Top 5 recommendation/watch slots, active Research trades and decision model.
 - **Settings** separates broker connection, official Univest trading, Research trading, reliability, data and diagnostics.
-- The v2.9.3 broker/signal execution semantics are intentionally unchanged in this UI-focused release.
+- The v2.9.3 stable broker/signal execution semantics remain intentionally unchanged; v2.9.5 changes only Research/forecasting, benchmark, strategy-governance and presentation code.
 
 The official execution lane is locked to the official Univest Android package `com.univest.capp` and NSE CASH / CNC delivery.
 
@@ -48,9 +58,9 @@ The green-only rule is intentional but can keep exposure open after Univest has 
 - Off-market Research Lab performs full-NSE research/replay and a descriptive Univest strategy study using observed official calls.
 - Every official ENTRY/EXIT now produces an asynchronous causality-safe point-in-time profile with raw 1m/15m/daily candles, volume/VWAP/momentum/volatility context, quote/depth and circuit data where available.
 - Non-exclusive composite **Univest Playbooks** learn recurring combinations of component signals; one stock may match several playbooks simultaneously.
-- The Top 5 active playbooks are rated by evidence and fair pre-Univest forecast hits; historical champions are retained rather than destructively overwritten.
+- Generic playbooks are rated by evidence and fair pre-Univest forecast hits; up to 10 proven generic Champions become immutable, while per-stock memory remains adaptive with deliberately small weight.
 - A Top-100 nightly candidate pool supports matched non-selected control groups so broad market conditions are not mistaken for Univest-specific selection logic.
-- Forecast accountability explicitly measures whether the eventual official Univest ENTRY was already in the frozen Top 10/5/3 before the notification.
+- Forecast accountability measures whether the eventual official Univest ENTRY was already ranked before the notification; EOD/pre-open baselines and intraday snapshots remain timestamped for causal evaluation.
 - Pre-signal evidence and later outcomes are kept separate to avoid look-ahead contamination.
 - Fundamentals and dedicated first-party NSE/BSE announcement feeds remain explicitly marked unavailable until a point-in-time source is connected; the app does not silently invent those fields.
 
@@ -62,7 +72,7 @@ Requirements: JDK 17 and Android SDK 35.
 gradle --no-daemon clean testReleaseUnitTest assembleRelease
 ```
 
-The GitHub release workflow generates an ephemeral signing identity for CI artifacts. Because that certificate changes between such builds, Android may require uninstalling a differently signed prior APK. A permanent protected release key should be introduced before relying on seamless in-place upgrades.
+The release workflow is pinned to the permanent public signing certificate established with v2.9.3. CI signs only when the protected stable-key secrets are present; it never generates an ephemeral replacement key. Builds without those secrets remain unsigned until signed with the owner-held stable key.
 
 ## Security
 

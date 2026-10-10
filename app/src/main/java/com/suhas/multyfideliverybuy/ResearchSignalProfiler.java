@@ -60,7 +60,7 @@ final class ResearchSignalProfiler {
                     InstrumentRepository.resolve(InstrumentRepository.load(c), symbol);
             if (resolved != null) symbol = resolved.symbol;
 
-            row.put("schemaVersion", 1);
+            row.put("schemaVersion", 2);
             row.put("symbol", symbol);
             row.put("signalType", signal.type.name());
             row.put("signalAt", signalAt);
@@ -129,6 +129,28 @@ final class ResearchSignalProfiler {
                 row.put("sectorContextStatus", "NOT_CONNECTED");
             }
 
+            if (!row.has("positiveCatalysts") && !row.has("negativeCatalysts")) {
+                try {
+                    ResearchNewsClient.Summary n = ResearchNewsClient.fetch(
+                            resolved == null ? symbol : resolved.name, symbol);
+                    row.put("nationalNews", n.nationalCount);
+                    row.put("internationalNews", n.internationalCount);
+                    row.put("positiveCatalysts", n.positiveCatalysts);
+                    row.put("negativeCatalysts", n.negativeCatalysts);
+                    row.put("newsSignal", n.catalystLabel);
+                } catch (Throwable ignored) {}
+            }
+
+            JSONObject marketContext = null;
+            try {
+                marketContext = ResearchMarketContext.snapshot(c, signalAt);
+                if (marketContext != null && "AVAILABLE".equals(marketContext.optString("status"))) {
+                    row.put("marketRegimeStatus", ResearchMarketContext.label(marketContext));
+                    row.put("marketRegimeText", ResearchMarketContext.text(marketContext));
+                }
+            } catch (Throwable ignored) {}
+            ResearchEntryFingerprint.annotate(c, row, daily, fifteen, oneMinute, marketContext);
+
             ResearchMath.StrategyScores sc = ResearchMath.score(
                     d,
                     Math.max(0, row.optInt("positiveCatalysts", 0) - row.optInt("negativeCatalysts", 0)),
@@ -150,9 +172,11 @@ final class ResearchSignalProfiler {
                 row.put("lowerCircuit", q.lowerCircuit);
                 row.put("quoteCapturedAt", System.currentTimeMillis());
                 row.put("quoteLatencyFromSignalMs", Math.max(0L, System.currentTimeMillis() - signalAt));
+                ResearchEntryFingerprint.annotateQuote(row, q);
             } catch (Throwable quoteError) {
                 row.put("liveQuoteSuccess", false);
                 row.put("quoteError", safe(quoteError));
+                ResearchEntryFingerprint.annotateQuote(row, null);
             }
 
             int rank = ResearchPlaybookEngine.forecastRankBeforeSignal(c, symbol, signalAt);
@@ -169,6 +193,7 @@ final class ResearchSignalProfiler {
             ResearchEventStore.appendDecisionSnapshot(c, "POINT_IN_TIME_SIGNAL_PROFILE", row);
 
             if (signal.type == UnivestParser.Type.ENTRY) {
+                StockStrategyMemory.updateFromOfficialEntry(c, row);
                 ResearchPlaybookEngine.captureMatchedControls(c, row);
                 ResearchPlaybookEngine.rebuildRegistry(c);
             }
