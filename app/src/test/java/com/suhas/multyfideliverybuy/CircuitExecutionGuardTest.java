@@ -13,16 +13,16 @@ public class CircuitExecutionGuardTest {
         GrowwClient.CircuitOrderPlan p = GrowwClient.circuitOrderPlan(q, "BUY", 0.05);
         assertTrue(p.useLimit);
         assertTrue(p.limitPrice <= 713.45 + 1e-9);
-        assertEquals(713.45, p.limitPrice, 0.0001);
+        assertEquals(702.55, p.limitPrice, 0.0001);
     }
 
-    @Test public void normalBuyUsesTwoPercentAggressiveLimitInsideBand() {
+    @Test public void normalBuyUsesTightThirtyFiveBasisPointLimitInsideBand() {
         GrowwClient.QuoteSnapshot q = new GrowwClient.QuoteSnapshot(
                 true, 100.00, 99.95, 100.05, 100, 100,
                 120.00, 80.00, 100000, "OK");
         GrowwClient.CircuitOrderPlan p = GrowwClient.circuitOrderPlan(q, "BUY", 0.05);
         assertTrue(p.useLimit);
-        assertTrue(p.limitPrice >= 102.00 && p.limitPrice <= 102.10);
+        assertEquals(100.40, p.limitPrice, 0.0001);
         assertTrue(p.limitPrice < 120.00);
     }
 
