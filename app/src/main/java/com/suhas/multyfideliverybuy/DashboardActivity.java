@@ -669,10 +669,10 @@ public class DashboardActivity extends Activity {
         stock.addView(text(r.reason, 9, SUBTEXT, false), margins(0, 2, 0, 0));
 
         row.addView(stock, new LinearLayout.LayoutParams(0, -2, 2.35f));
-        row.addView(tableCell(r.entryPrice > 0 ? "₹" + money(r.entryPrice) : "—",
+        row.addView(tableCell(r.entryPrice > 0 ? String.format(Locale.US, "₹%.2f", r.entryPrice) : "—",
                         11, TEXT, false, Gravity.END),
                 new LinearLayout.LayoutParams(0, -2, 0.90f));
-        row.addView(tableCell(r.targetPrice > 0 ? "₹" + money(r.targetPrice) : "—",
+        row.addView(tableCell(r.targetPrice > 0 ? String.format(Locale.US, "₹%.2f", r.targetPrice) : "—",
                         11, TEXT, false, Gravity.END),
                 new LinearLayout.LayoutParams(0, -2, 0.90f));
 
