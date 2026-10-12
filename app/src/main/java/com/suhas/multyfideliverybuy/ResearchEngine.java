@@ -462,7 +462,7 @@ final class ResearchEngine {
             if (j.optInt("playbookOfficialCompleted", 0) > 0)
                 b.append("\nSimilar official outcomes • avg ")
                         .append(String.format(Locale.US, "%+.1f%%", j.optDouble("playbookAvgOfficialUpsidePct", 0)))
-                        .append(" • ≤2 sessions ").append(String.format(Locale.US, "%.0f%%", j.optDouble("playbookOfficialByTwoSessionsPct", 0)))
+                        .append(" • ≤3 sessions ").append(String.format(Locale.US, "%.0f%%", j.optDouble("playbookOfficialByThreeSessionsPct", 0)))
                         .append(" • n=").append(j.optInt("playbookOfficialCompleted"));
             if (j.has("benchmarkTargetUpsidePct"))
                 b.append("\nBenchmark target ≥+").append(String.format(Locale.US, "%.1f", j.optDouble("benchmarkTargetUpsidePct")))

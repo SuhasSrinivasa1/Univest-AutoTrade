@@ -47,6 +47,7 @@ final class GrowwClient {
     private static final String POSITION_SYMBOL_URL = "https://api.groww.in/v1/positions/trading-symbol";
     private static final String HOLDINGS_URL = "https://api.groww.in/v1/holdings/user";
     private static final String HISTORICAL_CANDLES_URL = "https://api.groww.in/v1/historical/candles";
+    static final boolean STOP_LOSS_ORDERS_ENABLED = false;
     private static final double OFFICIAL_BUY_LIMIT_BUFFER_PCT = 0.0035;
     private static final double OFFICIAL_SELL_LIMIT_BUFFER_PCT = 0.02;
     private static final ExecutorService EXIT_READ_POOL = Executors.newFixedThreadPool(2);
@@ -772,33 +773,15 @@ final class GrowwClient {
     }
 
     static GttResult createUnivestCncStopGtt(Context context, String symbol, int quantity, double trigger, String referenceId) {
-        return createGttMarketDetailed(context, symbol, quantity, "CNC", "SELL", "DOWN", trigger, referenceId);
+        DiagnosticsStore.runtime(context, "STOP_LOSS_BLOCKED", symbol,
+                "Global no-stop-loss policy blocked legacy protective-stop creation.");
+        return new GttResult(false, false, "", "Stop-loss orders are disabled by policy.");
     }
 
     static Result modifyUnivestCncStopGtt(Context context, String smartOrderId, int quantity, double trigger) {
-        if (smartOrderId == null || smartOrderId.isEmpty()) return new Result(false, false, 0, "No protective stop GTT id to modify.");
-        try {
-            JSONObject order = new JSONObject();
-            order.put("order_type", "MARKET");
-            order.put("price", JSONObject.NULL);
-            order.put("transaction_type", "SELL");
-            JSONObject body = new JSONObject();
-            body.put("smart_order_type", "GTT");
-            body.put("segment", "CASH");
-            body.put("quantity", quantity);
-            body.put("trigger_price", money(trigger));
-            body.put("trigger_direction", "DOWN");
-            body.put("order", order);
-            HttpResponse r = put(SMART_MODIFY_URL + URLEncoder.encode(smartOrderId, StandardCharsets.UTF_8.name()), ensureToken(context), body.toString(), true);
-            if (r.code == 401 || r.code == 403) {
-                AppPrefs.clearAccessToken(context); Result a = authenticate(context); if (!a.success) return a;
-                r = put(SMART_MODIFY_URL + URLEncoder.encode(smartOrderId, StandardCharsets.UTF_8.name()), AppPrefs.getAccessToken(context), body.toString(), true);
-            }
-            if (r.code >= 200 && r.code < 300) return new Result(true, false, r.code, "Protective stop GTT updated • qty " + quantity + " • trigger ₹" + money(trigger));
-            return new Result(false, false, r.code, "Protective stop GTT modify rejected HTTP " + r.code + ": " + shortText(r.body));
-        } catch (SocketTimeoutException e) {
-            return new Result(false, true, 0, "Protective stop GTT modification status unknown after timeout; verify Smart Orders before any retry.");
-        } catch (Exception e) { return new Result(false, true, 0, "Protective stop GTT modify error: " + safeMessage(e)); }
+        DiagnosticsStore.runtime(context, "STOP_LOSS_BLOCKED", "",
+                "Global no-stop-loss policy blocked legacy protective-stop modification.");
+        return new Result(false, false, 0, "Stop-loss orders are disabled by policy.");
     }
 
     static GttStatusResult getCashGttStatus(Context context, String smartOrderId) {
@@ -1099,53 +1082,10 @@ final class GrowwClient {
 
     /** Multyfi official close -> MIS MARKET short, protected by same-day CASH/MIS OCO. */
     static ShortOcoResult placeMultyfiMisShortWithOco(Context context, String symbol, int budget, double tickSize, String referenceId) {
-        try {
-            double ltp = getLtp(context, symbol);
-            if (!(ltp > 0)) return new ShortOcoResult(false, false, false, 0, 0, 0, 0, "", "No valid LTP for short sizing.");
-            int qty = (int)Math.floor(budget / ltp);
-            if (qty < 1) return new ShortOcoResult(false, false, false, 0, 0, 0, 0, "", "Saved Multyfi budget cannot short one share at current LTP.");
-            OrderSubmit shortEntry = submitMarketOrder(context, symbol, qty, "MIS", "SELL", referenceId);
-            if (!shortEntry.success) return new ShortOcoResult(false, false, shortEntry.unknown, qty, 0, 0, 0, "", shortEntry.message);
-            if (shortEntry.orderId.isEmpty()) return new ShortOcoResult(true, false, false, qty, 0, 0, 0, "", "MIS short accepted but no order ID returned; OCO not created.");
-            Fill fill = awaitExecution(context, shortEntry.orderId, qty);
-            if (fill.quantity < 1 || !(fill.averagePrice > 0)) return new ShortOcoResult(true, false, false, qty, 0, 0, 0, "", "MIS short accepted but fill not confirmed; OCO not created.");
-            double tick = tickSize > 0 ? tickSize : 0.05;
-            double target = IntradayChargeTarget.targetPriceForNetProfit(fill.averagePrice, fill.quantity, tick, budget * 0.005);
-            double stop = IntradayChargeTarget.stopTriggerForMaxLoss(fill.averagePrice, fill.quantity, tick, budget * 0.01);
-            GttResult oco = createCashMisShortOco(context, symbol, fill.quantity, target, stop, makeReference("MSO", symbol));
-            return new ShortOcoResult(true, oco.success, oco.unknown, fill.quantity, fill.averagePrice, target, stop,
-                    oco.smartOrderId,
-                    "MIS SHORT executed • qty " + fill.quantity + " • avg ₹" + money(fill.averagePrice)
-                            + " • OCO BUY target ₹" + money(target) + " (+0.5% NET-on-budget)"
-                            + " • stop trigger ₹" + money(stop) + " (1% budget-loss guard) • " + oco.message);
-        } catch (SocketTimeoutException e) {
-            return new ShortOcoResult(false, false, true, 0, 0, 0, 0, "", "Short/OCO status unknown after timeout. Check Groww before retrying.");
-        } catch (Exception e) { return new ShortOcoResult(false, false, true, 0, 0, 0, 0, "", "Short/OCO error: " + safeMessage(e)); }
-    }
-
-    private static GttResult createCashMisShortOco(Context context, String symbol, int qty, double target, double stop, String referenceId) {
-        try {
-            JSONObject targetLeg = new JSONObject();
-            targetLeg.put("trigger_price", money(target)); targetLeg.put("order_type", "LIMIT"); targetLeg.put("price", money(target));
-            JSONObject stopLeg = new JSONObject();
-            stopLeg.put("trigger_price", money(stop)); stopLeg.put("order_type", "SL_M"); stopLeg.put("price", JSONObject.NULL);
-            JSONObject body = new JSONObject();
-            body.put("reference_id", referenceId); body.put("smart_order_type", "OCO"); body.put("segment", "CASH");
-            body.put("trading_symbol", symbol); body.put("quantity", qty); body.put("net_position_quantity", -qty);
-            body.put("transaction_type", "BUY"); body.put("target", targetLeg); body.put("stop_loss", stopLeg);
-            body.put("product_type", "MIS"); body.put("exchange", "NSE"); body.put("duration", "DAY");
-            HttpResponse r = post(GTT_URL, ensureToken(context), body.toString(), true);
-            if (r.code == 401 || r.code == 403) {
-                AppPrefs.clearAccessToken(context); Result a = authenticate(context); if (!a.success) return new GttResult(false, false, "", a.message);
-                r = post(GTT_URL, AppPrefs.getAccessToken(context), body.toString(), true);
-            }
-            if (r.code >= 200 && r.code < 300) {
-                String id=""; JSONObject j=new JSONObject(r.body); JSONObject pl=j.optJSONObject("payload"); if (pl!=null) id=pl.optString("smart_order_id","");
-                return new GttResult(true, false, id, "MIS OCO active" + (id.isEmpty()?"":" • "+id));
-            }
-            return new GttResult(false, false, "", "MIS OCO rejected HTTP " + r.code + ": " + shortText(r.body));
-        } catch (SocketTimeoutException e) { return new GttResult(false, true, "", "MIS OCO status unknown after timeout; no blind retry."); }
-        catch (Exception e) { return new GttResult(false, true, "", "MIS OCO error: " + safeMessage(e)); }
+        DiagnosticsStore.runtime(context, "STOP_LOSS_DEPENDENT_SHORT_BLOCKED", symbol,
+                "Legacy short/OCO entry disabled because stop-loss orders are globally forbidden.");
+        return new ShortOcoResult(false, false, false, 0, 0, 0, 0, "",
+                "Short/OCO entry disabled: this app never creates stop-loss orders.");
     }
 
     static ManualResult executeManualLong(Context context, InstrumentRepository.Instrument instrument, int budget) {

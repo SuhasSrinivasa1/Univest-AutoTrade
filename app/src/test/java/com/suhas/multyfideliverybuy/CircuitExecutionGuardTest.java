@@ -44,6 +44,10 @@ public class CircuitExecutionGuardTest {
         assertFalse(GrowwClient.circuitOrderPlan(q, "SELL", 0.05).useLimit);
     }
 
+    @Test public void stopLossOrdersAreGloballyDisabled() {
+        assertFalse(GrowwClient.STOP_LOSS_ORDERS_ENABLED);
+    }
+
     @Test public void terminalBrokerStatusesAreRecognized() {
         assertTrue(GrowwClient.isTerminalFailureStatus("REJECTED • Circuit breach"));
         assertTrue(GrowwClient.isTerminalFailureStatus("FAILED"));

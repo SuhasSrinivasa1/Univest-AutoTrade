@@ -54,6 +54,12 @@ jobs:
           ! grep -q 'claimNotificationFingerprint' app/src/main/java/com/suhas/multyfideliverybuy/AppPrefs.java
           ! grep -q 'claimDailySignal' app/src/main/java/com/suhas/multyfideliverybuy/AppPrefs.java
           grep -q 'OFFICIAL_BUY_LIMIT_BUFFER_PCT = 0.0035' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
+          grep -q 'STOP_LOSS_ORDERS_ENABLED = false' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
+          ! grep -q '"stop_loss"' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
+          ! grep -q 'createCashMisShortOco' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
+          grep -q 'ForecastPolicy.openCallState' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
+          grep -q 'ForecastPolicy.horizonExpired' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
+          grep -q 'disabledActionButton' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -q 'OFFICIAL_SELL_LIMIT_BUFFER_PCT = 0.02' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
           grep -q 'placeUnivestCncGreenSell' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'EXIT_DEFERRED_NOT_GREEN' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
@@ -73,8 +79,8 @@ jobs:
           grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
           grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
-          grep -q "versionCode 299" app/build.gradle
-          grep -q "versionName '2.9.9'" app/build.gradle
+          grep -q "versionCode 300" app/build.gradle
+          grep -q "versionName '2.9.10'" app/build.gradle
           grep -Fq 'appHeader("EXECUTION", "Live Univest status & actions")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("RESEARCH", "What the system has learned")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("FORECAST", "Univest-pattern LONG calls")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
@@ -94,7 +100,7 @@ jobs:
           grep -q 'GreenOfficialExitTest' app/src/test/java/com/suhas/multyfideliverybuy/GreenOfficialExitTest.java
           grep -q 'FinalStabilityContractTest' app/src/test/java/com/suhas/multyfideliverybuy/FinalStabilityContractTest.java
           grep -q 'WINDOW_DAYS = 30' app/src/main/java/com/suhas/multyfideliverybuy/UnivestBenchmark.java
-          grep -q 'PRIMARY_MAX_SESSIONS = 2' app/src/main/java/com/suhas/multyfideliverybuy/UnivestBenchmark.java
+          grep -q 'PRIMARY_MAX_SESSIONS = 3' app/src/main/java/com/suhas/multyfideliverybuy/UnivestBenchmark.java
           grep -q 'parameterCount", PARAMETERS.length' app/src/main/java/com/suhas/multyfideliverybuy/ResearchEntryFingerprint.java
           grep -q 'FROZEN_TARGET = 10' app/src/main/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngine.java
           grep -q 'decisionCoreFrozen' app/src/main/java/com/suhas/multyfideliverybuy/ResearchPlaybookEngine.java
@@ -123,6 +129,7 @@ jobs:
           grep -Fq 'rolling30DayAverageUpsidePct' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
           grep -q 'ResearchBenchmarkContractTest' app/src/test/java/com/suhas/multyfideliverybuy/ResearchBenchmarkContractTest.java
           grep -q 'FrozenStrategyPolicyTest' app/src/test/java/com/suhas/multyfideliverybuy/FrozenStrategyPolicyTest.java
+          grep -q 'ForecastPolicyTest' app/src/test/java/com/suhas/multyfideliverybuy/ForecastPolicyTest.java
           ! grep -q 'Math.abs(at - priorAt) <= 30000L' app/src/main/java/com/suhas/multyfideliverybuy/ResearchStore.java
           grep -q 'RELEASE_KEYSTORE_B64' .github/workflows/android-release.yml
           test -s RELEASE_SIGNING_CERT.pem

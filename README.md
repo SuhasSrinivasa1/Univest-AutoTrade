@@ -4,7 +4,16 @@ Dedicated Android repository for the Univest AutoTrade project.
 
 ## Current release
 
-**v2.9.9** — package `com.suhas.multyfideliverybuy`, versionCode **299**.
+**v2.9.10** — package `com.suhas.multyfideliverybuy`, versionCode **300**.
+
+### v2.9.10 three-session Forecast lifecycle + no stop-loss policy
+
+- Forecast BUY NOW is shown only while the regular NSE session is open. Outside market hours an unbought live call shows MARKET CLOSED and its CNC button uses an unmistakably grey disabled style.
+- Terminal Forecast calls (TARGET HIT / MISSED / LOSS) stay visible only on their resolution day and are archived from the live Forecast table on the next day.
+- Only unresolved live calls carry forward, for a maximum of three trading sessions including the trigger session. The complete third session is allowed; if the rolling Univest upside target is not reached by the Session-3 close, the picking strategy is scored MISSED.
+- The three-session Forecast clock is anchored to the original Forecast call time, not reset if the user later executes the CNC BUY.
+- No horizon timeout forces a sell. Existing green-only official/research exit behavior remains independent of Forecast scoring.
+- Stop-loss order creation is globally disabled. Legacy stop identifiers are retained only so old broker-hosted stop GTTs can be cancelled during cleanup; new stop-loss orders cannot be created or modified.
 
 ### v2.9.9 Forecast UI
 

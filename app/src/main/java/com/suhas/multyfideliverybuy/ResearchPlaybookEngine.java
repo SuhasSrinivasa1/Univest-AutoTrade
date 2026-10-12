@@ -33,7 +33,7 @@ final class ResearchPlaybookEngine {
     static final double FREEZE_MIN_TOP10_RATE = 0.50;
     static final double FREEZE_MIN_RATING = 72.0;
     static final int FREEZE_MIN_COMPLETED_OUTCOMES = 8;
-    static final double FREEZE_MIN_TWO_SESSION_RATE = 60.0;
+    static final double FREEZE_MIN_PRIMARY_HORIZON_RATE = 60.0;
     private static final String[] COMPONENTS = {
             "volumeBreakout", "trendPullback", "momentum", "qualityRerating", "catalystSector"
     };
@@ -191,7 +191,7 @@ final class ResearchPlaybookEngine {
                     row.optInt("top10Hits"), row.optInt("uniqueSymbolCount"), row.optDouble("rating"))) continue;
             JSONObject perf = row.optJSONObject("officialOutcomePerformance");
             if (perf == null || !freezeOutcomeEligible(perf.optInt("completed"),
-                    perf.optDouble("averageUpsidePct"), perf.optDouble("byTwoSessionsPct"),
+                    perf.optDouble("averageUpsidePct"), perf.optDouble("byPrimaryHorizonPct", perf.optDouble("byThreeSessionsPct", 0)),
                     currentBenchmark.optDouble("averageUpsidePct", 0))) continue;
             JSONObject locked = copy(row);
             try {
@@ -260,11 +260,11 @@ final class ResearchPlaybookEngine {
     }
 
     static boolean freezeOutcomeEligible(int completed, double averageUpsidePct,
-                                         double byTwoSessionsPct, double benchmarkAverageUpsidePct) {
+                                         double byPrimaryHorizonPct, double benchmarkAverageUpsidePct) {
         double requiredUpside = Math.max(0.50, benchmarkAverageUpsidePct * 0.80);
         return completed >= FREEZE_MIN_COMPLETED_OUTCOMES
                 && averageUpsidePct >= requiredUpside
-                && byTwoSessionsPct >= FREEZE_MIN_TWO_SESSION_RATE;
+                && byPrimaryHorizonPct >= FREEZE_MIN_PRIMARY_HORIZON_RATE;
     }
 
     static void applyToCandidate(Context c, JSONObject candidate) {
@@ -335,7 +335,7 @@ final class ResearchPlaybookEngine {
             if (bestOutcomePerformance != null) {
                 candidate.put("playbookOfficialCompleted", bestOutcomePerformance.optInt("completed", 0));
                 candidate.put("playbookAvgOfficialUpsidePct", bestOutcomePerformance.optDouble("averageUpsidePct", 0));
-                candidate.put("playbookOfficialByTwoSessionsPct", bestOutcomePerformance.optDouble("byTwoSessionsPct", 0));
+                candidate.put("playbookOfficialByThreeSessionsPct", bestOutcomePerformance.optDouble("byPrimaryHorizonPct", bestOutcomePerformance.optDouble("byThreeSessionsPct", 0)));
             }
         } catch (Exception ignored) {}
     }

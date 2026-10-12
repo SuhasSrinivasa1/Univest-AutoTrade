@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  */
 final class UnivestBenchmark {
     static final int WINDOW_DAYS = 30;
-    static final int PRIMARY_MAX_SESSIONS = 2;
+    static final int PRIMARY_MAX_SESSIONS = 3;
     static final int MIN_READY_COMPLETED = 8;
     private static final double FALLBACK_TARGET_PCT = 0.50;
 
@@ -131,19 +131,20 @@ final class UnivestBenchmark {
     static JSONObject performanceForSignature(Context c, String signature) {
         JSONArray campaigns = completedCampaigns(c);
         List<Double> returns = new ArrayList<>();
-        int by2 = 0;
+        int byPrimary = 0;
         for (int i = 0; i < campaigns.length(); i++) {
             JSONObject x = campaigns.optJSONObject(i);
             if (x == null || !safe(signature).equals(x.optString("compositeSignature", ""))) continue;
             returns.add(x.optDouble("upsidePct", 0));
-            if (x.optInt("holdingSessions", 99) <= PRIMARY_MAX_SESSIONS) by2++;
+            if (x.optInt("holdingSessions", 99) <= PRIMARY_MAX_SESSIONS) byPrimary++;
         }
         JSONObject out = new JSONObject();
         try {
             out.put("completed", returns.size());
             out.put("averageUpsidePct", one(avgD(returns)));
             out.put("medianUpsidePct", one(medianD(returns)));
-            out.put("byTwoSessionsPct", pct(by2, returns.size()));
+            out.put("byThreeSessionsPct", pct(byPrimary, returns.size()));
+            out.put("byPrimaryHorizonPct", pct(byPrimary, returns.size()));
         } catch (Exception ignored) {}
         return out;
     }
@@ -160,11 +161,11 @@ final class UnivestBenchmark {
                     + "Benchmarking starts automatically as official recommendations close.";
         }
         return String.format(Locale.US,
-                "%d completed • avg upside %+.1f%% • median %+.1f%%\nAvg hold %.2f trading sessions (%.1f h) • same-session %.0f%% • by Session 2 %.0f%%\nPrimary Research target: ≥%+.1f%% within ≤%d sessions%s",
+                "%d completed • avg upside %+.1f%% • median %+.1f%%\nAvg hold %.2f trading sessions (%.1f h) • same-session %.0f%% • by Session 3 %.0f%%\nPrimary Research target: ≥%+.1f%% within ≤%d sessions%s",
                 n,
                 b.optDouble("averageUpsidePct"), b.optDouble("medianUpsidePct"),
                 b.optDouble("averageHoldingSessions"), b.optDouble("averageHoldingHours"),
-                b.optDouble("sameSessionPct"), b.optDouble("byTwoSessionsPct"),
+                b.optDouble("sameSessionPct"), b.optDouble("byThreeSessionsPct"),
                 b.optDouble("targetUpsidePct"), b.optInt("primaryMaxSessions", PRIMARY_MAX_SESSIONS),
                 b.optBoolean("ready") ? "" : " • provisional until " + MIN_READY_COMPLETED + " completed campaigns");
     }

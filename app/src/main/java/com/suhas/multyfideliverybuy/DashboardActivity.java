@@ -496,7 +496,7 @@ public class DashboardActivity extends Activity {
 
         LinearLayout about = card();
         about.addView(sectionRow("ABOUT", "Orchestrated Research"));
-        about.addView(body("Univest AutoTrade v2.9.9"), margins(0, 10, 0, 0));
+        about.addView(body("Univest AutoTrade v2.9.10"), margins(0, 10, 0, 0));
         about.addView(meta("Package: com.suhas.multyfideliverybuy"), margins(0, 6, 0, 0));
         about.addView(meta("Official Univest execution and Research decisions remain separately attributed; Research→Univest same-symbol confirmation is intentionally additive."), margins(0, 6, 0, 0));
         root.addView(about, margins(0, 0, 0, 22));
@@ -515,7 +515,7 @@ public class DashboardActivity extends Activity {
         left.addView(text(subtitle, 12, SUBTEXT, false), margins(0, 3, 0, 0));
         row.addView(left, new LinearLayout.LayoutParams(0, -2, 1f));
 
-        TextView version = text("v2.9.9", 11, TEAL, true);
+        TextView version = text("v2.9.10", 11, TEAL, true);
         version.setGravity(Gravity.CENTER);
         version.setPadding(dp(10), dp(6), dp(10), dp(6));
         GradientDrawable chip = new GradientDrawable();
@@ -670,9 +670,10 @@ public class DashboardActivity extends Activity {
         int index = 1;
         for (ResearchTradeEngine.ForecastDecisionRow r : rows) {
             c.addView(forecastDecisionRow(index++, r), margins(0, 10, 0, 0));
-            Button buy = primaryButton("BUY " + r.symbol + " • CNC");
+            Button buy = r.buyable
+                    ? primaryButton("BUY " + r.symbol + " • CNC")
+                    : disabledActionButton("BUY " + r.symbol + " • CNC");
             buy.setEnabled(r.buyable);
-            buy.setAlpha(r.buyable ? 1.0f : 0.42f);
             if (r.buyable) buy.setOnClickListener(v -> executeResearchAction(buy, r.symbol, "BUY"));
             c.addView(buy, fixedMargins(-1, 48, 0, 8, 0, 0));
         }
@@ -1165,7 +1166,7 @@ public class DashboardActivity extends Activity {
         i.setType("application/zip");
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.9.zip");
+        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.10.zip");
         startActivityForResult(i, REQUEST_HISTORY_CREATE);
     }
 
@@ -1509,6 +1510,23 @@ public class DashboardActivity extends Activity {
         g.setColor(TEAL);
         g.setCornerRadius(dp(14));
         b.setBackground(g);
+        return b;
+    }
+
+    private Button disabledActionButton(String label) {
+        Button b = new Button(this);
+        b.setText(label);
+        b.setAllCaps(false);
+        b.setTextSize(14);
+        b.setTextColor(Color.rgb(126, 143, 158));
+        b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        b.setMinHeight(dp(48));
+        GradientDrawable g = new GradientDrawable();
+        g.setColor(Color.rgb(44, 56, 69));
+        g.setCornerRadius(dp(14));
+        g.setStroke(dp(1), Color.rgb(63, 77, 91));
+        b.setBackground(g);
+        b.setEnabled(false);
         return b;
     }
 

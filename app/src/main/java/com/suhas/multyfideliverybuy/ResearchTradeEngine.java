@@ -478,26 +478,35 @@ final class ResearchTradeEngine {
                     else failureBucket = "NO_ROBUST_EDGE";
                     p.put("failureBucket", failureBucket);
                 } else {
-                    int horizon = Math.max(1, p.optInt("evaluationHorizonSessions",
-                            UnivestBenchmark.PRIMARY_MAX_SESSIONS));
-                    int elapsed = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(
-                            p.optLong("entryAt", 0L), System.currentTimeMillis()));
+                    int horizon = UnivestBenchmark.PRIMARY_MAX_SESSIONS;
+                    long callAt = forecastCallAt(p);
+                    long now = System.currentTimeMillis();
+                    int elapsed = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(callAt, now));
                     p.put("evaluationSessionsElapsed", elapsed);
                     p.put("evaluationHorizonSessions", horizon);
-                    if (elapsed >= horizon && "OPEN".equals(p.optString("evaluationState", "OPEN"))) {
+                    p.put("benchmarkMaxSessions", horizon);
+                    boolean horizonExpired = ForecastPolicy.horizonExpired(callAt, now);
+                    if (horizonExpired && "OPEN".equals(p.optString("evaluationState", "OPEN"))) {
                         double mfe = p.optDouble("mfePct", 0);
-                        if (mfe >= MIN_NET_WIN_PCT) {
+                        double target = p.optDouble("benchmarkTargetUpsidePct", UnivestBenchmark.targetUpsidePct(c));
+                        if (mfe >= target) {
                             p.put("evaluationState", "EDGE_SEEN_WITHIN_HORIZON");
-                            p.put("replaySummary", "HORIZON EVALUATED • >=0.5% favorable opportunity appeared within "
-                                    + horizon + " trading sessions; physical/shadow position may remain open.");
+                            p.put("benchmarkOpportunityOutcome", "BENCHMARK_WIN");
+                            p.put("benchmarkOpportunityPct", mfe);
+                            p.put("replaySummary", "HORIZON EVALUATED • Univest benchmark target was reached within "
+                                    + horizon + " trading sessions; no forced position exit.");
                         } else {
                             p.put("evaluationState", "TIMEOUT_NO_EDGE");
+                            p.put("benchmarkOpportunityOutcome", mfe > 0 ? "PROFITABLE_MISS" : "FAIL");
+                            p.put("benchmarkOpportunityPct", mfe);
                             p.put("failureBucket", "HORIZON_TIMEOUT_NO_EDGE");
-                            p.put("replaySummary", "HORIZON TIMEOUT • no >=0.5% favorable opportunity within "
-                                    + horizon + " trading sessions. Prediction scored without forcing a position exit.");
+                            p.put("replaySummary", "HORIZON TIMEOUT • Univest benchmark target was not reached within "
+                                    + horizon + " trading sessions. Picking strategy scored MISSED; no forced position exit.");
                         }
+                        p.put("benchmarkEvaluationLocked", true);
+                        p.put("benchmarkResolvedAt", now);
                     } else {
-                        p.put("replaySummary", "OPEN • evaluation " + elapsed + "/" + horizon
+                        p.put("replaySummary", "OPEN • evaluation " + Math.min(elapsed, horizon) + "/" + horizon
                                 + " trading sessions; physical/shadow position remains independently managed.");
                     }
                 }
@@ -757,6 +766,7 @@ final class ResearchTradeEngine {
             p.put("live", false);
             p.put("predictionAt", prediction.optLong("scannedAt", now));
             p.put("entryAt", now);
+            p.put("forecastCallAt", now);
             p.put("shadowEntryPrice", ltp);
             p.put("entryPrice", ltp);
             int frozenBudget = AppPrefs.getUnivestBudget(c);
@@ -1100,15 +1110,30 @@ final class ResearchTradeEngine {
         String today = NseTradingCalendar.dayKey(now);
         java.util.List<JSONObject> canonical = canonicalPositions(ResearchStore.positions(c));
         java.util.List<JSONObject> rows = new java.util.ArrayList<>();
+
         for (JSONObject p : canonical) {
-            long entryAt = p.optLong("entryAt", 0L);
-            long exitAt = p.optLong("exitAt", 0L);
-            if ((entryAt > 0 && today.equals(NseTradingCalendar.dayKey(entryAt)))
-                    || (exitAt > 0 && today.equals(NseTradingCalendar.dayKey(exitAt)))) {
-                rows.add(p);
+            long callAt = forecastCallAt(p);
+            if (callAt <= 0) continue;
+
+            boolean terminal = isForecastTerminal(p);
+            if (terminal) {
+                long terminalAt = forecastTerminalAt(p);
+                if (terminalAt <= 0) terminalAt = callAt; // legacy records without a resolution timestamp
+                if (today.equals(NseTradingCalendar.dayKey(terminalAt))) rows.add(p);
+                continue;
             }
+
+            if (ForecastPolicy.horizonExpired(callAt, now)) {
+                // Show the Session-3 miss only on its expiry session; archive it thereafter.
+                if (today.equals(ForecastPolicy.expirySessionKey(callAt))) rows.add(p);
+                continue;
+            }
+
+            // Only still-live Forecast calls carry forward between sessions.
+            if (ForecastPolicy.liveCallVisible(callAt, now)) rows.add(p);
         }
-        rows.sort((a,b) -> Long.compare(a.optLong("entryAt", 0L), b.optLong("entryAt", 0L)));
+
+        rows.sort((a,b) -> Long.compare(forecastCallAt(a), forecastCallAt(b)));
 
         java.util.List<ForecastDecisionRow> out = new java.util.ArrayList<>();
         for (JSONObject p : rows) {
@@ -1118,7 +1143,7 @@ final class ResearchTradeEngine {
                     p.optInt("score", p.optInt("dataConfidence", 0))));
             double entry = p.optDouble("shadowEntryPrice", p.optDouble("entryPrice", 0));
             double target = forecastBenchmarkTargetPrice(c, p, entry);
-            String state = forecastDecisionState(p);
+            String state = forecastDecisionState(p, now);
             boolean buyable = "BUY NOW".equals(state)
                     && !p.optBoolean("live", false)
                     && NseTradingCalendar.isRegularMarketOpen(now);
@@ -1146,7 +1171,7 @@ final class ResearchTradeEngine {
         return Math.max(benchmarkTarget, modelTarget > entry ? modelTarget : 0);
     }
 
-    private static String forecastDecisionState(JSONObject p) {
+    private static String forecastDecisionState(JSONObject p, long now) {
         String opportunity = p.optString("benchmarkOpportunityOutcome", "");
         String realized = p.optString("benchmarkRealizedOutcome", "");
         String eval = p.optString("evaluationState", "");
@@ -1160,10 +1185,38 @@ final class ResearchTradeEngine {
         if ("BENCHMARK_WIN".equals(opportunity) || "EDGE_SEEN_WITHIN_HORIZON".equals(eval)) return "TARGET HIT";
         if ("TIMEOUT_NO_EDGE".equals(eval) || "PROFITABLE_MISS".equals(opportunity) || "FAIL".equals(opportunity))
             return net < 0 ? "LOSS" : "MISSED";
-        if (p.optBoolean("live", false)
-                || "LIVE_OPEN".equals(raw) || "LIVE_PENDING".equals(raw) || "LIVE_EXIT_PENDING".equals(raw))
-            return "BOUGHT";
-        return "BUY NOW";
+
+        long callAt = forecastCallAt(p);
+        return ForecastPolicy.openCallState(
+                p.optBoolean("live", false)
+                        || "LIVE_OPEN".equals(raw) || "LIVE_PENDING".equals(raw) || "LIVE_EXIT_PENDING".equals(raw),
+                callAt, now);
+    }
+
+    private static boolean isForecastTerminal(JSONObject p) {
+        if (p == null) return true;
+        if ("CLOSED".equals(p.optString("state", ""))) return true;
+        String opportunity = p.optString("benchmarkOpportunityOutcome", "");
+        String eval = p.optString("evaluationState", "");
+        return "BENCHMARK_WIN".equals(opportunity)
+                || "PROFITABLE_MISS".equals(opportunity)
+                || "FAIL".equals(opportunity)
+                || "EDGE_SEEN_WITHIN_HORIZON".equals(eval)
+                || "TIMEOUT_NO_EDGE".equals(eval);
+    }
+
+    private static long forecastTerminalAt(JSONObject p) {
+        long resolved = p.optLong("benchmarkResolvedAt", 0L);
+        if (resolved > 0) return resolved;
+        long exit = p.optLong("exitAt", 0L);
+        if (exit > 0) return exit;
+        return 0L;
+    }
+
+    private static long forecastCallAt(JSONObject p) {
+        long t = p == null ? 0L : p.optLong("forecastCallAt", 0L);
+        if (t > 0) return t;
+        return p == null ? 0L : p.optLong("entryAt", p.optLong("predictionAt", 0L));
     }
 
     private static String forecastReasonLabel(JSONObject p) {
@@ -1369,11 +1422,12 @@ final class ResearchTradeEngine {
 
     private static void updateBenchmarkEvaluation(Context c, JSONObject p) {
         if (p == null || p.optBoolean("benchmarkEvaluationLocked", false)) return;
-        long entryAt = p.optLong("entryAt", 0L);
-        if (entryAt <= 0) return;
+        long callAt = forecastCallAt(p);
+        if (callAt <= 0) return;
+        long now = System.currentTimeMillis();
         long end = "CLOSED".equals(p.optString("state")) && p.optLong("exitAt", 0L) > 0
-                ? p.optLong("exitAt") : System.currentTimeMillis();
-        int sessions = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(entryAt, end));
+                ? p.optLong("exitAt") : now;
+        int sessions = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(callAt, end));
         double target = p.optDouble("benchmarkTargetUpsidePct", UnivestBenchmark.targetUpsidePct(c));
         double mfe = p.optDouble("mfePct", 0);
         try {
@@ -1382,14 +1436,19 @@ final class ResearchTradeEngine {
                 p.put("benchmarkOpportunityOutcome", "BENCHMARK_WIN");
                 p.put("benchmarkOpportunityPct", mfe);
                 p.put("benchmarkEvaluationLocked", true);
+                p.put("benchmarkResolvedAt", end);
             } else if ("CLOSED".equals(p.optString("state"))) {
                 p.put("benchmarkOpportunityOutcome", mfe > 0 ? "PROFITABLE_MISS" : "FAIL");
                 p.put("benchmarkOpportunityPct", mfe);
                 p.put("benchmarkEvaluationLocked", true);
-            } else if (sessions >= UnivestBenchmark.PRIMARY_MAX_SESSIONS) {
+                p.put("benchmarkResolvedAt", end);
+            } else if (ForecastPolicy.horizonExpired(callAt, now)) {
                 p.put("benchmarkOpportunityOutcome", mfe > 0 ? "PROFITABLE_MISS" : "FAIL");
                 p.put("benchmarkOpportunityPct", mfe);
+                p.put("evaluationState", "TIMEOUT_NO_EDGE");
+                p.put("failureBucket", "HORIZON_TIMEOUT_NO_EDGE");
                 p.put("benchmarkEvaluationLocked", true);
+                p.put("benchmarkResolvedAt", now);
             }
         } catch (Exception ignored) {}
     }
