@@ -107,7 +107,7 @@ jobs:
           grep -q 'FOREGROUND_SERVICE_SPECIAL_USE' app/src/main/AndroidManifest.xml
           grep -q 'PARTIAL_WAKE_LOCK' app/src/main/java/com/suhas/multyfideliverybuy/DurableOfficialSignalQueue.java
           grep -q 'OFFICIAL_BUY_LIMIT_BUFFER_PCT = 0.0035' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
-          grep -Fq 'TODAY\'S FORECAST CALLS' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq "TODAY'S FORECAST CALLS" app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'LIVE WATCHLIST' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -q 'UNIVEST 30-DAY BENCHMARK' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'UNIVEST AVG UPSIDE' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
