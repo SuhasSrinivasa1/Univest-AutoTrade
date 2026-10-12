@@ -68,6 +68,7 @@ public class DashboardActivity extends Activity {
         getWindow().setNavigationBarColor(NAV_BG);
         ResearchScheduler.ensureScheduled(getApplicationContext());
         ResearchMonitorScheduler.ensureScheduled(getApplicationContext());
+        MarketGuardianService.ensureRunning(getApplicationContext());
         PreMarketReadinessScheduler.ensureScheduled(getApplicationContext());
         UnivestHistoryDb.ensureInitialized(getApplicationContext());
         DurableOfficialSignalQueue.recoverPending(getApplicationContext());
@@ -269,9 +270,9 @@ public class DashboardActivity extends Activity {
 
         LinearLayout intro = card();
         intro.addView(sectionRow("FORECAST ENGINE", lastResearchTime()));
-        intro.addView(body("Scans the eligible NSE CASH universe off-market, keeps a broad candidate pool, then reranks the strongest candidates about every 15 minutes as point-in-time intraday evidence develops."), margins(0, 12, 0, 0));
+        intro.addView(body("Scans the eligible NSE CASH universe off-market, then the foreground guardian reranks a broad live watchlist about every 2 minutes. A stock becomes a Forecast call only after all gates remain READY across consecutive live scans."), margins(0, 12, 0, 0));
         intro.addView(meta(ResearchIntradayScanner.statusText(this)), margins(0, 8, 0, 0));
-        intro.addView(meta("Up to five high-conviction Research recommendations may trigger in a session. Five is a maximum, never a quota; weak days may produce fewer."), margins(0, 6, 0, 0));
+        intro.addView(meta("No daily call quota. Recommendations arrive one by one when conditions cross into a confirmed actionable state; the watchlist itself is not a recommendation."), margins(0, 6, 0, 0));
         intro.addView(meta(AppPrefs.isResearchAutoTradeEnabled(this)
                 ? "Research AutoTrade ON • qualified Research entries/exits may place real CNC orders"
                 : "Research AutoTrade OFF • research entry/exit actions require confirmation"), margins(0, 8, 0, 0));
@@ -292,9 +293,12 @@ public class DashboardActivity extends Activity {
             root.addView(actionCard, margins(0, 0, 0, 14));
         }
 
+        root.addView(forecastImpactTableCard(), margins(0, 0, 0, 14));
+
         LinearLayout expected = card();
-        expected.addView(sectionRow("LIVE RECOMMENDATIONS / WATCHLIST", "Top 5"));
-        expected.addView(body(ResearchEngine.predictionsText(this, 5)), margins(0, 12, 0, 0));
+        expected.addView(sectionRow("LIVE WATCHLIST", "Top 10 candidates"));
+        expected.addView(body(ResearchEngine.predictionsText(this, 10)), margins(0, 12, 0, 0));
+        expected.addView(meta("Watchlist ranks are candidates only. A call is recorded separately only after the edge-trigger confirmation fires."), margins(0, 8, 0, 0));
         root.addView(expected, margins(0, 0, 0, 14));
 
         LinearLayout activeResearch = card();
@@ -438,7 +442,7 @@ public class DashboardActivity extends Activity {
         Button repair = secondaryButton("REPAIR / RESCHEDULE RESEARCH");
         repair.setOnClickListener(v -> repairSchedule(repair));
         scheduler.addView(repair, fixedMargins(-1, 50, 0, 12, 0, 0));
-        scheduler.addView(meta("Live monitor: " + (ResearchMonitorScheduler.isActive(this) ? "ACTIVE (~15 min cadence)" : "NOT ACTIVE"), 
+        scheduler.addView(meta("Live fallback job: " + (ResearchMonitorScheduler.isActive(this) ? "ACTIVE (~15 min)" : "NOT ACTIVE"), 
                 ResearchMonitorScheduler.isActive(this) ? GREEN : AMBER), margins(0, 8, 0, 0));
         scheduler.addView(meta("Historical scheduler errors remain in diagnostics even after a successful repair."), margins(0, 8, 0, 0));
         root.addView(scheduler, margins(0, 0, 0, 14));
@@ -465,6 +469,8 @@ public class DashboardActivity extends Activity {
         device.addView(meta("For reliable Univest notifications, keep notification access enabled and allow unrestricted background activity. These controls do not change trading rules."), margins(0, 8, 0, 0));
         device.addView(meta("Durable official queue: " + DurableOfficialSignalQueue.statusText(this),
                 DurableOfficialSignalQueue.pendingCount(this) == 0 ? GREEN : AMBER), margins(0, 8, 0, 0));
+        device.addView(meta("Foreground guardian: " + MarketGuardianService.statusText(this),
+                MarketGuardianService.isRecentlyAlive(this) ? GREEN : AMBER), margins(0, 8, 0, 0));
 
         Button battery = secondaryButton(batteryFree ? "BATTERY EXEMPTION ALREADY ACTIVE" : "ALLOW UNRESTRICTED BATTERY");
         battery.setEnabled(!batteryFree);
@@ -527,7 +533,7 @@ public class DashboardActivity extends Activity {
 
         LinearLayout about = card();
         about.addView(sectionRow("ABOUT", "Orchestrated Research"));
-        about.addView(body("Univest AutoTrade v2.9.6"), margins(0, 10, 0, 0));
+        about.addView(body("Univest AutoTrade v2.9.7"), margins(0, 10, 0, 0));
         about.addView(meta("Package: com.suhas.multyfideliverybuy"), margins(0, 6, 0, 0));
         about.addView(meta("Official Univest execution and Research decisions remain separately attributed; Research→Univest same-symbol confirmation is intentionally additive."), margins(0, 6, 0, 0));
         root.addView(about, margins(0, 0, 0, 22));
@@ -546,7 +552,7 @@ public class DashboardActivity extends Activity {
         left.addView(text(subtitle, 12, SUBTEXT, false), margins(0, 3, 0, 0));
         row.addView(left, new LinearLayout.LayoutParams(0, -2, 1f));
 
-        TextView version = text("v2.9.6", 11, TEAL, true);
+        TextView version = text("v2.9.7", 11, TEAL, true);
         version.setGravity(Gravity.CENTER);
         version.setPadding(dp(10), dp(6), dp(10), dp(6));
         GradientDrawable chip = new GradientDrawable();
@@ -658,6 +664,39 @@ public class DashboardActivity extends Activity {
         return c;
     }
 
+    private View forecastImpactTableCard() {
+        LinearLayout c = card();
+        java.util.List<ResearchTradeEngine.ForecastImpactRow> rows = ResearchTradeEngine.todayForecastImpactRows(this);
+        c.addView(sectionRow("TODAY'S FORECAST CALLS", ResearchTradeEngine.forecastCallsTodayCount(this) + " calls"));
+        c.addView(forecastImpactRow("Time", "Stock", "Return", "30D avg impact", "Result", true), margins(0, 12, 0, 0));
+        if (rows.isEmpty()) {
+            c.addView(meta("No Forecast call has triggered today. Watchlist candidates do not count until the READY confirmation fires."),
+                    margins(0, 10, 0, 0));
+            return c;
+        }
+        for (ResearchTradeEngine.ForecastImpactRow r : rows) {
+            String avg = "—".equals(r.averageChange) ? "—" : r.averageChange + " (" + r.impact + ")";
+            c.addView(forecastImpactRow(r.time, r.symbol, r.realized, avg, r.result, false), margins(0, 7, 0, 0));
+        }
+        c.addView(meta("WIN = met/exceeded the rolling Univest upside benchmark within the primary horizon. MISS = positive but below benchmark or too slow. LOSS = negative close. OPEN does not affect the realized 30-day Forecast average."),
+                margins(0, 10, 0, 0));
+        return c;
+    }
+
+    private View forecastImpactRow(String time, String stock, String realized, String average, String result, boolean header) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        int color = header ? SUBTEXT : TEXT;
+        int size = header ? 10 : 11;
+        row.addView(tableCell(time, size, color, header, Gravity.START), new LinearLayout.LayoutParams(0, -2, 0.75f));
+        row.addView(tableCell(stock, size, color, header, Gravity.START), new LinearLayout.LayoutParams(0, -2, 1.00f));
+        row.addView(tableCell(realized, size, color, header, Gravity.END), new LinearLayout.LayoutParams(0, -2, 0.90f));
+        row.addView(tableCell(average, size, color, header, Gravity.END), new LinearLayout.LayoutParams(0, -2, 1.65f));
+        row.addView(tableCell(result, size, color, header, Gravity.END), new LinearLayout.LayoutParams(0, -2, 0.85f));
+        return row;
+    }
+
     private View campaignTableCard() {
         LinearLayout c = card();
         c.addView(sectionRow("CURRENT POSITIONS", String.valueOf(activeCampaignCount())));
@@ -689,6 +728,8 @@ public class DashboardActivity extends Activity {
         c.addView(meta("Execution latency: " + OfficialExecutionLatency.latestSummary(this)), margins(0, 8, 0, 0));
         c.addView(meta("Signal queue: " + DurableOfficialSignalQueue.statusText(this),
                 DurableOfficialSignalQueue.pendingCount(this) == 0 ? GREEN : AMBER), margins(0, 6, 0, 0));
+        c.addView(meta("Background protection: " + MarketGuardianService.statusText(this),
+                MarketGuardianService.isRecentlyAlive(this) ? GREEN : AMBER), margins(0, 6, 0, 0));
         return c;
     }
 
@@ -1038,7 +1079,7 @@ public class DashboardActivity extends Activity {
         i.setType("application/zip");
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.6.zip");
+        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.7.zip");
         startActivityForResult(i, REQUEST_HISTORY_CREATE);
     }
 

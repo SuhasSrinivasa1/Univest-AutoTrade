@@ -47,7 +47,8 @@ final class GrowwClient {
     private static final String POSITION_SYMBOL_URL = "https://api.groww.in/v1/positions/trading-symbol";
     private static final String HOLDINGS_URL = "https://api.groww.in/v1/holdings/user";
     private static final String HISTORICAL_CANDLES_URL = "https://api.groww.in/v1/historical/candles";
-    private static final double OFFICIAL_MARKETABLE_LIMIT_BUFFER_PCT = 0.02;
+    private static final double OFFICIAL_BUY_LIMIT_BUFFER_PCT = 0.0035;
+    private static final double OFFICIAL_SELL_LIMIT_BUFFER_PCT = 0.02;
     private static final ExecutorService EXIT_READ_POOL = Executors.newFixedThreadPool(2);
 
 
@@ -428,9 +429,10 @@ final class GrowwClient {
             OrderSubmit entry;
             if (plan.useLimit) {
                 DiagnosticsStore.broker(context, "CIRCUIT_GUARD_BUY", symbol, true,
-                        "Official BUY uses circuit-safe marketable LIMIT ₹" + money(plan.limitPrice)
+                        "Official BUY uses tight circuit-safe marketable LIMIT ₹" + money(plan.limitPrice)
                                 + " • band ₹" + money(plan.lowerCircuit) + "–₹" + money(plan.upperCircuit)
-                                + " • reference ₹" + money(plan.referencePrice) + ".");
+                                + " • executable reference ₹" + money(plan.referencePrice)
+                                + " • max buffer " + String.format(Locale.US, "%.2f%%", OFFICIAL_BUY_LIMIT_BUFFER_PCT * 100.0) + ".");
                 entry = submitLimitOrder(context, symbol, quantity, "CNC", "BUY", plan.limitPrice, referenceId);
             } else {
                 DiagnosticsStore.broker(context, "CIRCUIT_GUARD_UNAVAILABLE_BUY", symbol, true,
@@ -451,6 +453,15 @@ final class GrowwClient {
                 return new ExecutionResult(false, false, false, entry.orderId, quantity, fill.quantity,
                         fill.averagePrice, ltp, dispatch,
                         "Official BUY rejected after submission • " + fill.status);
+            }
+            if (fill.averagePrice > 0 && plan.referencePrice > 0) {
+                double slippagePct = (fill.averagePrice / plan.referencePrice - 1.0) * 100.0;
+                DiagnosticsStore.runtime(context, "OFFICIAL_BUY_PRICE_PATH", symbol,
+                        "Dispatch reference ₹" + money(plan.referencePrice)
+                                + " • limit ₹" + money(plan.useLimit ? plan.limitPrice : 0)
+                                + " • fill ₹" + money(fill.averagePrice)
+                                + " • dispatch-to-fill " + String.format(Locale.US, "%+.2f%%", slippagePct)
+                                + " • max buffer " + String.format(Locale.US, "%.2f%%", OFFICIAL_BUY_LIMIT_BUFFER_PCT * 100.0) + ".");
             }
             return new ExecutionResult(true, fill.quantity >= quantity && fill.averagePrice > 0, false,
                     entry.orderId, quantity, fill.quantity, fill.averagePrice, ltp, dispatch,
@@ -1234,7 +1245,7 @@ final class GrowwClient {
         double tick = tickSize > 0 ? tickSize : 0.05;
         if ("BUY".equals(side) && q.upperCircuit > 0) {
             double reference = Math.max(q.lastPrice, q.offerPrice > 0 ? q.offerPrice : q.lastPrice);
-            double aggressive = reference * (1.0 + OFFICIAL_MARKETABLE_LIMIT_BUFFER_PCT);
+            double aggressive = reference * (1.0 + OFFICIAL_BUY_LIMIT_BUFFER_PCT);
             double capped = Math.min(q.upperCircuit, aggressive);
             double limit = roundDownToTick(capped, tick);
             if (limit <= 0) return new CircuitOrderPlan(false, reference, 0, q.lowerCircuit, q.upperCircuit, "Invalid upper-circuit plan.");
@@ -1242,7 +1253,7 @@ final class GrowwClient {
         }
         if ("SELL".equals(side) && q.lowerCircuit > 0) {
             double reference = Math.min(q.lastPrice, q.bidPrice > 0 ? q.bidPrice : q.lastPrice);
-            double aggressive = reference * (1.0 - OFFICIAL_MARKETABLE_LIMIT_BUFFER_PCT);
+            double aggressive = reference * (1.0 - OFFICIAL_SELL_LIMIT_BUFFER_PCT);
             double floored = Math.max(q.lowerCircuit, aggressive);
             double limit = roundUpToTick(floored, tick);
             if (limit <= 0) return new CircuitOrderPlan(false, reference, 0, q.lowerCircuit, q.upperCircuit, "Invalid lower-circuit plan.");

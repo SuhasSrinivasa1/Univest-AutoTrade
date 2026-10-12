@@ -20,6 +20,7 @@ public class MultyfiNotificationService extends NotificationListenerService {
     @Override public void onCreate() {
         super.onCreate();
         AppPrefs.setNotificationListenerHeartbeat(getApplicationContext(), "CREATED");
+        MarketGuardianService.ensureRunning(getApplicationContext());
         UnivestHistoryDb.ensureInitialized(getApplicationContext());
         PreMarketReadinessScheduler.ensureScheduled(getApplicationContext());
         DurableOfficialSignalQueue.recoverPending(getApplicationContext());
@@ -33,6 +34,7 @@ public class MultyfiNotificationService extends NotificationListenerService {
     @Override public void onListenerConnected() {
         super.onListenerConnected();
         AppPrefs.setNotificationListenerHeartbeat(getApplicationContext(), "CONNECTED");
+        MarketGuardianService.ensureRunning(getApplicationContext());
         ResearchScheduler.ensureScheduled(getApplicationContext());
         ResearchMonitorScheduler.ensureScheduled(getApplicationContext());
         PreMarketReadinessScheduler.ensureScheduled(getApplicationContext());

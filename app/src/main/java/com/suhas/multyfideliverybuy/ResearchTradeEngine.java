@@ -22,7 +22,6 @@ final class ResearchTradeEngine {
     static final double MIN_NET_WIN_PCT = 0.50;
     static final int ENTRY_SCORE_MIN = 80;
     static final int ENTRY_CONSENSUS_MIN = 2;
-    static final int DAILY_RECOMMENDATION_CAP = 5;
     private static final String CHANNEL = "research_trade_signals";
 
     private ResearchTradeEngine() {}
@@ -46,11 +45,7 @@ final class ResearchTradeEngine {
             monitorOpenPositions(c);
             JSONArray predictions = ResearchStore.predictions(c);
             boolean auto = AppPrefs.isResearchAutoTradeEnabled(c);
-            int maxTracked = auto ? AppPrefs.getResearchMaxPositions(c) : 10;
-            int active = activeCount(c);
-            int recommendedToday = researchEntriesToday(c);
-            for (int i = 0; i < predictions.length() && i < 20 && active < maxTracked
-                    && recommendedToday < DAILY_RECOMMENDATION_CAP; i++) {
+            for (int i = 0; i < predictions.length() && i < 30; i++) {
                 JSONObject p = predictions.optJSONObject(i);
                 if (p == null) continue;
                 String symbol = p.optString("symbol", "").trim().toUpperCase(Locale.US);
@@ -64,17 +59,12 @@ final class ResearchTradeEngine {
                     }
                     continue;
                 }
-                if (hasResearchEntryToday(c, symbol)) {
-                    logSkip(c, symbol, "ALREADY_RECOMMENDED_TODAY", "Research already issued a recommendation for this symbol today.");
-                    continue;
-                }
-
                 int score = p.optInt("similarity", p.optInt("bestScore", 0));
                 int consensus = p.optInt("consensus", 0);
                 int confidence = p.optInt("dataConfidence", ResearchDataQuality.score(p));
-                if (score < ENTRY_SCORE_MIN) { logSkip(c, symbol, "LOW_STRATEGY_SCORE", "Score " + score + " < " + ENTRY_SCORE_MIN); continue; }
-                if (consensus < ENTRY_CONSENSUS_MIN) { logSkip(c, symbol, "LOW_CONSENSUS", "Consensus " + consensus + "/5"); continue; }
-                if (confidence < 60) { logSkip(c, symbol, "LOW_DATA_CONFIDENCE", "Data confidence " + confidence + "% • missing " + p.optString("missingData")); continue; }
+                if (score < ENTRY_SCORE_MIN) { ResearchTriggerState.markNotReady(c, symbol, today); logSkip(c, symbol, "LOW_STRATEGY_SCORE", "Score " + score + " < " + ENTRY_SCORE_MIN); continue; }
+                if (consensus < ENTRY_CONSENSUS_MIN) { ResearchTriggerState.markNotReady(c, symbol, today); logSkip(c, symbol, "LOW_CONSENSUS", "Consensus " + consensus + "/5"); continue; }
+                if (confidence < 60) { ResearchTriggerState.markNotReady(c, symbol, today); logSkip(c, symbol, "LOW_DATA_CONFIDENCE", "Data confidence " + confidence + "% • missing " + p.optString("missingData")); continue; }
 
                 double ltp;
                 try { ltp = GrowwClient.getLtpForAutomation(c, symbol); }
@@ -84,9 +74,9 @@ final class ResearchTradeEngine {
                 double low = p.optDouble("buyLow", 0);
                 double high = p.optDouble("buyHigh", 0);
                 double chase = p.optDouble("chaseLimit", 0);
-                if (!(low > 0) || !(chase > 0)) { logSkip(c, symbol, "INVALID_ENTRY_ZONE", "Frozen entry zone unavailable"); continue; }
-                if (ltp < low) { logSkip(c, symbol, "WAIT_RETEST_LOW", "LTP ₹" + money(ltp) + " below buy zone"); continue; }
-                if (ltp > chase) { logSkip(c, symbol, "DO_NOT_CHASE", "LTP ₹" + money(ltp) + " above chase ceiling ₹" + money(chase)); continue; }
+                if (!(low > 0) || !(chase > 0)) { ResearchTriggerState.markNotReady(c, symbol, today); logSkip(c, symbol, "INVALID_ENTRY_ZONE", "Frozen entry zone unavailable"); continue; }
+                if (ltp < low) { ResearchTriggerState.markNotReady(c, symbol, today); logSkip(c, symbol, "WAIT_RETEST_LOW", "LTP ₹" + money(ltp) + " below buy zone"); continue; }
+                if (ltp > chase) { ResearchTriggerState.markNotReady(c, symbol, today); logSkip(c, symbol, "DO_NOT_CHASE", "LTP ₹" + money(ltp) + " above chase ceiling ₹" + money(chase)); continue; }
 
                 int shadowQty = Math.max(1, (int)Math.floor(Math.max(1, AppPrefs.getUnivestBudget(c)) / ltp));
                 double sellLow = p.optDouble("sellLow", 0);
@@ -95,15 +85,26 @@ final class ResearchTradeEngine {
                     double potentialPct = potentialNet / Math.max(1.0, ltp * shadowQty) * 100.0;
                     double requiredEdge = Math.max(MIN_NET_WIN_PCT, UnivestBenchmark.targetUpsidePct(c));
                     if (potentialPct < requiredEdge) {
+                        ResearchTriggerState.markNotReady(c, symbol, today);
                         logSkip(c, symbol, "INSUFFICIENT_BENCHMARK_EDGE", "Reference sell zone offers only " + one(potentialPct)
                                 + "% estimated net vs current Univest benchmark target " + one(requiredEdge) + "%.");
                         continue;
                     }
                 }
 
+                long readyNow = System.currentTimeMillis();
+                if (!ResearchTriggerState.shouldTrigger(c, symbol, today, readyNow)) {
+                    logSkip(c, symbol, "READY_CONFIRMING",
+                            "All gates pass; waiting for a second live scan before emitting the recommendation.");
+                    continue;
+                }
+
                 JSONObject pos = openShadow(c, p, ltp, i + 1);
-                active++;
-                recommendedToday++;
+                if (pos == null) {
+                    DiagnosticsStore.runtime(c, "RESEARCH_RECOMMENDATION_DUPLICATE_BLOCK", symbol,
+                            "Atomic Research position claim rejected a duplicate recommendation.");
+                    continue;
+                }
                 postEntryReady(c, pos);
 
                 if (auto && AppPrefs.isLiveMode(c) && AppPrefs.isReadyForBuy(c)) {
@@ -745,7 +746,11 @@ final class ResearchTradeEngine {
         JSONObject p = new JSONObject();
         try {
             long now = System.currentTimeMillis();
+            String recommendationKey = prediction.optString("forecastSessionKey", AppPrefs.getResearchForecastTargetKey(c))
+                    + "|" + prediction.optString("symbol") + "|" + prediction.optLong("scannedAt", prediction.optLong("predictionAt", 0L))
+                    + "|" + prediction.optString("strategy");
             p.put("id", "R" + now + prediction.optString("symbol"));
+            p.put("recommendationKey", recommendationKey);
             p.put("symbol", prediction.optString("symbol"));
             p.put("companyName", prediction.optString("companyName"));
             p.put("state", "SHADOW_OPEN");
@@ -803,7 +808,7 @@ final class ResearchTradeEngine {
             p.put("benchmarkOpportunityOutcome", "OPEN");
             p.put("lastReason", "Entry trigger reached inside frozen Research buy/chase range.");
         } catch (Exception ignored) {}
-        JSONArray a = ResearchStore.positions(c); a.put(p); ResearchStore.savePositions(c, a);
+        if (!ResearchStore.appendPositionIfAbsent(c, p)) return null;
         AppPrefs.setResearchAction(c, p.optString("symbol"), "BUY");
         DiagnosticsStore.runtime(c, "RESEARCH_SHADOW_ENTRY", p.optString("symbol"),
                 "Frozen Research entry triggered at ₹" + money(ltp) + ".");
@@ -1039,35 +1044,150 @@ final class ResearchTradeEngine {
     }
 
     static double rollingAverageClosedUpsidePct(JSONArray positions, long now, int windowDays) {
-        if (positions == null || positions.length() == 0) return 0;
         long cutoff = now - Math.max(1, windowDays) * 24L * 60L * 60L * 1000L;
-        double sum = 0;
-        int count = 0;
-        for (int i = 0; i < positions.length(); i++) {
-            JSONObject p = positions.optJSONObject(i);
-            if (p == null || !"CLOSED".equals(p.optString("state"))) continue;
+        double sum = 0; int count = 0;
+        for (JSONObject p : canonicalPositions(positions)) {
+            if (!"CLOSED".equals(p.optString("state"))) continue;
             long exitAt = p.optLong("exitAt", 0L);
             if (exitAt <= 0 || exitAt < cutoff || exitAt > now) continue;
             double net = p.optDouble("netPct", Double.NaN);
             if (!Double.isFinite(net)) continue;
-            sum += net;
-            count++;
+            sum += net; count++;
         }
         return count == 0 ? 0 : sum / count;
     }
 
     static int rollingClosedCount(JSONArray positions, long now, int windowDays) {
-        if (positions == null || positions.length() == 0) return 0;
         long cutoff = now - Math.max(1, windowDays) * 24L * 60L * 60L * 1000L;
         int count = 0;
-        for (int i = 0; i < positions.length(); i++) {
-            JSONObject p = positions.optJSONObject(i);
-            if (p == null || !"CLOSED".equals(p.optString("state"))) continue;
+        for (JSONObject p : canonicalPositions(positions)) {
+            if (!"CLOSED".equals(p.optString("state"))) continue;
             long exitAt = p.optLong("exitAt", 0L);
             if (exitAt > 0 && exitAt >= cutoff && exitAt <= now
                     && Double.isFinite(p.optDouble("netPct", Double.NaN))) count++;
         }
         return count;
+    }
+
+    static final class ForecastImpactRow {
+        final String time;
+        final String symbol;
+        final String realized;
+        final String averageChange;
+        final String impact;
+        final String result;
+
+        ForecastImpactRow(String time, String symbol, String realized, String averageChange, String impact, String result) {
+            this.time = time; this.symbol = symbol; this.realized = realized;
+            this.averageChange = averageChange; this.impact = impact; this.result = result;
+        }
+    }
+
+    static java.util.List<ForecastImpactRow> todayForecastImpactRows(Context c) {
+        long now = System.currentTimeMillis();
+        String today = NseTradingCalendar.dayKey(now);
+        java.util.List<JSONObject> canonical = canonicalPositions(ResearchStore.positions(c));
+        java.util.List<JSONObject> rows = new java.util.ArrayList<>();
+        for (JSONObject p : canonical) {
+            long exitAt = p.optLong("exitAt", 0L);
+            long entryAt = p.optLong("entryAt", 0L);
+            if (exitAt > 0 && today.equals(NseTradingCalendar.dayKey(exitAt))) rows.add(p);
+            else if (!"CLOSED".equals(p.optString("state")) && entryAt > 0
+                    && today.equals(NseTradingCalendar.dayKey(entryAt))) rows.add(p);
+        }
+        rows.sort((a,b) -> {
+            long ta = "CLOSED".equals(a.optString("state")) ? a.optLong("exitAt", 0L) : a.optLong("entryAt", 0L);
+            long tb = "CLOSED".equals(b.optString("state")) ? b.optLong("exitAt", 0L) : b.optLong("entryAt", 0L);
+            return Long.compare(ta, tb);
+        });
+
+        java.util.List<ForecastImpactRow> out = new java.util.ArrayList<>();
+        for (JSONObject p : rows) {
+            boolean closed = "CLOSED".equals(p.optString("state"));
+            long eventAt = closed ? p.optLong("exitAt", 0L) : p.optLong("entryAt", 0L);
+            String time = clockIst(eventAt);
+            String symbol = p.optString("symbol", "");
+            if (!closed) {
+                out.add(new ForecastImpactRow(time, symbol, "—", "—", "—", "OPEN"));
+                continue;
+            }
+            double net = p.optDouble("netPct", 0);
+            double before = averageBefore(canonical, eventAt, p);
+            int beforeCount = countBefore(canonical, eventAt, p);
+            double after = (before * beforeCount + net) / Math.max(1, beforeCount + 1);
+            double delta = after - before;
+            String outcome;
+            if (net < 0) outcome = "LOSS";
+            else if ("BENCHMARK_WIN".equals(p.optString("benchmarkRealizedOutcome"))
+                    || "BENCHMARK_WIN".equals(p.optString("benchmarkOpportunityOutcome"))) outcome = "WIN";
+            else outcome = "MISS";
+            out.add(new ForecastImpactRow(time, symbol, signedOne(net) + "%",
+                    signedOne(before) + "→" + signedOne(after),
+                    signedOne(delta), outcome));
+        }
+        return out;
+    }
+
+    static int forecastCallsTodayCount(Context c) {
+        String today = NseTradingCalendar.dayKey(System.currentTimeMillis());
+        int n = 0;
+        for (JSONObject p : canonicalPositions(ResearchStore.positions(c))) {
+            long at = p.optLong("entryAt", 0L);
+            if (at > 0 && today.equals(NseTradingCalendar.dayKey(at))) n++;
+        }
+        return n;
+    }
+
+    private static double averageBefore(java.util.List<JSONObject> positions, long eventAt, JSONObject self) {
+        long cutoff = eventAt - 30L * 24L * 60L * 60L * 1000L;
+        double sum = 0; int n = 0;
+        for (JSONObject p : positions) {
+            if (p == self || !"CLOSED".equals(p.optString("state"))) continue;
+            long x = p.optLong("exitAt", 0L);
+            if (x >= cutoff && x < eventAt) { sum += p.optDouble("netPct", 0); n++; }
+        }
+        return n == 0 ? 0 : sum / n;
+    }
+
+    private static int countBefore(java.util.List<JSONObject> positions, long eventAt, JSONObject self) {
+        long cutoff = eventAt - 30L * 24L * 60L * 60L * 1000L;
+        int n = 0;
+        for (JSONObject p : positions) {
+            if (p == self || !"CLOSED".equals(p.optString("state"))) continue;
+            long x = p.optLong("exitAt", 0L);
+            if (x >= cutoff && x < eventAt) n++;
+        }
+        return n;
+    }
+
+    private static java.util.List<JSONObject> canonicalPositions(JSONArray positions) {
+        java.util.LinkedHashMap<String, JSONObject> byKey = new java.util.LinkedHashMap<>();
+        if (positions == null) return new java.util.ArrayList<>();
+        for (int i = 0; i < positions.length(); i++) {
+            JSONObject p = positions.optJSONObject(i); if (p == null) continue;
+            String key = p.optString("recommendationKey", "");
+            if (key.isEmpty()) {
+                key = p.optString("forecastSessionKey", "") + "|" + p.optString("symbol", "")
+                        + "|" + p.optLong("predictionAt", 0L) + "|" + p.optString("strategy", "");
+            }
+            JSONObject prior = byKey.get(key);
+            if (prior == null || (!"CLOSED".equals(prior.optString("state")) && "CLOSED".equals(p.optString("state")))) {
+                byKey.put(key, p);
+            }
+        }
+        return new java.util.ArrayList<>(byKey.values());
+    }
+
+    private static String clockIst(long when) {
+        if (when <= 0) return "—";
+        java.text.SimpleDateFormat f = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.US);
+        f.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+        return f.format(new java.util.Date(when));
+    }
+
+    private static String signedOne(double x) {
+        if (Math.abs(x) < 0.0001) return "0.0";
+        return String.format(java.util.Locale.US, "%+.1f", x);
     }
 
     static String benchmarkScorecardText(Context c) {

@@ -1,6 +1,7 @@
 package com.suhas.multyfideliverybuy;
 
 import android.content.Context;
+import android.os.PowerManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -171,7 +172,20 @@ final class DurableOfficialSignalQueue {
     private static void processOne(Context c, String id) {
         UnivestParser.Signal signal = null;
         long postTime = 0L;
+        PowerManager.WakeLock wakeLock = null;
         try {
+            try {
+                PowerManager pm = (PowerManager)c.getSystemService(Context.POWER_SERVICE);
+                if (pm != null) {
+                    wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                            c.getPackageName() + ":official-execution");
+                    wakeLock.setReferenceCounted(false);
+                    wakeLock.acquire(45_000L);
+                }
+            } catch (Throwable t) {
+                DiagnosticsStore.error(c, "OFFICIAL_WAKELOCK_ACQUIRE_FAILED", "",
+                        "Official execution will continue without a CPU wake lock.", t);
+            }
             synchronized (FILE_LOCK) {
                 List<JSONObject> all = loadLocked(c);
                 JSONObject row = findById(all, id);
@@ -238,6 +252,9 @@ final class DurableOfficialSignalQueue {
                     "Official signal handler was interrupted/failed; event remains durable for broker-truth replay.", t);
             OfficialSignalRecoveryScheduler.scheduleAfter(c, 60_000L);
         } finally {
+            try {
+                if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+            } catch (Throwable ignored) {}
             synchronized (IDLE_LOCK) {
                 IN_FLIGHT.remove(id);
                 IDLE_LOCK.notifyAll();

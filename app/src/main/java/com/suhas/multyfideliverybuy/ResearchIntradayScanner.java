@@ -20,9 +20,9 @@ import java.util.concurrent.Future;
  */
 final class ResearchIntradayScanner {
     private static final String PREF = "research_intraday_scanner";
-    private static final int LIVE_POOL_LIMIT = 30;
-    private static final int FINAL_LIMIT = 10;
-    private static final long MIN_REFRESH_MS = 8L * 60L * 1000L;
+    private static final int LIVE_POOL_LIMIT = 50;
+    private static final int FINAL_LIMIT = 20;
+    private static final long MIN_REFRESH_MS = 2L * 60L * 1000L;
 
     private ResearchIntradayScanner() {}
 
@@ -84,12 +84,13 @@ final class ResearchIntradayScanner {
             event.put("scannedAt", now);
             event.put("eodPoolConsidered", base.size());
             event.put("liveRanked", out.length());
-            event.put("actionableQuota", 5);
-            event.put("quotaIsMaximumNotMinimum", true);
+            event.put("recommendationMode", "EDGE_TRIGGERED_NO_DAILY_QUOTA");
+            event.put("readyConfirmationScans", 2);
             ResearchEventStore.appendDecisionSnapshot(c, "INTRADAY_RESEARCH_RERANK", event);
         } catch (Exception ignored) {}
-        p.edit().putString("status", "Live rerank " + out.length() + " candidates from top " + base.size()
-                + " EOD pool • " + AppPrefs.istDayKey(now)).apply();
+        p.edit().putString("status", "2-minute live rerank • " + out.length() + " watchlist candidates from top "
+                + base.size() + " EOD pool • calls fire only after READY persists across consecutive scans • "
+                + AppPrefs.istDayKey(now)).apply();
         return out;
     }
 

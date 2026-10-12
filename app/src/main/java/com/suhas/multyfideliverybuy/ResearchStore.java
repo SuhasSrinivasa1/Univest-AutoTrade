@@ -103,6 +103,27 @@ final class ResearchStore {
     static synchronized JSONArray positions(Context c) { return readArray(c, POSITIONS); }
     static synchronized void savePositions(Context c, JSONArray a) { writeJson(c, POSITIONS, a == null ? new JSONArray().toString() : a.toString()); }
 
+    static synchronized boolean appendPositionIfAbsent(Context c, JSONObject position) {
+        if (position == null) return false;
+        JSONArray a = readArray(c, POSITIONS);
+        String symbol = position.optString("symbol", "");
+        String recommendationKey = position.optString("recommendationKey", "");
+        for (int i = 0; i < a.length(); i++) {
+            JSONObject prior = a.optJSONObject(i);
+            if (prior == null) continue;
+            if (!recommendationKey.isEmpty() && recommendationKey.equals(prior.optString("recommendationKey", ""))) {
+                return false;
+            }
+            if (!"CLOSED".equals(prior.optString("state"))
+                    && !symbol.isEmpty() && symbol.equalsIgnoreCase(prior.optString("symbol", ""))) {
+                return false;
+            }
+        }
+        a.put(position);
+        writeJson(c, POSITIONS, a.toString());
+        return true;
+    }
+
     static synchronized void saveCandidatePool(Context c, JSONArray a) {
         writeJson(c, CANDIDATE_POOL, a == null ? new JSONArray().toString() : a.toString());
     }

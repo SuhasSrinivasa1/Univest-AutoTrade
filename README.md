@@ -4,7 +4,16 @@ Dedicated Android repository for the Univest AutoTrade project.
 
 ## Current release
 
-**v2.9.6** — package `com.suhas.multyfideliverybuy`, versionCode **296**.
+**v2.9.7** — package `com.suhas.multyfideliverybuy`, versionCode **297**.
+
+### v2.9.7 live forecast + Vivo reliability
+
+- Forecast calls are edge-triggered, not quota-driven: the live watchlist can produce any number of legitimate calls during the session, one by one as conditions remain READY across consecutive scans.
+- A foreground market guardian keeps restrictive OEM devices (including Vivo/Funtouch) active and drives a two-minute intraday rerank while the 15-minute JobScheduler remains a fallback.
+- Official durable execution acquires a short CPU wake lock only while processing a queued official event. BUY/SELL eligibility and downward averaging rules are unchanged.
+- Official BUY circuit-safe limits now use a tighter 0.35% executable-reference buffer and record dispatch-reference → limit → fill slippage diagnostics.
+- Forecast recommendations are claimed atomically to block concurrent duplicate shadow entries.
+- Forecast UI now has a chronological Today’s Forecast Calls table showing realized return, rolling-30D average before→after impact, and WIN/MISS/LOSS/OPEN.
 
 ### Reverse-engineering benchmark + frozen strategy policy
 
@@ -23,7 +32,7 @@ Dedicated Android repository for the Univest AutoTrade project.
 - **Research** is the single home for historical learning, accuracy, playbooks, failure clusters and lifecycle analysis.
 - **Forecast** is forward-looking only: current action, live Top 5 recommendation/watch slots, active Research trades and decision model.
 - **Settings** separates broker connection, official Univest trading, Research trading, reliability, data and diagnostics.
-- The v2.9.3 stable broker/signal execution semantics remain intentionally unchanged; v2.9.6 keeps official execution unchanged and adds the compact 30-day upside comparison to Execution.
+- The v2.9.3 stable broker/signal execution semantics remain intentionally unchanged; v2.9.7 keeps official signal semantics and downward averaging unchanged while hardening execution availability and making Forecast calls continuous, edge-triggered and attributable.
 
 The official execution lane is locked to the official Univest Android package `com.univest.capp` and NSE CASH / CNC delivery.
 

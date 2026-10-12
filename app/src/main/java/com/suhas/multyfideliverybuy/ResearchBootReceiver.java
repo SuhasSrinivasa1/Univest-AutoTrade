@@ -9,6 +9,7 @@ public class ResearchBootReceiver extends BroadcastReceiver {
         Context c = context.getApplicationContext();
         ResearchScheduler.ensureScheduled(c);
         ResearchMonitorScheduler.ensureScheduled(c);
+        MarketGuardianService.ensureRunning(c);
         PreMarketReadinessScheduler.ensureScheduled(c);
         UnivestHistoryDb.ensureInitialized(c);
         DurableOfficialSignalQueue.recoverPending(c);
