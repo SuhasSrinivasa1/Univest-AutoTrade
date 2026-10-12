@@ -27,7 +27,8 @@ public class ResearchBenchmarkContractTest {
     @Test public void benchmarkWinRequiresTargetWithinThreeSessions() {
         assertEquals("BENCHMARK_WIN", UnivestBenchmark.classifyBenchmarkOutcome(1.8, 1.7, 2));
         assertEquals("PROFITABLE_MISS", UnivestBenchmark.classifyBenchmarkOutcome(1.2, 1.7, 2));
-        assertEquals("BENCHMARK_WIN", UnivestBenchmark.classifyBenchmarkOutcome(2.0, 1.7, 3));\n        assertEquals("HORIZON_MISS", UnivestBenchmark.classifyBenchmarkOutcome(2.0, 1.7, 4));
+        assertEquals("BENCHMARK_WIN", UnivestBenchmark.classifyBenchmarkOutcome(2.0, 1.7, 3));
+        assertEquals("HORIZON_MISS", UnivestBenchmark.classifyBenchmarkOutcome(2.0, 1.7, 4));
     }
 
     @Test public void entryFingerprintHasExactlyFortyParameters() {
