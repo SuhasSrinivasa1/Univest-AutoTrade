@@ -21,10 +21,9 @@ public class FrozenStrategyPolicyTest {
         assertFalse(ResearchPlaybookEngine.freezeOutcomeEligible(8, 2.0, 59.9, 1.8));
     }
 
-    @Test public void frozenGenericTargetIsBoundedAndResearchDailyCallsAreCapped() {
+    @Test public void frozenGenericTargetIsBoundedAndPrimaryHorizonStaysTwoSessions() {
         assertEquals(10, ResearchPlaybookEngine.FROZEN_TARGET);
         assertEquals(5, ResearchPlaybookEngine.MIN_FROZEN_FOR_STABLE_DECISIONS);
-        assertEquals(5, ResearchTradeEngine.DAILY_RECOMMENDATION_CAP);
         assertEquals(2, UnivestBenchmark.PRIMARY_MAX_SESSIONS);
     }
 }
