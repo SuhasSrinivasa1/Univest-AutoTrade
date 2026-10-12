@@ -41,9 +41,10 @@ public class MarketGuardianService extends Service {
                             DurableOfficialSignalQueue.recoverPending(getApplicationContext());
                             OfficialSignalRecoveryScheduler.scheduleNow(getApplicationContext());
                         }
-                        if (NseTradingCalendar.isRegularMarketOpen(System.currentTimeMillis())) {
-                            ResearchOrchestrator.tick(getApplicationContext());
-                        }
+                        // Drive all orchestrator stages, not only the live market stage.
+                        // This makes Session-3 timeout scoring and post-close replay resilient on
+                        // restrictive OEM firmware where the fallback JobScheduler may be delayed.
+                        ResearchOrchestrator.tick(getApplicationContext());
                     } catch (Throwable t) {
                         DiagnosticsStore.error(getApplicationContext(), "MARKET_GUARDIAN_TICK_FAILED", "",
                                 "Foreground market guardian tick failed.", t);
