@@ -53,7 +53,8 @@ jobs:
           ! grep -q 'postTime / 300000' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           ! grep -q 'claimNotificationFingerprint' app/src/main/java/com/suhas/multyfideliverybuy/AppPrefs.java
           ! grep -q 'claimDailySignal' app/src/main/java/com/suhas/multyfideliverybuy/AppPrefs.java
-          grep -q 'OFFICIAL_MARKETABLE_LIMIT_BUFFER_PCT = 0.02' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
+          grep -q 'OFFICIAL_BUY_LIMIT_BUFFER_PCT = 0.0035' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
+          grep -q 'OFFICIAL_SELL_LIMIT_BUFFER_PCT = 0.02' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
           grep -q 'placeUnivestCncGreenSell' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'EXIT_DEFERRED_NOT_GREEN' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'UNIVEST_EXIT_EXTERNAL_OR_MANUAL_HOLDING' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
