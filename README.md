@@ -4,7 +4,13 @@ Dedicated Android repository for the Univest AutoTrade project.
 
 ## Current release
 
-**v2.9.8** — package `com.suhas.multyfideliverybuy`, versionCode **298**.
+**v2.9.9** — package `com.suhas.multyfideliverybuy`, versionCode **299**.
+
+### v2.9.9 Forecast UI
+
+- Forecast uses a compact LONG-calls layout with a rolling 30-day average card, scanner/research controls, and one decision table.
+- Each row shows symbol, company name, confidence, setup reason, entry, target and state.
+- Each row keeps its CNC action button visible; it is enabled only for actionable calls and disabled after the call is no longer actionable.
 
 ### v2.9.8 simplified Forecast decision table
 
