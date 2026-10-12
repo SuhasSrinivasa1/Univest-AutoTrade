@@ -4,7 +4,15 @@ Dedicated Android repository for the Univest AutoTrade project.
 
 ## Current release
 
-**v2.9.7** — package `com.suhas.multyfideliverybuy`, versionCode **297**.
+**v2.9.8** — package `com.suhas.multyfideliverybuy`, versionCode **298**.
+
+### v2.9.8 simplified Forecast decision table
+
+- Forecast UI is reduced to one decision table: stock/name, entry, benchmark-aware target and state.
+- Each stock cell shows model confidence plus the compact setup reason (for example trend continuation, VWAP support, volume expansion or current market regime).
+- Only triggered Forecast calls appear; internal watchlist candidates and the separate Active Research Trades card are no longer shown on the Forecast screen.
+- Actionable calls show a single BUY <SYMBOL> CNC button beneath the row. Completed calls resolve to TARGET HIT, MISSED or LOSS; already bought Research lots show BOUGHT.
+- Closed rows retain the stock's effect on the rolling 30-day Forecast average inside the State cell without adding another table.
 
 ### v2.9.7 live forecast + Vivo reliability
 

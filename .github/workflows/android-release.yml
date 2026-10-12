@@ -73,8 +73,8 @@ jobs:
           grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
           grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
-          grep -q "versionCode 297" app/build.gradle
-          grep -q "versionName '2.9.7'" app/build.gradle
+          grep -q "versionCode 298" app/build.gradle
+          grep -q "versionName '2.9.8'" app/build.gradle
           grep -Fq 'appHeader("EXECUTION", "Live Univest status & actions")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("RESEARCH", "What the system has learned")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("FORECAST", "What may happen next")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
@@ -108,8 +108,12 @@ jobs:
           grep -q 'FOREGROUND_SERVICE_SPECIAL_USE' app/src/main/AndroidManifest.xml
           grep -q 'PARTIAL_WAKE_LOCK' app/src/main/java/com/suhas/multyfideliverybuy/DurableOfficialSignalQueue.java
           grep -q 'OFFICIAL_BUY_LIMIT_BUFFER_PCT = 0.0035' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
-          grep -Fq "TODAY'S FORECAST CALLS" app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
-          grep -Fq 'LIVE WATCHLIST' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'sectionRow("FORECAST CALLS"' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'BUY " + r.symbol + " CNC' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'Confidence " + r.confidence + "/100"' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          ! grep -Fq 'LIVE WATCHLIST' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          ! grep -Fq 'ACTIVE RESEARCH TRADES' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -q 'todayForecastDecisionRows' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
           grep -q 'UNIVEST 30-DAY BENCHMARK' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'UNIVEST AVG UPSIDE' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'FORECAST AVG UPSIDE' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java

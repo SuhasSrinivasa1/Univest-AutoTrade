@@ -266,54 +266,8 @@ public class DashboardActivity extends Activity {
     private View buildForecastTab() {
         ScrollView scroll = baseScroll();
         LinearLayout root = scrollRoot(scroll);
-        root.addView(appHeader("FORECAST", "What may happen next"));
-
-        LinearLayout intro = card();
-        intro.addView(sectionRow("FORECAST ENGINE", lastResearchTime()));
-        intro.addView(body("Scans the eligible NSE CASH universe off-market, then the foreground guardian reranks a broad live watchlist about every 2 minutes. A stock becomes a Forecast call only after all gates remain READY across consecutive live scans."), margins(0, 12, 0, 0));
-        intro.addView(meta(ResearchIntradayScanner.statusText(this)), margins(0, 8, 0, 0));
-        intro.addView(meta("No daily call quota. Recommendations arrive one by one when conditions cross into a confirmed actionable state; the watchlist itself is not a recommendation."), margins(0, 6, 0, 0));
-        intro.addView(meta(AppPrefs.isResearchAutoTradeEnabled(this)
-                ? "Research AutoTrade ON • qualified Research entries/exits may place real CNC orders"
-                : "Research AutoTrade OFF • research entry/exit actions require confirmation"), margins(0, 8, 0, 0));
-        root.addView(intro, margins(0, 20, 0, 14));
-
-        String actionSymbol = !selectedResearchSymbol.isEmpty() ? selectedResearchSymbol : ResearchTradeEngine.actionSymbol(this);
-        String actionType = !selectedResearchAction.isEmpty() ? selectedResearchAction : ResearchTradeEngine.actionType(this);
-        if (!actionSymbol.isEmpty() && ("BUY".equals(actionType) || "SELL".equals(actionType))) {
-            LinearLayout actionCard = card();
-            actionCard.addView(sectionRow("CURRENT RESEARCH ACTION", actionType));
-            actionCard.addView(body(actionSymbol + " • " + ("BUY".equals(actionType)
-                    ? "Entry condition reached. Uses the configured Initial Entry Budget."
-                    : "Exit model detected a profitable weakening condition.")), margins(0, 10, 0, 0));
-            Button actionButton = primaryButton(("BUY".equals(actionType) ? "BUY " + formatRupees(AppPrefs.getUnivestBudget(this))
-                    : "SELL RESEARCH LOT") + " • " + actionSymbol);
-            actionButton.setOnClickListener(v -> executeResearchAction(actionButton, actionSymbol, actionType));
-            actionCard.addView(actionButton, fixedMargins(-1, 54, 0, 12, 0, 0));
-            root.addView(actionCard, margins(0, 0, 0, 14));
-        }
-
-        root.addView(forecastImpactTableCard(), margins(0, 0, 0, 14));
-
-        LinearLayout expected = card();
-        expected.addView(sectionRow("LIVE WATCHLIST", "Top 10 candidates"));
-        expected.addView(body(ResearchEngine.predictionsText(this, 10)), margins(0, 12, 0, 0));
-        expected.addView(meta("Watchlist ranks are candidates only. A call is recorded separately only after the edge-trigger confirmation fires."), margins(0, 8, 0, 0));
-        root.addView(expected, margins(0, 0, 0, 14));
-
-        LinearLayout activeResearch = card();
-        activeResearch.addView(sectionRow("ACTIVE RESEARCH TRADES", AppPrefs.isResearchAutoTradeEnabled(this) ? "AUTO" : "MANUAL"));
-        activeResearch.addView(body(ResearchTradeEngine.activePositionsText(this)), margins(0, 12, 0, 0));
-        root.addView(activeResearch, margins(0, 0, 0, 14));
-
-        LinearLayout ranges = card();
-        ranges.addView(sectionRow("ENTRY / EXIT MODEL", "How decisions are used"));
-        ranges.addView(body("Official Univest BUY/SELL and downward averaging are unchanged. Research recommendations are judged against the rolling 30-day Univest upside benchmark with a two-session primary evaluation window; Session 3 is diagnostic only, not a success extension."), margins(0, 12, 0, 0));
-        root.addView(ranges, margins(0, 0, 0, 14));
-
-        Button scan = primaryButton("REFRESH FORECAST OFF-MARKET");
-        scan.setOnClickListener(v -> runResearchNow(scan));
-        root.addView(scan, fixedMargins(-1, 54, 0, 0, 0, 22));
+        root.addView(appHeader("FORECAST", "Calls to act on"));
+        root.addView(forecastDecisionTableCard(), margins(0, 20, 0, 22));
         return scroll;
     }
 
@@ -533,7 +487,7 @@ public class DashboardActivity extends Activity {
 
         LinearLayout about = card();
         about.addView(sectionRow("ABOUT", "Orchestrated Research"));
-        about.addView(body("Univest AutoTrade v2.9.7"), margins(0, 10, 0, 0));
+        about.addView(body("Univest AutoTrade v2.9.8"), margins(0, 10, 0, 0));
         about.addView(meta("Package: com.suhas.multyfideliverybuy"), margins(0, 6, 0, 0));
         about.addView(meta("Official Univest execution and Research decisions remain separately attributed; Research→Univest same-symbol confirmation is intentionally additive."), margins(0, 6, 0, 0));
         root.addView(about, margins(0, 0, 0, 22));
@@ -552,7 +506,7 @@ public class DashboardActivity extends Activity {
         left.addView(text(subtitle, 12, SUBTEXT, false), margins(0, 3, 0, 0));
         row.addView(left, new LinearLayout.LayoutParams(0, -2, 1f));
 
-        TextView version = text("v2.9.7", 11, TEAL, true);
+        TextView version = text("v2.9.8", 11, TEAL, true);
         version.setGravity(Gravity.CENTER);
         version.setPadding(dp(10), dp(6), dp(10), dp(6));
         GradientDrawable chip = new GradientDrawable();
@@ -662,6 +616,74 @@ public class DashboardActivity extends Activity {
         c.addView(text(valueText, 22, value >= 0 ? GREEN : RED, true), margins(0, 6, 0, 0));
         c.addView(meta("Rolling 30D • " + sample + " closed"), margins(0, 4, 0, 0));
         return c;
+    }
+
+    private View forecastDecisionTableCard() {
+        LinearLayout c = card();
+        java.util.List<ResearchTradeEngine.ForecastDecisionRow> rows =
+                ResearchTradeEngine.todayForecastDecisionRows(this);
+        c.addView(sectionRow("FORECAST CALLS", rows.size() + " today"));
+        c.addView(forecastDecisionHeader(), margins(0, 12, 0, 2));
+
+        if (rows.isEmpty()) {
+            c.addView(meta("No Forecast call has triggered today."), margins(0, 12, 0, 0));
+            return c;
+        }
+
+        for (ResearchTradeEngine.ForecastDecisionRow r : rows) {
+            c.addView(forecastDecisionRow(r), margins(0, 8, 0, 0));
+            if (r.buyable) {
+                Button buy = primaryButton("BUY " + r.symbol + " CNC");
+                buy.setOnClickListener(v -> executeResearchAction(buy, r.symbol, "BUY"));
+                c.addView(buy, fixedMargins(-1, 48, 0, 8, 0, 0));
+            }
+        }
+        return c;
+    }
+
+    private View forecastDecisionHeader() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.addView(tableCell("Stock", 10, SUBTEXT, true, Gravity.START),
+                new LinearLayout.LayoutParams(0, -2, 2.35f));
+        row.addView(tableCell("Entry", 10, SUBTEXT, true, Gravity.END),
+                new LinearLayout.LayoutParams(0, -2, 0.90f));
+        row.addView(tableCell("Target", 10, SUBTEXT, true, Gravity.END),
+                new LinearLayout.LayoutParams(0, -2, 0.90f));
+        row.addView(tableCell("State", 10, SUBTEXT, true, Gravity.END),
+                new LinearLayout.LayoutParams(0, -2, 1.15f));
+        return row;
+    }
+
+    private View forecastDecisionRow(ResearchTradeEngine.ForecastDecisionRow r) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.TOP);
+
+        LinearLayout stock = new LinearLayout(this);
+        stock.setOrientation(LinearLayout.VERTICAL);
+        stock.addView(text(r.symbol, 12, TEXT, true));
+        if (r.companyName != null && !r.companyName.trim().isEmpty())
+            stock.addView(text(r.companyName.trim(), 10, SUBTEXT, false), margins(0, 2, 0, 0));
+        stock.addView(text("Confidence " + r.confidence + "/100", 10, GREEN, true), margins(0, 3, 0, 0));
+        stock.addView(text(r.reason, 9, SUBTEXT, false), margins(0, 2, 0, 0));
+
+        row.addView(stock, new LinearLayout.LayoutParams(0, -2, 2.35f));
+        row.addView(tableCell(r.entryPrice > 0 ? "₹" + money(r.entryPrice) : "—",
+                        11, TEXT, false, Gravity.END),
+                new LinearLayout.LayoutParams(0, -2, 0.90f));
+        row.addView(tableCell(r.targetPrice > 0 ? "₹" + money(r.targetPrice) : "—",
+                        11, TEXT, false, Gravity.END),
+                new LinearLayout.LayoutParams(0, -2, 0.90f));
+
+        String stateText = r.state;
+        if (r.averageImpact != null && !r.averageImpact.isEmpty()) stateText += "\n" + r.averageImpact;
+        int stateColor = "TARGET HIT".equals(r.state) ? GREEN
+                : ("LOSS".equals(r.state) || "MISSED".equals(r.state) ? RED
+                : ("BUY NOW".equals(r.state) ? AMBER : TEXT));
+        row.addView(tableCell(stateText, 10, stateColor, true, Gravity.END),
+                new LinearLayout.LayoutParams(0, -2, 1.15f));
+        return row;
     }
 
     private View forecastImpactTableCard() {
@@ -1079,7 +1101,7 @@ public class DashboardActivity extends Activity {
         i.setType("application/zip");
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.7.zip");
+        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.8.zip");
         startActivityForResult(i, REQUEST_HISTORY_CREATE);
     }
 
