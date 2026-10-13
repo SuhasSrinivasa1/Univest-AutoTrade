@@ -716,7 +716,11 @@ public class DashboardActivity extends Activity {
         row.addView(tableCell(r.entryPrice > 0 ? String.format(Locale.US, "₹%.2f", r.entryPrice) : "—",
                         11, TEXT, false, Gravity.END),
                 new LinearLayout.LayoutParams(0, -2, 0.90f));
-        row.addView(tableCell(r.targetPrice > 0 ? String.format(Locale.US, "₹%.2f", r.targetPrice) : "—",
+        String targetLabel = r.targetPrice > 0 && Double.isFinite(r.targetPrice)
+                ? String.format(Locale.US, "₹%.2f", r.targetPrice) : "—";
+        if ("TARGET HIT".equals(r.state) && r.observedHighPrice >= r.targetPrice && r.observedHighPrice > 0)
+            targetLabel += String.format(Locale.US, "\nHigh ₹%.2f", r.observedHighPrice);
+        row.addView(tableCell(targetLabel,
                         11, TEXT, false, Gravity.END),
                 new LinearLayout.LayoutParams(0, -2, 0.90f));
 

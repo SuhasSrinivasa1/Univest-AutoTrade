@@ -809,6 +809,14 @@ final class ResearchTradeEngine {
             p.put("exitState", "HOLD");
             JSONObject benchmark = UnivestBenchmark.snapshot(c);
             p.put("benchmarkTargetUpsidePct", benchmark.optDouble("targetUpsidePct", MIN_NET_WIN_PCT));
+            // Forecast targets learn exclusively from closed Forecast calls.
+            // No completed forecast sample: conservative +0.5% net bootstrap.
+            int forecastSamples = rolling30DayClosedCount(c);
+            double forecastMean = rolling30DayAverageUpsidePct(c);
+            double forecastTargetPct = forecastSamples >= 3 && Double.isFinite(forecastMean)
+                    ? Math.min(3.0, Math.max(MIN_NET_WIN_PCT, forecastMean)) : MIN_NET_WIN_PCT;
+            p.put("forecastTargetUpsidePct", forecastTargetPct);
+            p.put("forecastTargetPrice", forecastBenchmarkTargetPrice(c, p, ltp));
             p.put("benchmarkReferenceAverageUpsidePct", benchmark.optDouble("averageUpsidePct", 0));
             p.put("benchmarkReferenceAverageHoldingSessions", benchmark.optDouble("averageHoldingSessions", 0));
             p.put("benchmarkReferenceSample", benchmark.optInt("completed", 0));
@@ -1057,7 +1065,7 @@ final class ResearchTradeEngine {
         long cutoff = now - Math.max(1, windowDays) * 24L * 60L * 60L * 1000L;
         double sum = 0; int count = 0;
         for (JSONObject p : canonicalPositions(positions)) {
-            if (!"CLOSED".equals(p.optString("state"))) continue;
+            if (!"CLOSED".equals(p.optString("state")) || p.optLong("forecastCallAt", 0L) <= 0L) continue;
             long exitAt = p.optLong("exitAt", 0L);
             if (exitAt <= 0 || exitAt < cutoff || exitAt > now) continue;
             double net = p.optDouble("netPct", Double.NaN);
@@ -1071,7 +1079,7 @@ final class ResearchTradeEngine {
         long cutoff = now - Math.max(1, windowDays) * 24L * 60L * 60L * 1000L;
         int count = 0;
         for (JSONObject p : canonicalPositions(positions)) {
-            if (!"CLOSED".equals(p.optString("state"))) continue;
+            if (!"CLOSED".equals(p.optString("state")) || p.optLong("forecastCallAt", 0L) <= 0L) continue;
             long exitAt = p.optLong("exitAt", 0L);
             if (exitAt > 0 && exitAt >= cutoff && exitAt <= now
                     && Double.isFinite(p.optDouble("netPct", Double.NaN))) count++;
@@ -1086,12 +1094,13 @@ final class ResearchTradeEngine {
         final String reason;
         final double entryPrice;
         final double targetPrice;
+        final double observedHighPrice;
         final String state;
         final String averageImpact;
         final boolean buyable;
 
         ForecastDecisionRow(String symbol, String companyName, int confidence, String reason,
-                            double entryPrice, double targetPrice, String state,
+                            double entryPrice, double targetPrice, double observedHighPrice, String state,
                             String averageImpact, boolean buyable) {
             this.symbol = symbol;
             this.companyName = companyName;
@@ -1099,6 +1108,7 @@ final class ResearchTradeEngine {
             this.reason = reason;
             this.entryPrice = entryPrice;
             this.targetPrice = targetPrice;
+            this.observedHighPrice = observedHighPrice;
             this.state = state;
             this.averageImpact = averageImpact;
             this.buyable = buyable;
@@ -1143,49 +1153,46 @@ final class ResearchTradeEngine {
                     p.optInt("score", p.optInt("dataConfidence", 0))));
             double entry = p.optDouble("shadowEntryPrice", p.optDouble("entryPrice", 0));
             double target = forecastBenchmarkTargetPrice(c, p, entry);
-            String state = forecastDecisionState(p, now);
-            boolean buyable = "BUY NOW".equals(state)
+            String state = forecastDecisionState(p, now, target);
+            boolean buyable = target > entry && "BUY NOW".equals(state)
                     && !p.optBoolean("live", false)
                     && NseTradingCalendar.isRegularMarketOpen(now);
             String impact = forecastAverageImpact(canonical, p);
             out.add(new ForecastDecisionRow(symbol, company, confidence, forecastReasonLabel(p),
-                    entry, target, state, impact, buyable));
+                    entry, target, p.optDouble("maxPrice", 0), state, impact, buyable));
         }
         return out;
     }
 
     private static double forecastBenchmarkTargetPrice(Context c, JSONObject p, double entry) {
-        if (!(entry > 0)) return 0;
-        int qty = Math.max(1, p.optInt("shadowQuantity", p.optInt("quantity", 1)));
-        double benchmarkPct = Math.max(MIN_NET_WIN_PCT,
-                p.optDouble("benchmarkTargetUpsidePct", UnivestBenchmark.targetUpsidePct(c)));
-        double desiredNet = entry * qty * benchmarkPct / 100.0;
+        if (!Double.isFinite(entry) || !(entry > 0)) return 0;
+        double locked = p.optDouble("forecastTargetPrice", 0);
+        if (Double.isFinite(locked) && locked > entry) return locked;
+        int qty = p.optInt("shadowQuantity", p.optInt("quantity", 0));
+        double pct = p.optDouble("forecastTargetUpsidePct",
+                p.optDouble("benchmarkTargetUpsidePct", 0));
+        if (qty <= 0 || !Double.isFinite(pct) || pct <= 0) return 0;
         double tick = 0.05;
         try {
             InstrumentRepository.Instrument ins = InstrumentRepository.resolve(
                     InstrumentRepository.load(c), p.optString("symbol", ""));
             if (ins != null && ins.tickSize > 0) tick = ins.tickSize;
         } catch (Throwable ignored) {}
-        double benchmarkTarget = DeliveryNetTarget.targetPriceForNetProfit(entry, qty, tick, desiredNet);
-        double modelTarget = p.optDouble("sellLow", 0);
-        return Math.max(benchmarkTarget, modelTarget > entry ? modelTarget : 0);
+        // Sell-zone projections are not observed price targets. The frozen
+        // fee-adjusted target cannot be raised by an unsupported model sellLow.
+        return ForecastTargetMath.netPrice(entry, qty, tick, pct);
     }
 
-    private static String forecastDecisionState(JSONObject p, long now) {
-        String opportunity = p.optString("benchmarkOpportunityOutcome", "");
-        String realized = p.optString("benchmarkRealizedOutcome", "");
+    private static String forecastDecisionState(JSONObject p, long now, double target) {
         String eval = p.optString("evaluationState", "");
         String raw = p.optString("state", "");
         double net = p.optDouble("netPct", 0);
-
-        if ("CLOSED".equals(raw)) {
-            if ("BENCHMARK_WIN".equals(realized) || "BENCHMARK_WIN".equals(opportunity)) return "TARGET HIT";
+        // An actual post-call observed high must meet the displayed target.
+        if (ForecastTargetMath.observedHit(p.optDouble("maxPrice", 0), target)) return "TARGET HIT";
+        if ("CLOSED".equals(raw)) return net < 0 ? "LOSS" : "MISSED";
+        if ("TIMEOUT_NO_EDGE".equals(eval) || "PROFITABLE_MISS".equals(p.optString("benchmarkOpportunityOutcome", ""))
+                || "FAIL".equals(p.optString("benchmarkOpportunityOutcome", "")))
             return net < 0 ? "LOSS" : "MISSED";
-        }
-        if ("BENCHMARK_WIN".equals(opportunity) || "EDGE_SEEN_WITHIN_HORIZON".equals(eval)) return "TARGET HIT";
-        if ("TIMEOUT_NO_EDGE".equals(eval) || "PROFITABLE_MISS".equals(opportunity) || "FAIL".equals(opportunity))
-            return net < 0 ? "LOSS" : "MISSED";
-
         long callAt = forecastCallAt(p);
         return ForecastPolicy.openCallState(
                 p.optBoolean("live", false)
@@ -1252,7 +1259,7 @@ final class ResearchTradeEngine {
     }
 
     private static String forecastAverageImpact(java.util.List<JSONObject> canonical, JSONObject p) {
-        if (!"CLOSED".equals(p.optString("state"))) return "";
+        if (!"CLOSED".equals(p.optString("state")) || p.optLong("forecastCallAt", 0L) <= 0L) return "";
         long eventAt = p.optLong("exitAt", 0L);
         if (eventAt <= 0) return "";
         double before = averageBefore(canonical, eventAt, p);
@@ -1283,6 +1290,7 @@ final class ResearchTradeEngine {
         java.util.List<JSONObject> canonical = canonicalPositions(ResearchStore.positions(c));
         java.util.List<JSONObject> rows = new java.util.ArrayList<>();
         for (JSONObject p : canonical) {
+            if (p.optLong("forecastCallAt", 0L) <= 0L) continue;
             long exitAt = p.optLong("exitAt", 0L);
             long entryAt = p.optLong("entryAt", 0L);
             if (exitAt > 0 && today.equals(NseTradingCalendar.dayKey(exitAt))) rows.add(p);
@@ -1326,7 +1334,7 @@ final class ResearchTradeEngine {
         String today = NseTradingCalendar.dayKey(System.currentTimeMillis());
         int n = 0;
         for (JSONObject p : canonicalPositions(ResearchStore.positions(c))) {
-            long at = p.optLong("entryAt", 0L);
+            long at = p.optLong("forecastCallAt", 0L);
             if (at > 0 && today.equals(NseTradingCalendar.dayKey(at))) n++;
         }
         return n;
@@ -1336,7 +1344,7 @@ final class ResearchTradeEngine {
         long cutoff = eventAt - 30L * 24L * 60L * 60L * 1000L;
         double sum = 0; int n = 0;
         for (JSONObject p : positions) {
-            if (p == self || !"CLOSED".equals(p.optString("state"))) continue;
+            if (p == self || !"CLOSED".equals(p.optString("state")) || p.optLong("forecastCallAt", 0L) <= 0L) continue;
             long x = p.optLong("exitAt", 0L);
             if (x >= cutoff && x < eventAt) { sum += p.optDouble("netPct", 0); n++; }
         }
@@ -1347,7 +1355,7 @@ final class ResearchTradeEngine {
         long cutoff = eventAt - 30L * 24L * 60L * 60L * 1000L;
         int n = 0;
         for (JSONObject p : positions) {
-            if (p == self || !"CLOSED".equals(p.optString("state"))) continue;
+            if (p == self || !"CLOSED".equals(p.optString("state")) || p.optLong("forecastCallAt", 0L) <= 0L) continue;
             long x = p.optLong("exitAt", 0L);
             if (x >= cutoff && x < eventAt) n++;
         }
