@@ -634,7 +634,10 @@ public class DashboardActivity extends Activity {
         c.addView(text("Forecasted Stocks Avg Upside %", 11, SUBTEXT, false));
         c.addView(text(Math.abs(avg) < 0.0001 ? "0.00%" : String.format(Locale.US, "%+.2f%%", avg),
                 26, avg >= 0 ? GREEN : RED, true), margins(0, 8, 0, 0));
-        c.addView(meta("rolling 30 days • " + sample + " completed"), margins(0, 6, 0, 0));
+        c.addView(meta("Actual realized Forecast result • 30 days • " + sample + " closed"), margins(0, 6, 0, 0));
+        c.addView(meta(String.format(Locale.US,
+                "Target policy ≥+%.2f%% NET • 1%% floor • rises with completed Univest calls",
+                AppPrefs.getForecastTargetPolicyPct(this))), margins(0, 4, 0, 0));
         return c;
     }
 

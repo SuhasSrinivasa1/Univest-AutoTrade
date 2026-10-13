@@ -231,6 +231,19 @@ final class AppPrefs {
     static void setResearchPreopenFreezeKey(Context c, String v) { p(c).edit().putString("research_preopen_freeze_key", clean(v)).apply(); }
     static String getResearchReplayKey(Context c) { return p(c).getString("research_replay_key", ""); }
     static void setResearchReplayKey(Context c, String v) { p(c).edit().putString("research_replay_key", clean(v)).apply(); }
+    /** Saved high-water mark for Forecast target policy; not an achieved average. */
+    static double getForecastTargetPolicyPct(Context c) {
+        return Math.max(ForecastTargetPolicy.MIN_NET_PCT, p(c).getFloat("forecast_target_policy_net_pct", 1.0f));
+    }
+
+    static synchronized double advanceForecastTargetPolicyPct(Context c, int officialCompleted,
+                                                               double officialAverageUpsidePct) {
+        double next = ForecastTargetPolicy.nextNetPct(
+                getForecastTargetPolicyPct(c), officialCompleted, officialAverageUpsidePct);
+        p(c).edit().putFloat("forecast_target_policy_net_pct", (float)next).commit();
+        return next;
+    }
+
     static String getResearchForecastTargetKey(Context c) { return p(c).getString("research_forecast_target_key", ""); }
     static void setResearchForecastTargetKey(Context c, String v) { p(c).edit().putString("research_forecast_target_key", clean(v)).apply(); }
 

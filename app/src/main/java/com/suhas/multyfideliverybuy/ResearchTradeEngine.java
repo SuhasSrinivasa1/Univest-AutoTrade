@@ -45,6 +45,9 @@ final class ResearchTradeEngine {
             monitorOpenPositions(c);
             JSONArray predictions = ResearchStore.predictions(c);
             boolean auto = AppPrefs.isResearchAutoTradeEnabled(c);
+            JSONArray frozenStrategies = ResearchStore.playbookRegistry(c).optJSONArray("frozenChampions");
+            boolean establishedChampions = frozenStrategies != null
+                    && frozenStrategies.length() >= ResearchPlaybookEngine.MIN_FROZEN_FOR_STABLE_DECISIONS;
             for (int i = 0; i < predictions.length() && i < 30; i++) {
                 JSONObject p = predictions.optJSONObject(i);
                 if (p == null) continue;
@@ -90,6 +93,32 @@ final class ResearchTradeEngine {
                                 + "% estimated net vs current Univest benchmark target " + one(requiredEdge) + "%.");
                         continue;
                     }
+                }
+
+                // Price feasibility, regime, news and learned champion-family evidence
+                // are checked before issuing a new Forecast recommendation.
+                JSONObject targetBenchmark = UnivestBenchmark.snapshot(c);
+                double targetPct = ForecastTargetPolicy.nextNetPct(
+                        AppPrefs.getForecastTargetPolicyPct(c),
+                        targetBenchmark.optInt("completed", 0),
+                        targetBenchmark.optDouble("averageUpsidePct", 0));
+                double tick = 0.05;
+                try {
+                    InstrumentRepository.Instrument instrument = InstrumentRepository.resolve(
+                            InstrumentRepository.load(c), symbol);
+                    if (instrument != null && instrument.tickSize > 0) tick = instrument.tickSize;
+                } catch (Throwable ignored) {}
+                double targetPrice = ForecastTargetMath.netPrice(ltp, shadowQty, tick, targetPct);
+                String gate = ForecastSignalGate.rejectReason(
+                        p.optString("marketRegimeStatus", "NOT_CONNECTED"),
+                        p.optDouble("minuteReturn5Pct", 0),
+                        p.optInt("positiveCatalysts", 0), p.optInt("negativeCatalysts", 0),
+                        ltp, targetPrice, p.optDouble("atr14", 0),
+                        establishedChampions, p.optInt("playbookVotes", 0));
+                if (!gate.isEmpty()) {
+                    ResearchTriggerState.markNotReady(c, symbol, today);
+                    logSkip(c, symbol, "FORECAST_EVIDENCE_GATE", gate);
+                    continue;
                 }
 
                 long readyNow = System.currentTimeMillis();
@@ -374,8 +403,20 @@ final class ResearchTradeEngine {
             double mfe = (max / entry - 1.0) * 100.0;
             double netPct = estimatedNetPct(p, ltp);
             try {
+                long quoteAt = System.currentTimeMillis();
+                long callAt = forecastCallAt(p);
+                if (callAt > 0 && quoteAt >= callAt
+                        && NseTradingCalendar.isRegularMarketOpen(quoteAt)
+                        && !ForecastPolicy.horizonExpired(callAt, quoteAt)) {
+                    double observed = Math.max(p.optDouble("forecastObservedHigh", entry), ltp);
+                    p.put("forecastObservedHigh", observed);
+                    double frozenTarget = forecastBenchmarkTargetPrice(c, p, entry);
+                    if (p.optLong("forecastTargetHitAt", 0L) <= 0
+                            && ForecastTargetMath.observedHit(ltp, frozenTarget))
+                        p.put("forecastTargetHitAt", quoteAt);
+                }
                 p.put("lastPrice", ltp);
-                p.put("lastUpdate", System.currentTimeMillis());
+                p.put("lastUpdate", quoteAt);
                 p.put("minPrice", min);
                 p.put("maxPrice", max);
                 p.put("maePct", mae);
@@ -809,14 +850,14 @@ final class ResearchTradeEngine {
             p.put("exitState", "HOLD");
             JSONObject benchmark = UnivestBenchmark.snapshot(c);
             p.put("benchmarkTargetUpsidePct", benchmark.optDouble("targetUpsidePct", MIN_NET_WIN_PCT));
-            // Forecast targets learn exclusively from closed Forecast calls.
-            // No completed forecast sample: conservative +0.5% net bootstrap.
-            int forecastSamples = rolling30DayClosedCount(c);
-            double forecastMean = rolling30DayAverageUpsidePct(c);
-            double forecastTargetPct = forecastSamples >= 3 && Double.isFinite(forecastMean)
-                    ? Math.min(3.0, Math.max(MIN_NET_WIN_PCT, forecastMean)) : MIN_NET_WIN_PCT;
+            // The objective tracks the official Univest completed-call reference, rising
+            // from a 1% NET floor. The achieved Forecast average remains independent.
+            double forecastTargetPct = AppPrefs.advanceForecastTargetPolicyPct(c,
+                    benchmark.optInt("completed", 0), benchmark.optDouble("averageUpsidePct", 0));
             p.put("forecastTargetUpsidePct", forecastTargetPct);
             p.put("forecastTargetPrice", forecastBenchmarkTargetPrice(c, p, ltp));
+            p.put("forecastObservedHigh", ltp);
+            p.put("forecastTargetHitAt", 0L);
             p.put("benchmarkReferenceAverageUpsidePct", benchmark.optDouble("averageUpsidePct", 0));
             p.put("benchmarkReferenceAverageHoldingSessions", benchmark.optDouble("averageHoldingSessions", 0));
             p.put("benchmarkReferenceSample", benchmark.optInt("completed", 0));
@@ -1159,7 +1200,7 @@ final class ResearchTradeEngine {
                     && NseTradingCalendar.isRegularMarketOpen(now);
             String impact = forecastAverageImpact(canonical, p);
             out.add(new ForecastDecisionRow(symbol, company, confidence, forecastReasonLabel(p),
-                    entry, target, p.optDouble("maxPrice", 0), state, impact, buyable));
+                    entry, target, p.optDouble("forecastObservedHigh", 0), state, impact, buyable));
         }
         return out;
     }
@@ -1188,12 +1229,16 @@ final class ResearchTradeEngine {
         String raw = p.optString("state", "");
         double net = p.optDouble("netPct", 0);
         // An actual post-call observed high must meet the displayed target.
-        if (ForecastTargetMath.observedHit(p.optDouble("maxPrice", 0), target)) return "TARGET HIT";
+        long callAt = forecastCallAt(p);
+        long hitAt = p.optLong("forecastTargetHitAt", 0L);
+        if (hitAt >= callAt && callAt > 0 && hitAt > 0
+                && !ForecastPolicy.horizonExpired(callAt, hitAt)
+                && ForecastTargetMath.observedHit(p.optDouble("forecastObservedHigh", 0), target))
+            return "TARGET HIT";
         if ("CLOSED".equals(raw)) return net < 0 ? "LOSS" : "MISSED";
         if ("TIMEOUT_NO_EDGE".equals(eval) || "PROFITABLE_MISS".equals(p.optString("benchmarkOpportunityOutcome", ""))
                 || "FAIL".equals(p.optString("benchmarkOpportunityOutcome", "")))
             return net < 0 ? "LOSS" : "MISSED";
-        long callAt = forecastCallAt(p);
         return ForecastPolicy.openCallState(
                 p.optBoolean("live", false)
                         || "LIVE_OPEN".equals(raw) || "LIVE_PENDING".equals(raw) || "LIVE_EXIT_PENDING".equals(raw),
@@ -1203,16 +1248,14 @@ final class ResearchTradeEngine {
     private static boolean isForecastTerminal(JSONObject p) {
         if (p == null) return true;
         if ("CLOSED".equals(p.optString("state", ""))) return true;
-        String opportunity = p.optString("benchmarkOpportunityOutcome", "");
-        String eval = p.optString("evaluationState", "");
-        return "BENCHMARK_WIN".equals(opportunity)
-                || "PROFITABLE_MISS".equals(opportunity)
-                || "FAIL".equals(opportunity)
-                || "EDGE_SEEN_WITHIN_HORIZON".equals(eval)
-                || "TIMEOUT_NO_EDGE".equals(eval);
+        if (p.optLong("forecastTargetHitAt", 0L) > 0) return true;
+        // Benchmarked +0.5% opportunity is not proof that a Forecast +1% target hit.
+        return "TIMEOUT_NO_EDGE".equals(p.optString("evaluationState", ""));
     }
 
     private static long forecastTerminalAt(JSONObject p) {
+        long observedHitAt = p.optLong("forecastTargetHitAt", 0L);
+        if (observedHitAt > 0) return observedHitAt;
         long resolved = p.optLong("benchmarkResolvedAt", 0L);
         if (resolved > 0) return resolved;
         long exit = p.optLong("exitAt", 0L);
