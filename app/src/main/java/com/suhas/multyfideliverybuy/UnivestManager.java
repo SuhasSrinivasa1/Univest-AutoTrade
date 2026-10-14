@@ -32,6 +32,12 @@ final class UnivestManager {
     }
 
     static void handleEntry(Context context, UnivestParser.Signal signal, long notificationPostTime) {
+        synchronized (campaignLock(signal.symbol)) {
+            handleEntrySerial(context, signal, notificationPostTime);
+        }
+    }
+
+    private static void handleEntrySerial(Context context, UnivestParser.Signal signal, long notificationPostTime) {
         InstrumentRepository.Instrument instrument = resolve(context, signal, "ENTRY");
         if (instrument == null) return;
         String symbol = instrument.symbol;
@@ -52,8 +58,19 @@ final class UnivestManager {
 
         if (!instrument.buyAllowed) { fail(context, "ENTRY_BUY_BLOCKED", symbol, "Groww instrument master marks buy_allowed=0.", null); return; }
 
-        // Every distinct official "New Equity" notification starts a fresh entry cycle. Existing holdings are
-        // broker truth to carry forward, not a duplicate gate. Only an actually open broker BUY blocks another BUY.
+        // A same-day official BUY supersedes any *untriggered* recovery SELL GTT.
+        // Verify cancellation and pending orders BEFORE buying additional CNC shares.
+        UnivestStateStore.State prior = UnivestStateStore.get(context, symbol);
+        if (prior != null && !cancelDeferredProfitGttBeforeBuy(context, prior)) return;
+        GrowwClient.Result openSell = GrowwClient.checkForActiveCncSellOrder(context, symbol);
+        if (openSell.unknown || openSell.success) {
+            fail(context, "ENTRY_SELL_CONFLICT", symbol,
+                    "Fresh BUY blocked until old CNC SELL is absent: " + openSell.message, null);
+            return;
+        }
+
+        // Each distinct official New Equity notification is a fresh initial-budget BUY,
+        // including after an exit if the older holding remained negative.
         GrowwClient.PositionSnapshot before = GrowwClient.getCncPosition(context, symbol);
         if (!before.success) { fail(context, "ENTRY_HOLDING_CHECK_FAILED", symbol, before.message, null); return; }
 
@@ -66,7 +83,7 @@ final class UnivestManager {
         }
         OfficialExecutionLatency.brokerReady(context, signal.type, symbol, notificationPostTime, System.currentTimeMillis());
 
-        UnivestStateStore.State prior = UnivestStateStore.get(context, symbol);
+        prior = UnivestStateStore.get(context, symbol);
         if (prior != null) {
             // A fresh recommendation gets a fresh averaging ladder. Retire the older ladder first so two
             // recommendation cycles cannot leave overlapping smart BUY triggers behind.
@@ -276,6 +293,12 @@ final class UnivestManager {
     }
 
     static void handleExit(Context context, UnivestParser.Signal signal, long notificationPostTime) {
+        synchronized (campaignLock(signal.symbol)) {
+            handleExitSerial(context, signal, notificationPostTime);
+        }
+    }
+
+    private static void handleExitSerial(Context context, UnivestParser.Signal signal, long notificationPostTime) {
         // EXIT must never wait for the 12-hour instrument-master network refresh. The packaged/cached NSE
         // instrument master is enough to resolve the exact symbol and tick size, and Groww remains broker truth.
         InstrumentRepository.Instrument instrument = resolveCached(context, signal, "EXIT");
@@ -289,6 +312,15 @@ final class UnivestManager {
             return;
         }
 
+        UnivestStateStore.State already = UnivestStateStore.get(context, symbol);
+        if (already != null && UnivestStateStore.EXITING_OFFICIAL.equals(already.phase)
+                && (!already.deferredProfitSellGttId.isEmpty()
+                    || already.deferredProfitSellGttUncertain)) {
+            DiagnosticsStore.runtime(context, "EXIT_EXISTING_PROFIT_GTT", symbol,
+                    "Official profit-recovery GTT already tracked; repeat EXIT did not create another.");
+            OfficialSignalRecoveryScheduler.scheduleAfter(context, 60_000L);
+            return;
+        }
         UnivestStateStore.State state;
         boolean hadTrackedCampaign;
         synchronized (campaignLock(symbol)) {
