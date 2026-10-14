@@ -451,9 +451,9 @@ final class UnivestManager {
                     + " • " + green.reason;
             UnivestStateStore.put(context, state);
             DiagnosticsStore.runtime(context, "EXIT_DEFERRED_NOT_GREEN", symbol, state.lastAction);
-            status(context, state.lastAction);
+            armDeferredProfitSellGtt(context, state, instrument.tickSize,
+                    holding.netPrice, holding.quantity, notificationPostTime);
             OfficialSignalRecoveryScheduler.scheduleAfter(context, 60_000L);
-            DeferredGreenExitWatcher.start(context, symbol);
             return;
         }
 
@@ -615,7 +615,13 @@ final class UnivestManager {
         return false;
     }
 
-    static synchronized boolean reconcileDeferredExit(Context context, String symbol) {
+    static boolean reconcileDeferredExit(Context context, String symbol) {
+        synchronized (campaignLock(symbol)) {
+            return reconcileDeferredExitSerial(context, symbol);
+        }
+    }
+
+    private static boolean reconcileDeferredExitSerial(Context context, String symbol) {
         UnivestStateStore.State state = UnivestStateStore.get(context, symbol);
         if (state == null || !UnivestStateStore.EXITING_OFFICIAL.equals(state.phase)) return true;
         reconcilePendingOfficialExit(context, state);
@@ -624,6 +630,14 @@ final class UnivestManager {
     }
 
     private static void reconcilePendingOfficialExit(Context context, UnivestStateStore.State state) {
+        synchronized (campaignLock(state.symbol)) {
+            reconcilePendingOfficialExitSerial(context, state);
+        }
+    }
+
+    private static void reconcilePendingOfficialExitSerial(Context context, UnivestStateStore.State state) {
+        state = UnivestStateStore.get(context, state.symbol);
+        if (state == null || !UnivestStateStore.EXITING_OFFICIAL.equals(state.phase)) return;
         String symbol = state.symbol;
         InstrumentRepository.Instrument instrument = InstrumentRepository.resolve(InstrumentRepository.load(context), symbol);
         double tick = instrument != null && instrument.tickSize > 0 ? instrument.tickSize : 0.05;
@@ -646,6 +660,12 @@ final class UnivestManager {
             DiagnosticsStore.runtime(context, "EXIT_RECOVERY_CONFIRMED_FLAT", symbol,
                     "Broker truth confirms the official exit is complete.");
             return;
+        }
+
+        // Groww's registered profit-recovery GTT is authoritative until it is
+        // verified inactive. Never place a second limit SELL against the same shares.
+        if (!state.deferredProfitSellGttId.isEmpty() || state.deferredProfitSellGttUncertain) {
+            if (!reconcileDeferredProfitGtt(context, state, broker)) return;
         }
 
         if (state.exitOrderId != null && !state.exitOrderId.isEmpty()) {
@@ -690,8 +710,9 @@ final class UnivestManager {
                     + " • " + green.reason;
             UnivestStateStore.put(context, state);
             DiagnosticsStore.runtime(context, "EXIT_RECOVERY_STILL_NOT_GREEN", symbol, state.lastAction);
+            armDeferredProfitSellGtt(context, state, tick,
+                    broker.netPrice, broker.quantity, System.currentTimeMillis());
             OfficialSignalRecoveryScheduler.scheduleAfter(context, 60_000L);
-            DeferredGreenExitWatcher.start(context, symbol);
             return;
         }
 
@@ -978,6 +999,7 @@ final class UnivestManager {
         if (s == null) { s = new UnivestStateStore.State(); s.symbol = symbol; }
         s.phase = UnivestStateStore.EXITED; s.quantity = 0; s.principal = 0; s.estimatedBuyCharges = 0; s.averageLevel = 0;
         s.exitRequestedQty = 0; s.activeGttId = ""; s.protectiveStopGttId = "";
+        clearDeferredProfitGtt(s);
         s.averageGtt1Id = ""; s.averageGtt2Id = ""; s.averageGtt3Id = "";
         s.averageGtt1Price = 0; s.averageGtt2Price = 0; s.averageGtt3Price = 0; s.lastAction = message;
         UnivestStateStore.put(c, s);
