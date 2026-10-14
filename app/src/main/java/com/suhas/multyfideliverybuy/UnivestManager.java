@@ -270,7 +270,11 @@ final class UnivestManager {
             UnivestStateStore.put(context, state);
             if (r.filled && r.averagePrice > 0) armAveragingLadder(context, state, r.orderId);
         } else {
-            state.phase = r.filled ? UnivestStateStore.ACTIVE : state.phase;
+            // A new BUY supersedes the prior EXIT state even if the broker fill
+            // has not confirmed yet. Recovery must not sell while that BUY is pending.
+            state.phase = r.filled ? UnivestStateStore.ACTIVE
+                    : (UnivestStateStore.EXITING_OFFICIAL.equals(state.phase)
+                        ? UnivestStateStore.ENTRY_PENDING : state.phase);
             if (state.anchorPrice <= 0 && before.netPrice > 0) state.anchorPrice = before.netPrice;
             if (r.filled) {
                 state.quantity = before.quantity + r.filledQuantity;
