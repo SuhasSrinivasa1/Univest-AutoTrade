@@ -629,6 +629,13 @@ final class GrowwClient {
         limit = Math.max(limit, minimumGreen);
         if (snap.quote.lowerCircuit > 0)
             limit = Math.max(limit, roundUpToTick(snap.quote.lowerCircuit, tick));
+        // A protected limit must be profitable after both sides' delivery charges.
+        double breakEven = DeliveryNetTarget.breakEvenPrice(avg, snap.holding.quantity, tick);
+        if (snap.holding.quantity <= 0 || !Double.isFinite(breakEven) || breakEven <= 0) {
+            return new GreenSellPlan(false, avg, executable, minimumGreen, 0,
+                    "Unable to compute fee-adjusted break-even sell price.");
+        }
+        limit = Math.max(limit, roundUpToTick(breakEven + tick, tick));
 
         if (limit > executable + 1e-9) {
             return new GreenSellPlan(false, avg, executable, minimumGreen, limit,
