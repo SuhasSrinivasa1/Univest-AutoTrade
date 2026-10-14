@@ -1036,6 +1036,37 @@ final class UnivestManager {
         st.deferredProfitSellGttUncertain = false;
     }
 
+    private static void armDeferredProfitSellGtt(Context c, UnivestStateStore.State st,
+                                                  double tick, double average, int qty, long eventAt) {
+        if (!st.deferredProfitSellGttId.isEmpty() || st.deferredProfitSellGttUncertain) return;
+        double target = DeferredProfitGttPolicy.targetPrice(average, qty, tick);
+        if (!(target > average) || qty <= 0) {
+            fail(c, "EXIT_PROFIT_GTT_INVALID", st.symbol, "Verified holding/target unavailable.", null);
+            return;
+        }
+        String ref = stableRef("UP05", st.symbol, "EXIT-PROFIT|" + eventAt, eventAt);
+        GrowwClient.GttResult gtt = GrowwClient.createResearchCncSellTarget(
+                c, st.symbol, qty, target, ref);
+        if (gtt.success && !gtt.smartOrderId.isEmpty()) {
+            st.deferredProfitSellGttId = gtt.smartOrderId;
+            st.deferredProfitSellGttPrice = target;
+            st.deferredProfitSellGttQty = qty;
+            st.lastAction = "Official EXIT: +0.5% NET profit SELL GTT active at ₹"
+                    + money(target) + " for " + qty + " CNC shares.";
+            UnivestStateStore.put(c, st);
+            DiagnosticsStore.runtime(c, "EXIT_PROFIT_GTT_ARMED", st.symbol, st.lastAction);
+            status(c, st.lastAction);
+        } else {
+            // An ambiguous broker response must not generate duplicate orders.
+            st.deferredProfitSellGttUncertain = gtt.unknown || gtt.success;
+            st.lastAction = "Profit SELL GTT unconfirmed: " + gtt.message
+                    + (st.deferredProfitSellGttUncertain ? " Check Groww Smart Orders." : "");
+            UnivestStateStore.put(c, st);
+            DiagnosticsStore.error(c, "EXIT_PROFIT_GTT_NOT_CONFIRMED", st.symbol, st.lastAction, null);
+            status(c, st.lastAction);
+        }
+    }
+
     private static void markExited(Context c, UnivestStateStore.State s, String symbol, String message) {
         if (s == null) { s = new UnivestStateStore.State(); s.symbol = symbol; }
         s.phase = UnivestStateStore.EXITED; s.quantity = 0; s.principal = 0; s.estimatedBuyCharges = 0; s.averageLevel = 0;
