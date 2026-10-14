@@ -16,6 +16,26 @@ public class UnivestParserTest {
         UnivestParser.Signal s = UnivestParser.parse("Equity Profit of the Day\nStock: GVPIL\nDuration: 2 Days\nBook Profit for the day");
         assertNotNull(s); assertEquals(UnivestParser.Type.EXIT, s.type); assertEquals("GVPIL", s.symbol);
     }
+    @Test public void parsesOfficialDailyProfitAlertsWithAdvisoryPickTicker() {
+        UnivestParser.Signal first = UnivestParser.parse(
+                "1st Equity Profit of the Day\\nAdvisory Pick: URBANCO\\n🕓 Duration: 2 Days");
+        assertNotNull(first);
+        assertEquals(UnivestParser.Type.EXIT, first.type);
+        assertEquals("URBANCO", first.symbol);
+
+        UnivestParser.Signal second = UnivestParser.parse(
+                "2nd Equity Profit of the Day\\nAdvisory Pick: BALRAMCHIN\\n🕓 Duration: 6 Days");
+        assertNotNull(second);
+        assertEquals(UnivestParser.Type.EXIT, second.type);
+        assertEquals("BALRAMCHIN", second.symbol);
+    }
+
+    @Test public void advisoryPickWithoutExplicitProfitOrEntryNeverSells() {
+        assertNull(UnivestParser.parse("Advisory Pick: URBANCO\\nDuration: 2 Days"));
+        assertNull(UnivestParser.parse("1st Equity Profit of the Day\\nDuration: 2 Days"));
+        assertNull(UnivestParser.parse("Options\\nEquity Profit of the Day\\nAdvisory Pick: NIFTY27OCT22000CE"));
+    }
+
     @Test public void parsesBackInRangeVariants() {
         String[] messages = {
                 "Stock: ABC\nEquity back in buying range",

@@ -172,7 +172,17 @@ final class DiagnosticsStore {
     private static JSONObject snapshot(Context c) {
         JSONObject j = new JSONObject();
         try {
-            j.put("app", "Univest AutoTrade"); j.put("version", "2.9.9"); j.put("versionCode", 300);
+            j.put("app", "Univest AutoTrade");
+            // Always export the installed package's real build version, not a stale constant.
+            try {
+                android.content.pm.PackageInfo pkg = c.getPackageManager().getPackageInfo(c.getPackageName(), 0);
+                j.put("version", pkg.versionName == null ? "unknown" : pkg.versionName);
+                j.put("versionCode", android.os.Build.VERSION.SDK_INT >= 28
+                        ? pkg.getLongVersionCode() : pkg.versionCode);
+            } catch (Exception versionFailure) {
+                j.put("version", "unknown");
+                j.put("versionCode", -1);
+            }
             j.put("sourcePackageLock", "com.univest.capp"); j.put("productLock", "CNC DELIVERY ONLY");
             j.put("executionMode", AppPrefs.getExecutionMode(c)); j.put("entryBudget", AppPrefs.getUnivestBudget(c));
             j.put("reentryBudget", AppPrefs.getUnivestAddBudget(c)); j.put("downwardAverageBudget", AppPrefs.getAveragingBudget(c));

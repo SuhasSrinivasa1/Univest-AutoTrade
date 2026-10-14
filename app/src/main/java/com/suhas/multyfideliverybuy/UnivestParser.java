@@ -20,7 +20,10 @@ final class UnivestParser {
 
     private static final Pattern[] STOCK_PATTERNS = new Pattern[] {
             Pattern.compile("(?im)^\\s*(?:stock(?:\\s+name)?|symbol|scrip|script|company)\\s*[:\\-]\\s*([^\\n\\r•|]{2,80})"),
-            Pattern.compile("(?im)\\b(?:stock(?:\\s+name)?|symbol|scrip|script)\\s*[:\\-]\\s*([A-Z][A-Z0-9&.\\-]{1,30})\\b")
+            Pattern.compile("(?im)\\b(?:stock(?:\\s+name)?|symbol|scrip|script)\\s*[:\\-]\\s*([A-Z][A-Z0-9&.\\-]{1,30})\\b"),
+            // Official Univest profit alerts put the exact ticker after "Advisory Pick".
+            // Do not infer a symbol from free-text headlines or unrelated notifications.
+            Pattern.compile("(?im)^\\s*advisory\\s+pick\\s*[:\\-]\\s*([A-Z][A-Z0-9&.\\-]{1,30})\\b")
     };
     private static final Pattern DURATION_MONTHS = Pattern.compile(
             "(?im)\\b(?:duration|holding(?:\\s+period)?|time\\s*horizon)\\s*[:\\-]?\\s*(\\d+(?:\\.\\d+)?)\\s*(?:(?:-|–|—|to)\\s*(\\d+(?:\\.\\d+)?))?\\s*months?\\b");
