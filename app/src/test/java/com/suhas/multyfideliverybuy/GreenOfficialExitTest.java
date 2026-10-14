@@ -21,6 +21,8 @@ public class GreenOfficialExitTest {
         assertTrue(p.canSell);
         assertTrue(p.limitPrice >= 680.05 - 1e-9);
         assertTrue(p.limitPrice <= 687.40 + 1e-9);
+        assertTrue("limit should cover estimated charges",
+                DeliveryNetTarget.estimatedNetProfit(680.0, 42, p.limitPrice) > 0);
     }
 
     @Test public void redOfficialExitIsDeferredNotSold() {
