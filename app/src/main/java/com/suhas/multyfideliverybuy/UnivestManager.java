@@ -995,6 +995,47 @@ final class UnivestManager {
         }
     }
 
+    private static boolean cancelDeferredProfitGttBeforeBuy(Context c, UnivestStateStore.State st) {
+        String id = st.deferredProfitSellGttId;
+        if (id.isEmpty()) {
+            if (!st.deferredProfitSellGttUncertain) return true;
+            fail(c, "ENTRY_GTT_UNCERTAIN", st.symbol,
+                    "Existing profit GTT creation is uncertain. Check Groww Smart Orders.", null);
+            return false;
+        }
+        GrowwClient.GttStatusResult before = GrowwClient.getCashGttStatus(c, id);
+        if (!before.success || DeferredProfitGttPolicy.isTriggered(before.status)) {
+            fail(c, "ENTRY_GTT_ALREADY_TRIGGERED", st.symbol,
+                    "Old SELL GTT may have triggered; new BUY blocked until broker confirmation.", null);
+            return false;
+        }
+        if (!DeferredProfitGttPolicy.isCancelled(before.status)) {
+            GrowwClient.Result canceled = GrowwClient.cancelCashGtt(c, id);
+            if (!canceled.success || canceled.unknown) {
+                fail(c, "ENTRY_GTT_CANCEL_FAILED", st.symbol, canceled.message, null);
+                return false;
+            }
+            GrowwClient.GttStatusResult after = GrowwClient.getCashGttStatus(c, id);
+            if (!after.success || !DeferredProfitGttPolicy.isCancelled(after.status)) {
+                fail(c, "ENTRY_GTT_CANCEL_UNVERIFIED", st.symbol,
+                        "Groww has not confirmed old sell GTT cancellation. BUY blocked.", null);
+                return false;
+            }
+        }
+        clearDeferredProfitGtt(st);
+        UnivestStateStore.put(c, st);
+        DiagnosticsStore.runtime(c, "ENTRY_CANCELLED_OLD_PROFIT_GTT", st.symbol,
+                "Verified cancellation of prior +0.5% net SELL GTT before new BUY.");
+        return true;
+    }
+
+    private static void clearDeferredProfitGtt(UnivestStateStore.State st) {
+        st.deferredProfitSellGttId = "";
+        st.deferredProfitSellGttPrice = 0;
+        st.deferredProfitSellGttQty = 0;
+        st.deferredProfitSellGttUncertain = false;
+    }
+
     private static void markExited(Context c, UnivestStateStore.State s, String symbol, String message) {
         if (s == null) { s = new UnivestStateStore.State(); s.symbol = symbol; }
         s.phase = UnivestStateStore.EXITED; s.quantity = 0; s.principal = 0; s.estimatedBuyCharges = 0; s.averageLevel = 0;
