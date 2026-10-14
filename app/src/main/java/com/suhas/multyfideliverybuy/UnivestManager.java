@@ -174,6 +174,12 @@ final class UnivestManager {
     }
 
     static void handleReentry(Context context, UnivestParser.Signal signal, long notificationPostTime) {
+        synchronized (campaignLock(signal.symbol)) {
+            handleReentrySerial(context, signal, notificationPostTime);
+        }
+    }
+
+    private static void handleReentrySerial(Context context, UnivestParser.Signal signal, long notificationPostTime) {
         InstrumentRepository.Instrument instrument = resolve(context, signal, "REENTRY");
         if (instrument == null) return;
         String symbol = instrument.symbol;
@@ -191,6 +197,14 @@ final class UnivestManager {
         }
 
         if (!instrument.buyAllowed) { fail(context, "REENTRY_BUY_BLOCKED", symbol, "Groww instrument master marks buy_allowed=0.", null); return; }
+        UnivestStateStore.State prior = UnivestStateStore.get(context, symbol);
+        if (prior != null && !cancelDeferredProfitGttBeforeBuy(context, prior)) return;
+        GrowwClient.Result pendingSell = GrowwClient.checkForActiveCncSellOrder(context, symbol);
+        if (pendingSell.unknown || pendingSell.success) {
+            fail(context, "REENTRY_SELL_CONFLICT", symbol,
+                    "Back-in-range BUY blocked while a CNC SELL is active/unknown: " + pendingSell.message, null);
+            return;
+        }
         GrowwClient.PositionSnapshot before = GrowwClient.getCncPosition(context, symbol);
         if (!before.success) { fail(context, "REENTRY_HOLDING_CHECK_FAILED", symbol, before.message, null); return; }
 
