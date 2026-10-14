@@ -1067,6 +1067,35 @@ final class UnivestManager {
         }
     }
 
+    private static boolean reconcileDeferredProfitGtt(Context c, UnivestStateStore.State st,
+                                                       GrowwClient.PositionSnapshot broker) {
+        if (st.deferredProfitSellGttUncertain) {
+            DiagnosticsStore.runtime(c, "EXIT_PROFIT_GTT_UNCERTAIN", st.symbol,
+                    "GTT creation status unknown; no second SELL order will be sent.");
+            return false;
+        }
+        GrowwClient.GttStatusResult status = GrowwClient.getCashGttStatus(
+                c, st.deferredProfitSellGttId);
+        if (!status.success) {
+            DiagnosticsStore.runtime(c, "EXIT_PROFIT_GTT_STATUS_UNAVAILABLE", st.symbol, status.message);
+            return false;
+        }
+        if (DeferredProfitGttPolicy.isCancelled(status.status)) {
+            clearDeferredProfitGtt(st);
+            UnivestStateStore.put(c, st);
+            DiagnosticsStore.runtime(c, "EXIT_PROFIT_GTT_INACTIVE", st.symbol,
+                    "Old GTT inactive. Checking remaining holding before another exit action.");
+            return true;
+        }
+        st.quantity = broker.quantity;
+        st.lastAction = "Broker-held +0.5% NET SELL GTT " + status.status
+                + " • target ₹" + money(st.deferredProfitSellGttPrice)
+                + " • held qty " + broker.quantity;
+        UnivestStateStore.put(c, st);
+        DiagnosticsStore.runtime(c, "EXIT_PROFIT_GTT_TRACKED", st.symbol, st.lastAction);
+        return false;
+    }
+
     private static void markExited(Context c, UnivestStateStore.State s, String symbol, String message) {
         if (s == null) { s = new UnivestStateStore.State(); s.symbol = symbol; }
         s.phase = UnivestStateStore.EXITED; s.quantity = 0; s.principal = 0; s.estimatedBuyCharges = 0; s.averageLevel = 0;
