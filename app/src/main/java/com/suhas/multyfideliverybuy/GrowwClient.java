@@ -635,6 +635,12 @@ final class GrowwClient {
                     "Deferred: green-protection limit ₹" + money(limit)
                             + " is above the currently executable price ₹" + money(executable) + ".");
         }
+        // A gross green price may still be a net loss after delivery charges.
+        if (snap.holding.quantity <= 0
+                || DeliveryNetTarget.estimatedNetProfit(avg, snap.holding.quantity, limit) <= 0) {
+            return new GreenSellPlan(false, avg, executable, minimumGreen, limit,
+                    "Deferred: current executable sell price does not cover estimated delivery charges.");
+        }
         return new GreenSellPlan(true, avg, executable, minimumGreen, limit,
                 "Green EXIT ready • avg ₹" + money(avg)
                         + " • executable ₹" + money(executable)
@@ -827,6 +833,20 @@ final class GrowwClient {
                 || "REJECTED".equals(st) || "FAILED".equals(st));
     }
 
+
+    /** Read-only: block new purchases against an active CNC SELL order for the same symbol. */
+    static Result checkForActiveCncSellOrder(Context context, String symbol) {
+        if (symbol == null || symbol.trim().isEmpty())
+            return new Result(false, true, 0, "Missing symbol for pending SELL check.");
+        try {
+            java.util.ArrayList<String> ids = listOpenCncSellOrderIds(
+                    context, symbol.trim().toUpperCase(Locale.US));
+            return new Result(!ids.isEmpty(), false, 200,
+                    ids.isEmpty() ? "No active CNC SELL." : "Active CNC SELL(s): " + ids);
+        } catch (Exception e) {
+            return new Result(false, true, 0, "CNC SELL status unknown: " + safeMessage(e));
+        }
+    }
 
     static Result checkForActiveCncBuyOrder(Context context, String symbol) {
         if (symbol == null || symbol.trim().isEmpty()) return new Result(false, false, 0, "Missing symbol for BUY-order reconciliation.");
