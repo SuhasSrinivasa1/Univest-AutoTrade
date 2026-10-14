@@ -1059,12 +1059,20 @@ final class UnivestManager {
             return;
         }
         String ref = stableRef("UP05", st.symbol, "EXIT-PROFIT|" + eventAt, eventAt);
+        // Persist an uncertainty barrier BEFORE the network call. If Android
+        // kills this process after Groww accepts the GTT, recovery must not
+        // blindly submit another sell against the same holding.
+        st.deferredProfitSellGttUncertain = true;
+        st.deferredProfitSellGttPrice = target;
+        st.deferredProfitSellGttQty = qty;
+        UnivestStateStore.put(c, st);
         GrowwClient.GttResult gtt = GrowwClient.createResearchCncSellTarget(
                 c, st.symbol, qty, target, ref);
         if (gtt.success && !gtt.smartOrderId.isEmpty()) {
             st.deferredProfitSellGttId = gtt.smartOrderId;
             st.deferredProfitSellGttPrice = target;
             st.deferredProfitSellGttQty = qty;
+            st.deferredProfitSellGttUncertain = false;
             st.lastAction = "Official EXIT: +0.5% NET profit SELL GTT active at ₹"
                     + money(target) + " for " + qty + " CNC shares.";
             UnivestStateStore.put(c, st);
