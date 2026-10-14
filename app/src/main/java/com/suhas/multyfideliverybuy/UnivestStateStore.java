@@ -50,6 +50,10 @@ final class UnivestStateStore {
         int brokerQtyAfterLastFill = -1;
         String exitOrderId = "";
         int exitRequestedQty = 0;
+        String deferredProfitSellGttId = "";
+        double deferredProfitSellGttPrice = 0;
+        int deferredProfitSellGttQty = 0;
+        boolean deferredProfitSellGttUncertain = false;
         String lastAction = "";
         long updatedAt = System.currentTimeMillis();
 
@@ -82,6 +86,10 @@ final class UnivestStateStore {
                 j.put("brokerQtyAfterLastFill", brokerQtyAfterLastFill);
                 j.put("exitOrderId", exitOrderId);
                 j.put("exitRequestedQty", exitRequestedQty);
+                j.put("deferredProfitSellGttId", deferredProfitSellGttId);
+                j.put("deferredProfitSellGttPrice", deferredProfitSellGttPrice);
+                j.put("deferredProfitSellGttQty", deferredProfitSellGttQty);
+                j.put("deferredProfitSellGttUncertain", deferredProfitSellGttUncertain);
                 j.put("lastAction", lastAction);
                 j.put("updatedAt", updatedAt);
             } catch (Exception ignored) {}
@@ -116,6 +124,10 @@ final class UnivestStateStore {
             s.brokerQtyAfterLastFill = j.optInt("brokerQtyAfterLastFill", -1);
             s.exitOrderId = j.optString("exitOrderId", "");
             s.exitRequestedQty = j.optInt("exitRequestedQty", 0);
+            s.deferredProfitSellGttId = j.optString("deferredProfitSellGttId", "");
+            s.deferredProfitSellGttPrice = j.optDouble("deferredProfitSellGttPrice", 0);
+            s.deferredProfitSellGttQty = j.optInt("deferredProfitSellGttQty", 0);
+            s.deferredProfitSellGttUncertain = j.optBoolean("deferredProfitSellGttUncertain", false);
             s.lastAction = j.optString("lastAction", "");
             s.updatedAt = j.optLong("updatedAt", System.currentTimeMillis());
             return s;
