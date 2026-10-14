@@ -37,6 +37,13 @@ public class GreenOfficialExitTest {
         assertEquals(680.05, p.minimumGreenPrice, 0.0001);
     }
 
+    @Test public void tinyGrossGainCanStillBeNetLossAfterBrokerCharges() {
+        GrowwClient.GreenSellPlan p = GrowwClient.greenSellPlan(
+                snap(100.00, 100.05, 100.05, 95.0, 105.0), 0.05);
+        assertFalse(p.canSell);
+        assertTrue(p.reason.contains("charges") || p.reason.contains("Deferred"));
+    }
+
     @Test public void missingBrokerAverageFailsClosed() {
         GrowwClient.GreenSellPlan p = GrowwClient.greenSellPlan(
                 snap(0.0, 700.00, 700.00, 645.55, 713.45), 0.05);
