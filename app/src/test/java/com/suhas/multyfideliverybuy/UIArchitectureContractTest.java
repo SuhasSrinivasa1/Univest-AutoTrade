@@ -5,8 +5,8 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class UIArchitectureContractTest {
-    @Test public void primaryNavigationHasFourDistinctUserJobs() {
-        assertArrayEquals(new String[]{"Execution", "Research", "Forecast", "Settings"},
+    @Test public void primaryNavigationHasFiveDistinctUserJobs() {
+        assertArrayEquals(new String[]{"Execution", "Research", "Forecast", "Formula", "Settings"},
                 UiArchitecture.primaryTabLabels());
     }
 
