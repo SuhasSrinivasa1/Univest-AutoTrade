@@ -45,6 +45,15 @@ public class MarketGuardianService extends Service {
                         // This makes Session-3 timeout scoring and post-close replay resilient on
                         // restrictive OEM firmware where the fallback JobScheduler may be delayed.
                         ResearchOrchestrator.tick(getApplicationContext());
+                        // Same 2-minute live cadence for Formula, on a separate worker.
+                        // A slow Formula score may not delay official execution or Forecast.
+                        new Thread(() -> {
+                            try { FormulaEngine.refresh(getApplicationContext(), false); }
+                            catch (Throwable formulaFailure) {
+                                DiagnosticsStore.error(getApplicationContext(), "FORMULA_GUARDIAN_FAILED", "",
+                                        "Independent Formula tick failed.", formulaFailure);
+                            }
+                        }, "formula-fixed-v1-guardian").start();
                     } catch (Throwable t) {
                         DiagnosticsStore.error(getApplicationContext(), "MARKET_GUARDIAN_TICK_FAILED", "",
                                 "Foreground market guardian tick failed.", t);
