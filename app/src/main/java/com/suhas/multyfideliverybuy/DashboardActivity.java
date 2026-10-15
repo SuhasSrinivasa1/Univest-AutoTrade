@@ -28,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -150,6 +151,7 @@ public class DashboardActivity extends Activity {
         if (selectedTab == 0) contentHost.addView(buildUnivestTab());
         else if (selectedTab == 1) contentHost.addView(buildStrategyTab());
         else if (selectedTab == 2) contentHost.addView(buildForecastTab());
+        else if (selectedTab == 3) contentHost.addView(buildFormulaTab());
         else contentHost.addView(buildSettingsTab());
         renderBottomNav();
     }
@@ -278,6 +280,142 @@ public class DashboardActivity extends Activity {
         root.addView(forecastActionButtons(), margins(0, 0, 0, 12));
         root.addView(forecastDecisionTableCard(), margins(0, 0, 0, 22));
         return scroll;
+    }
+
+    /** FORMULA is an independent, non-trading fixed strategy, not an alternate Forecast view. */
+    private View buildFormulaTab() {
+        ScrollView scroll = baseScroll();
+        LinearLayout root = scrollRoot(scroll);
+        root.addView(appHeader("FORMULA", "Immutable mathematical stock selection"));
+
+        LinearLayout title = card();
+        title.addView(text("Fixed Formula V1", 22, TEXT, true));
+        title.addView(meta("D35% • I25% • P15% • M10% • N5% • F5% • X5%\n"
+                + "Daily • Intraday • Champion • Market • News • Fundamentals • Feasibility"),
+                margins(0, 6, 0, 0));
+        title.addView(meta("The mathematics and thresholds do not adapt. Market observations can change qualifying stocks. Missing inputs never count as positive evidence."),
+                margins(0, 7, 0, 0));
+        root.addView(title, margins(0, 20, 0, 12));
+
+        LinearLayout metrics = card();
+        int[] stats = FormulaEngine.statistics(this);
+        int mature = stats[0] + stats[1];
+        metrics.addView(text("Fixed Recommendation Upside", 11, SUBTEXT, false));
+        metrics.addView(text("+1.00% NET", 26, GREEN, true), margins(0, 8, 0, 0));
+        metrics.addView(meta("Fee-adjusted, frozen target at call time • no automatic Groww trading"),
+                margins(0, 4, 0, 0));
+        metrics.addView(meta("Verified target touches: " + stats[0] + " • Misses after 3 sessions: "
+                + stats[1] + " • Open: " + stats[2] + " • Hit rate on matured calls: "
+                + (mature > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * stats[0] / mature) : "N/A")),
+                margins(0, 9, 0, 0));
+        metrics.addView(meta("Outcomes are observed price touches, NOT realized trading returns."),
+                margins(0, 6, 0, 0));
+        root.addView(metrics, margins(0, 0, 0, 12));
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        Button refresh = primaryButton("REFRESH SCANNER");
+        refresh.setOnClickListener(v -> refreshFormulaScanner(refresh));
+        LinearLayout.LayoutParams left = new LinearLayout.LayoutParams(0, dp(50), 1f);
+        left.setMargins(0, 0, dp(6), 0);
+        actions.addView(refresh, left);
+        Button research = secondaryButton("RUN RESEARCH");
+        research.setOnClickListener(v -> runResearchNow(research));
+        LinearLayout.LayoutParams right = new LinearLayout.LayoutParams(0, dp(50), 1f);
+        right.setMargins(dp(6), 0, 0, 0);
+        actions.addView(research, right);
+        root.addView(actions, margins(0, 0, 0, 12));
+
+        LinearLayout decisions = card();
+        JSONArray calls = FormulaEngine.calls(this);
+        decisions.addView(sectionRow("FORMULA STOCK CALLS", calls.length() + " archived"));
+        decisions.addView(forecastDecisionHeader(), margins(0, 12, 0, 4));
+        int visible = 0;
+        for (int i = calls.length() - 1; i >= 0 && visible < 20; i--) {
+            JSONObject call = calls.optJSONObject(i);
+            if (call == null) continue;
+            visible++;
+            decisions.addView(formulaDecisionRow(visible, call), margins(0, 11, 0, 0));
+        }
+        if (visible == 0)
+            decisions.addView(meta("No fixed-model Formula call yet. Qualifying recommendations need two confirmations during NSE hours, using the separately ranked EOD Research candidate pool."),
+                    margins(0, 12, 0, 0));
+        root.addView(decisions, margins(0, 0, 0, 12));
+
+        LinearLayout status = card();
+        status.addView(sectionRow("FORMULA ENGINE", FixedFormulaMath.VERSION));
+        status.addView(body(FormulaEngine.status(this)), margins(0, 10, 0, 0));
+        status.addView(meta("Formula uses the Research monitor cadence, independent call history and Formula-only notifications. Existing Forecast/Research/Execution orders and forecasts are untouched."),
+                margins(0, 8, 0, 0));
+        status.addView(meta("Data limitation: broker fundamentals, breadth and sector strength may be unavailable. No champion score is fabricated before frozen champions exist."),
+                margins(0, 6, 0, 0));
+        root.addView(status, margins(0, 0, 0, 22));
+        return scroll;
+    }
+
+    private View formulaDecisionRow(int index, JSONObject p) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.TOP);
+        row.addView(tableCell(String.valueOf(index), 11, SUBTEXT, false, Gravity.START),
+                new LinearLayout.LayoutParams(0, -2, 0.38f));
+
+        LinearLayout stock = new LinearLayout(this);
+        stock.setOrientation(LinearLayout.VERTICAL);
+        stock.addView(text(p.optString("symbol", ""), 12, TEXT, true));
+        String name = p.optString("companyName", "");
+        if (!name.isEmpty()) stock.addView(meta(name), margins(0, 2, 0, 0));
+        stock.addView(text(String.format(Locale.US, "%.1f/100 • %s",
+                p.optDouble("score", 0), p.optString("strategy", "Fixed")), 9, SUBTEXT, false),
+                margins(0, 3, 0, 0));
+        JSONArray factors = p.optJSONArray("factors");
+        if (factors != null) {
+            StringBuilder explanation = new StringBuilder();
+            for (int j = 0; j < FixedFormulaMath.FACTORS.length; j++) {
+                if (j > 0) explanation.append("  ");
+                explanation.append(FixedFormulaMath.FACTORS[j]).append(":");
+                if (j < factors.length() && !factors.isNull(j))
+                    explanation.append(Math.round(factors.optDouble(j)));
+                else explanation.append("—");
+            }
+            stock.addView(meta(explanation.toString()), margins(0, 3, 0, 0));
+        }
+        row.addView(stock, new LinearLayout.LayoutParams(0, -2, 2.05f));
+        row.addView(tableCell(String.format(Locale.US, "₹%.2f", p.optDouble("entry", 0)),
+                11, TEXT, false, Gravity.END),
+                new LinearLayout.LayoutParams(0, -2, 0.90f));
+        row.addView(tableCell(String.format(Locale.US, "₹%.2f", p.optDouble("target", 0)),
+                11, TEXT, false, Gravity.END),
+                new LinearLayout.LayoutParams(0, -2, 0.90f));
+        String state = p.optString("state", "OPEN");
+        String stateLabel = state + "\n" + p.optString("session", "");
+        row.addView(tableCell(stateLabel, 10,
+                        "TARGET HIT".equals(state) ? GREEN : "MISSED".equals(state) ? RED : AMBER,
+                        true, Gravity.END),
+                new LinearLayout.LayoutParams(0, -2, 1.10f));
+        return row;
+    }
+
+    private void refreshFormulaScanner(Button button) {
+        button.setEnabled(false);
+        button.setText("REFRESHING…");
+        new Thread(() -> {
+            try {
+                ResearchOrchestrator.tick(getApplicationContext());
+                FormulaEngine.refresh(getApplicationContext(), true);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Fixed Formula scanner refreshed.", Toast.LENGTH_SHORT).show();
+                    render();
+                });
+            } catch (Throwable t) {
+                DiagnosticsStore.error(getApplicationContext(), "FORMULA_MANUAL_REFRESH_FAILED", "",
+                        "Manual fixed Formula scanner refresh failed.", t);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Formula refresh failed.", Toast.LENGTH_LONG).show();
+                    render();
+                });
+            }
+        }, "formula-manual-refresh").start();
     }
 
     private View buildSettingsTab() {
@@ -1029,7 +1167,8 @@ public class DashboardActivity extends Activity {
         bottomNav.addView(navItem(R.drawable.ic_univest_nav, labels[0], 0), navParams());
         bottomNav.addView(navItem(R.drawable.ic_strategy_nav, labels[1], 1), navParams());
         bottomNav.addView(navItem(R.drawable.ic_forecast_nav, labels[2], 2), navParams());
-        bottomNav.addView(navItem(R.drawable.ic_settings_nav, labels[3], 3), navParams());
+        bottomNav.addView(navItem(R.drawable.ic_formula_nav, labels[3], 3), navParams());
+        bottomNav.addView(navItem(R.drawable.ic_settings_nav, labels[4], 4), navParams());
     }
 
     private View navItem(int iconRes, String label, int tab) {
