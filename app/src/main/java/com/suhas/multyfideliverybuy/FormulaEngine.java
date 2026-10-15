@@ -28,7 +28,7 @@ final class FormulaEngine {
     private static final String CHANNEL = "univest_formula_calls";
     private static final long MIN_REFRESH_MS = 2 * 60_000L;
     private static final long CONFIRM_MS = 60_000L;
-    private static final int MAX_CANDIDATES = 20;
+    private static final int MAX_CANDIDATES = 12;
     private FormulaEngine() {}
 
     static synchronized void refresh(Context context, boolean force) {
@@ -131,6 +131,10 @@ final class FormulaEngine {
                 call.put("missing", p.optString("missingData", ""));
                 calls.put(call);
                 saveCalls(pref, calls);
+                DiagnosticsStore.runtime(c, "FORMULA_V1_CALL", symbol,
+                        "Fixed score " + score + "/100 • entry ₹" + price
+                                + " • fee-adjusted net target ₹" + target
+                                + " • no automatic trade submitted.");
                 postCall(c, symbol, price, target, score);
                 triggered++;
             } catch (Throwable t) {
@@ -231,9 +235,10 @@ final class FormulaEngine {
         double n = news.isEmpty() ? Double.NaN
                 : Math.max(0, Math.min(100, 50 + 15 * p.optInt("positiveCatalysts")
                         - 25 * p.optInt("negativeCatalysts")));
-        double fundamental = p.optBoolean("fundamentalsPositive", false)
-                && !"UNKNOWN_NOT_CONNECTED".equals(p.optString("fundamentalsStatus", "UNKNOWN_NOT_CONNECTED"))
-                ? 75 : Double.NaN;
+        // Negative VERIFIED fundamentals must score poorly, not disappear as missing.
+        String fundamentals = p.optString("fundamentalsStatus", "UNKNOWN_NOT_CONNECTED");
+        double fundamental = "UNKNOWN_NOT_CONNECTED".equals(fundamentals)
+                ? Double.NaN : (p.optBoolean("fundamentalsPositive", false) ? 75 : 20);
         double x = price <= p.optDouble("buyHigh", 0) ? 100 : 70;
         return new double[]{d, i, champion, market, n, fundamental, x};
     }
