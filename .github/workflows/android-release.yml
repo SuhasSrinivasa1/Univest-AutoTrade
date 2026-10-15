@@ -79,12 +79,12 @@ jobs:
           grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
           grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
-          grep -q "versionCode 304" app/build.gradle
-          grep -q "versionName '2.9.14'" app/build.gradle
+          grep -q "versionCode 305" app/build.gradle
+          grep -q "versionName '2.9.15'" app/build.gradle
           grep -Fq 'appHeader("EXECUTION", "Live Univest status & actions")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("RESEARCH", "What the system has learned")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("FORECAST", "Univest-pattern LONG calls")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
-          grep -Fq 'return new String[]{"Execution", "Research", "Forecast", "Settings"}' app/src/main/java/com/suhas/multyfideliverybuy/UiArchitecture.java
+          grep -Fq 'return new String[]{"Execution", "Research", "Forecast", "Formula", "Settings"}' app/src/main/java/com/suhas/multyfideliverybuy/UiArchitecture.java
           grep -Fq 'CURRENT POSITIONS' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'LATEST OFFICIAL ACTION' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           ! grep -q 'FORECAST ACCOUNTABILITY' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
