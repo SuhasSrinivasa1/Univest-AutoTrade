@@ -8,7 +8,7 @@ final class UiArchitecture {
     private UiArchitecture() {}
 
     static String[] primaryTabLabels() {
-        return new String[]{"Execution", "Research", "Forecast", "Settings"};
+        return new String[]{"Execution", "Research", "Forecast", "Formula", "Settings"};
     }
 
     static String humanCampaignPhase(String phase) {
