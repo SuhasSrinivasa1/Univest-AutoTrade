@@ -89,6 +89,11 @@ public class DashboardActivity extends Activity {
                         "Initial broker reconciliation failed.", t);
             }
             try { ResearchOrchestrator.tick(getApplicationContext()); } catch (Throwable ignored) {}
+            try { FormulaEngine.refresh(getApplicationContext(), false); }
+            catch (Throwable formulaError) {
+                DiagnosticsStore.error(getApplicationContext(), "FORMULA_RESUME_FAILED", "",
+                        "Fixed Formula refresh failed without affecting other tabs.", formulaError);
+            }
             runOnUiThread(this::render);
         }, "univest-final-init").start();
 
@@ -107,6 +112,11 @@ public class DashboardActivity extends Activity {
         new Thread(() -> {
             try { ResearchOrchestrator.tick(getApplicationContext()); }
             catch (Throwable ignored) {}
+            try { FormulaEngine.refresh(getApplicationContext(), false); }
+            catch (Throwable formulaError) {
+                DiagnosticsStore.error(getApplicationContext(), "FORMULA_RESUME_FAILED", "",
+                        "Fixed Formula resume refresh failed.", formulaError);
+            }
             runOnUiThread(this::render);
         }, "research-orchestrator-resume").start();
         render();
