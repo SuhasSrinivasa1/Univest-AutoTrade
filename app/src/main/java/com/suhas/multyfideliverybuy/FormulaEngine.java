@@ -227,7 +227,9 @@ final class FormulaEngine {
             JSONObject call = calls.optJSONObject((start + step) % calls.length());
             if (call == null || !"OPEN".equals(call.optString("state"))) continue;
             long at = call.optLong("calledAt", 0);
-            boolean expired = at > 0 && ForecastPolicy.horizonExpired(at, now);
+            // Formula's fixed-model outcome window is unchanged: three NSE sessions.
+            boolean expired = at > 0 && ForecastPolicy.horizonExpired(
+                    at, now, UnivestBenchmark.PRIMARY_MAX_SESSIONS);
             if (trading && allowQuotes && !expired && quoteCount < MONITOR_QUOTES_PER_SCAN) {
                 moved = step + 1;
                 quoteCount++;
