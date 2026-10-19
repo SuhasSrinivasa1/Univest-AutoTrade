@@ -28,7 +28,8 @@ final class FormulaEngine {
     private static final String CHANNEL = "univest_formula_calls";
     private static final long MIN_REFRESH_MS = 2 * 60_000L;
     private static final long CONFIRM_MS = 60_000L;
-    private static final int MAX_CANDIDATES = 12;
+    // Every eligible stock is kept in the candidate rotation; network work
+    // is bounded per tick, NEVER the daily number of qualified recommendations.
     // Only a small rotating slice may contact Groww on each 2-minute tick.
     private static final int CHECKS_PER_SCAN = 3;
     private static final int MAX_NEW_CALLS_PER_SCAN = 1;
@@ -75,8 +76,7 @@ final class FormulaEngine {
         }
         // Sort on frozen daily component evidence, NOT mutable Forecast ensemble rank.
         Collections.sort(eligible, (a,b) -> Integer.compare(rawBest(b), rawBest(a)));
-        if (eligible.size() > MAX_CANDIDATES)
-            eligible = new ArrayList<>(eligible.subList(0, MAX_CANDIDATES));
+        // No top-N truncation: the entire qualified EOD candidate pool participates.
         int observed = 0, triggered = 0, progressed = 0;
         boolean providerOutage = false;
         JSONObject nextPending = pending;
@@ -131,7 +131,13 @@ final class FormulaEngine {
                     continue;
                 }
                 long armed = pending.optLong(today + "|" + symbol, 0);
-                if (armed <= 0 || now - armed > 15L * 60_000L) {
+                // A larger eligible universe takes more ticks to revisit a symbol.
+                // Allow a full rotation plus one scan instead of silently preventing
+                // every call outside a 15-minute fixed confirmation window.
+                long revisitMs = ((long) Math.ceil(count / (double) CHECKS_PER_SCAN) + 2)
+                        * MIN_REFRESH_MS;
+                long confirmationWindowMs = Math.max(15L * 60_000L, revisitMs);
+                if (armed <= 0 || now - armed > confirmationWindowMs) {
                     nextPending.put(today + "|" + symbol, now);
                     continue;
                 }
@@ -383,11 +389,8 @@ final class FormulaEngine {
         try {return new JSONObject(x);}catch(Exception e){return new JSONObject();}
     }
     private static void saveCalls(SharedPreferences p,JSONArray a){
-        if(a.length()>350){
-            JSONArray last=new JSONArray();
-            for(int i=a.length()-350;i<a.length();i++)last.put(a.opt(i));
-            a=last;
-        }
+        // Preserve every confirmed Formula record. A lifetime truncation at
+        // 350 would silently discard real history and limit visible calls.
         p.edit().putString("calls",a.toString()).commit();
     }
 

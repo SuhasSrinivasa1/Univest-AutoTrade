@@ -63,6 +63,9 @@ public class DashboardActivity extends Activity {
     private String selectedResearchSymbol = "";
     private String selectedResearchAction = "";
     private boolean showFormulaHistory = false;
+    // Incremental UI pages prevent one giant view without hiding any saved calls.
+    private int formulaTodayPageSize = 20;
+    private int formulaHistoryPageSize = 20;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -351,7 +354,7 @@ public class DashboardActivity extends Activity {
                 margins(0, 8, 0, 6));
         decisions.addView(forecastDecisionHeader(), margins(0, 9, 0, 4));
         int visible = 0;
-        for (int i = calls.length() - 1; i >= 0 && visible < 20; i--) {
+        for (int i = calls.length() - 1; i >= 0 && visible < formulaTodayPageSize; i--) {
             JSONObject call = calls.optJSONObject(i);
             if (call == null || !session.equals(call.optString("session"))) continue;
             decisions.addView(formulaDecisionRow(++visible, call), margins(0, 11, 0, 0));
@@ -360,6 +363,14 @@ public class DashboardActivity extends Activity {
             decisions.addView(meta("No Formula call confirmed today. Stocks appear individually "
                     + "when the fixed mathematical criteria remain valid across live checks."),
                     margins(0, 12, 0, 0));
+        if (todayCount > visible) {
+            Button more = secondaryButton("SHOW MORE TODAY • " + (todayCount - visible) + " remaining");
+            more.setOnClickListener(v -> {
+                formulaTodayPageSize += 20;
+                render();
+            });
+            decisions.addView(more, margins(0, 12, 0, 0));
+        }
         root.addView(decisions, margins(0, 0, 0, 12));
 
         int earlier = Math.max(0, calls.length() - todayCount);
@@ -376,11 +387,20 @@ public class DashboardActivity extends Activity {
             if (showFormulaHistory) {
                 history.addView(forecastDecisionHeader(), margins(0, 12, 0, 4));
                 int shown = 0;
-                for (int i = calls.length() - 1; i >= 0 && shown < 12; i--) {
+                for (int i = calls.length() - 1; i >= 0 && shown < formulaHistoryPageSize; i--) {
                     JSONObject previous = calls.optJSONObject(i);
                     if (previous == null || session.equals(previous.optString("session"))) continue;
                     history.addView(formulaDecisionRow(++shown, previous),
                             margins(0, 10, 0, 0));
+                }
+                if (earlier > shown) {
+                    Button moreHistory = secondaryButton("SHOW MORE HISTORY • "
+                            + (earlier - shown) + " remaining");
+                    moreHistory.setOnClickListener(v -> {
+                        formulaHistoryPageSize += 20;
+                        render();
+                    });
+                    history.addView(moreHistory, margins(0, 12, 0, 0));
                 }
             }
             root.addView(history, margins(0, 0, 0, 12));

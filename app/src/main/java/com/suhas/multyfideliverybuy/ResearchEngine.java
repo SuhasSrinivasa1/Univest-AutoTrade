@@ -285,7 +285,9 @@ final class ResearchEngine {
                 a.optDouble("ensembleScore", a.optInt("similarity"))));
 
         JSONArray candidatePool = new JSONArray();
-        int poolLimit = Math.min(100, candidates.size());
+        // Preserve every technically qualified EOD candidate for eventual live evaluation.
+        // The live scanner rotates a bounded network batch, not a bounded daily shortlist.
+        int poolLimit = candidates.size();
         String poolTarget = NseTradingCalendar.nextTradingDayKey(now);
         for (int i = 0; i < poolLimit; i++) {
             JSONObject p = candidates.get(i);

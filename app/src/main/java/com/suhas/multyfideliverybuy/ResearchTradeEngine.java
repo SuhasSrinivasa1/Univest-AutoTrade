@@ -52,7 +52,7 @@ final class ResearchTradeEngine {
             // one scanner tick. Remaining symbols are rechecked next tick and
             // retain their individual READY timers; no daily call quota added.
             int emittedThisTick = 0;
-            for (int i = 0; i < predictions.length() && i < 30; i++) {
+            for (int i = 0; i < predictions.length(); i++) {
                 JSONObject p = predictions.optJSONObject(i);
                 if (p == null) continue;
                 String symbol = p.optString("symbol", "").trim().toUpperCase(Locale.US);

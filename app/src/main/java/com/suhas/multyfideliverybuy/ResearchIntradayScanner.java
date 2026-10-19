@@ -20,8 +20,8 @@ import java.util.concurrent.Future;
  */
 final class ResearchIntradayScanner {
     private static final String PREF = "research_intraday_scanner";
-    private static final int LIVE_POOL_LIMIT = 50;
-    private static final int FINAL_LIMIT = 20;
+    // Request budget per 2-minute tick, NOT an upper limit on qualified stocks/day.
+    private static final int LIVE_CHECKS_PER_TICK = 8;
     private static final long MIN_REFRESH_MS = 2L * 60L * 1000L;
 
     private ResearchIntradayScanner() {}
@@ -37,12 +37,19 @@ final class ResearchIntradayScanner {
 
         JSONArray pool = ResearchStore.candidatePool(c);
         if (pool.length() == 0) return existing;
+        // Rotate through the ENTIRE eligible EOD pool. Do not permanently favor
+        // the top 50 or a fixed-size final list of 20.
+        int poolSize = pool.length();
+        int cursor = Math.floorMod(p.getInt("pool_cursor", 0), poolSize);
+        int inspected = 0;
         List<JSONObject> base = new ArrayList<>();
-        for (int i = 0; i < pool.length() && i < LIVE_POOL_LIMIT; i++) {
-            JSONObject x = pool.optJSONObject(i);
+        while (inspected < poolSize && base.size() < LIVE_CHECKS_PER_TICK) {
+            JSONObject x = pool.optJSONObject((cursor + inspected) % poolSize);
+            inspected++;
             if (x == null) continue;
             try { base.add(new JSONObject(x.toString())); } catch (Exception ignored) {}
         }
+        p.edit().putInt("pool_cursor", (cursor + Math.max(1, inspected)) % poolSize).apply();
         if (base.isEmpty()) return existing;
 
         ExecutorService exec = Executors.newFixedThreadPool(4);
@@ -56,8 +63,8 @@ final class ResearchIntradayScanner {
         scored.sort((a,b) -> Double.compare(b.optDouble("intradayPreMinuteScore", 0), a.optDouble("intradayPreMinuteScore", 0)));
 
         JSONArray top = new JSONArray();
-        for (int i = 0; i < scored.size() && i < FINAL_LIMIT; i++) top.put(scored.get(i));
-        ResearchEventStore.captureTopCandidates(c, top, now, FINAL_LIMIT);
+        for (JSONObject candidate : scored) top.put(candidate);
+        ResearchEventStore.captureTopCandidates(c, top, now, top.length());
 
         List<JSONObject> refined = new ArrayList<>();
         for (int i = 0; i < top.length(); i++) {
@@ -67,7 +74,7 @@ final class ResearchIntradayScanner {
         }
         refined.sort((a,b) -> Double.compare(b.optDouble("intradayActionScore", 0), a.optDouble("intradayActionScore", 0)));
         JSONArray out = new JSONArray();
-        for (int i = 0; i < refined.size() && i < FINAL_LIMIT; i++) {
+        for (int i = 0; i < refined.size(); i++) {
             JSONObject x = refined.get(i);
             try {
                 x.put("intradayRank", i + 1);
@@ -88,8 +95,9 @@ final class ResearchIntradayScanner {
             event.put("readyConfirmationScans", 2);
             ResearchEventStore.appendDecisionSnapshot(c, "INTRADAY_RESEARCH_RERANK", event);
         } catch (Exception ignored) {}
-        p.edit().putString("status", "2-minute live rerank • " + out.length() + " watchlist candidates from top "
-                + base.size() + " EOD pool • calls fire only after READY persists across consecutive scans • "
+        p.edit().putString("status", "2-minute live rerank • " + out.length()
+                + " watchlist candidates this tick • rotating through all " + poolSize
+                + " EOD candidates • no daily recommendation quota • READY confirmation required • "
                 + AppPrefs.istDayKey(now)).apply();
         return out;
     }
