@@ -48,6 +48,10 @@ final class ResearchTradeEngine {
             JSONArray frozenStrategies = ResearchStore.playbookRegistry(c).optJSONArray("frozenChampions");
             boolean establishedChampions = frozenStrategies != null
                     && frozenStrategies.length() >= ResearchPlaybookEngine.MIN_FROZEN_FOR_STABLE_DECISIONS;
+            // Progressive confirmation: do not emit an entire ready shortlist in
+            // one scanner tick. Remaining symbols are rechecked next tick and
+            // retain their individual READY timers; no daily call quota added.
+            int emittedThisTick = 0;
             for (int i = 0; i < predictions.length() && i < 30; i++) {
                 JSONObject p = predictions.optJSONObject(i);
                 if (p == null) continue;
@@ -121,6 +125,11 @@ final class ResearchTradeEngine {
                     continue;
                 }
 
+                if (emittedThisTick >= 1) {
+                    // Keep this candidate queued only while live evidence still
+                    // satisfies every gate. Re-check with fresh price next scan.
+                    continue;
+                }
                 long readyNow = System.currentTimeMillis();
                 if (!ResearchTriggerState.shouldTrigger(c, symbol, today, readyNow)) {
                     logSkip(c, symbol, "READY_CONFIRMING",
@@ -135,6 +144,7 @@ final class ResearchTradeEngine {
                     continue;
                 }
                 postEntryReady(c, pos);
+                emittedThisTick++;
 
                 if (auto && AppPrefs.isLiveMode(c) && AppPrefs.isReadyForBuy(c)) {
                     executeBuy(c, symbol, true);
