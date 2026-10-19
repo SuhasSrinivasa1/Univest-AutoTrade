@@ -217,14 +217,20 @@ final class FormulaEngine {
         return new int[]{hits, missed, open};
     }
 
-    static synchronized void monitor(Context c, JSONArray calls, long now) {
-        if (calls == null) return;
+    static synchronized void monitor(Context c, JSONArray calls, long now, boolean allowQuotes) {
+        if (calls == null || calls.length() == 0) return;
+        SharedPreferences pref = c.getSharedPreferences(PREF, Context.MODE_PRIVATE);
         boolean trading = NseTradingCalendar.isRegularMarketOpen(now);
-        for (int i = 0; i < calls.length(); i++) {
-            JSONObject call = calls.optJSONObject(i);
+        int start = Math.floorMod(pref.getInt("monitor_cursor", 0), calls.length());
+        int quoteCount = 0, moved = 1;
+        for (int step = 0; step < calls.length(); step++) {
+            JSONObject call = calls.optJSONObject((start + step) % calls.length());
             if (call == null || !"OPEN".equals(call.optString("state"))) continue;
             long at = call.optLong("calledAt", 0);
-            if (trading && at > 0 && !ForecastPolicy.horizonExpired(at, now)) {
+            boolean expired = at > 0 && ForecastPolicy.horizonExpired(at, now);
+            if (trading && allowQuotes && !expired && quoteCount < MONITOR_QUOTES_PER_SCAN) {
+                moved = step + 1;
+                quoteCount++;
                 try {
                     double price = GrowwClient.getLtpForAutomation(c, call.optString("symbol"));
                     if (price > 0) {
@@ -235,15 +241,58 @@ final class FormulaEngine {
                             call.put("hitAt", now);
                         }
                     }
-                } catch (Throwable ignored) {
-                    // No quote is never evidence of a target hit.
+                } catch (Throwable t) {
+                    if (applyNetworkBackoff(c, pref, t, now)) {
+                        allowQuotes = false;
+                    }
+                    // Failed quote is never evidence of a price target.
                 }
             }
-            if ("OPEN".equals(call.optString("state")) && ForecastPolicy.horizonExpired(at, now)) {
+            if ("OPEN".equals(call.optString("state")) && expired) {
                 try { call.put("state", "MISSED"); call.put("evaluatedAt", now); }
                 catch (Exception ignored) {}
             }
         }
+        pref.edit().putInt("monitor_cursor", (start + moved) % calls.length()).apply();
+    }
+
+    /** Durable provider circuit breaker. Silence repetitive per-symbol outage logs. */
+    private static boolean applyNetworkBackoff(Context c, SharedPreferences pref,
+                                                Throwable error, long now) {
+        String category = FixedFormulaNetworkBackoff.category(error);
+        if (category.isEmpty()) return false;
+        int consecutive = Math.min(12, pref.getInt("failure_streak", 0) + 1);
+        long delay = FixedFormulaNetworkBackoff.cooldownMillis(category, consecutive);
+        long pauseUntil = now + delay;
+        pref.edit().putInt("failure_streak", consecutive)
+                .putLong("network_cooldown_until", pauseUntil)
+                .putString("network_outage", category)
+                .putString("status", "FORMULA market feed paused • " + category
+                        + " • retry in " + delay / 60_000L + " min")
+                .commit();
+        DiagnosticsStore.runtime(c, "FORMULA_NETWORK_BACKOFF", "",
+                category + " • attempt " + consecutive
+                        + " • automatic retry deferred " + delay / 60_000L
+                        + " min • no calls generated from stale observations.");
+        return true;
+    }
+
+    static JSONObject diagnosticSnapshot(Context c) {
+        SharedPreferences p = c.getSharedPreferences(PREF, Context.MODE_PRIVATE);
+        JSONObject out = new JSONObject();
+        try {
+            out.put("model", FixedFormulaMath.VERSION);
+            out.put("status", status(c));
+            out.put("callCount", calls(c).length());
+            out.put("lastRefreshMillis", p.getLong("last_refresh", 0));
+            out.put("cooldownUntilMillis", p.getLong("network_cooldown_until", 0));
+            out.put("outageType", p.getString("network_outage", ""));
+            out.put("failureStreak", p.getInt("failure_streak", 0));
+            out.put("scanCursor", p.getInt("scan_cursor", 0));
+            out.put("monitorCursor", p.getInt("monitor_cursor", 0));
+            out.put("pendingCount", readObject(p.getString("pending", "{}")).length());
+        } catch (Exception ignored) {}
+        return out;
     }
 
     private static double[] factorScores(JSONObject p, JSONArray frozen,
