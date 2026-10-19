@@ -1,22 +1,38 @@
-# Stable release signing
+# Stable Univest AutoTrade release signing (v2.9.11 onward)
 
-Univest AutoTrade v2.9.3 establishes a permanent release-signing identity.
+**Pinned Android package:** `com.suhas.multyfideliverybuy`
 
-The private signing key must **never** be committed to this repository. Future GitHub Actions releases use these repository secrets:
+**Pinned release certificate SHA-256:** `a6a31f47de23f019de4e6718fb430e56c4d83ebd9eb9b9d8c08fccfbc684d1fe`
 
-- `RELEASE_KEYSTORE_B64` — base64 of the stable JKS/keystore
-- `RELEASE_STORE_PASSWORD` — keystore password
-- `RELEASE_KEY_ALIAS` — key alias
-- `RELEASE_KEY_PASSWORD` — key password
+The v2.9.11 clean-install signing identity is the certificate used for **every
+owner-installed signed APK from v2.9.11 through v2.9.18**. v2.9.18 has been
+independently verified against the v2.9.17 signed APK and this pinned certificate.
 
-If these secrets are absent, CI deliberately produces an **UNSIGNED-ALIGNED** APK instead of inventing a new signing identity. This prevents accidental certificate changes and preserves Android update compatibility.
+The old v2.9.3 "stable release" certificate (`31ece87c...`) is an
+**incompatible legacy identity**; do not use it for the current APK line.
+Android does not accept an in-place update signed by a different certificate.
 
-The v2.9.3 stable signing bundle is distributed privately to the app owner and is intentionally excluded from source control and release source ZIPs.
+## Private key handling
 
-## Pinned public certificate
+The corresponding private key is an encrypted PKCS#12 keystore. It must be
+preserved securely, backed up offline by the owner, and reused for each future
+APK. **Never generate a replacement key for routine version upgrades.**
+Never commit the keystore, password, signing key or token to this repository.
 
-`RELEASE_SIGNING_CERT.pem` and `RELEASE_SIGNING_CERT_SHA256.txt` are public verification material only.
-The workflow verifies that any secret-backed signed release matches this pinned certificate. The private JKS and
-passwords must never be committed. The pinned SHA-256 fingerprint for the stable identity is:
+If GitHub Actions signing is enabled, configure its protected repository secrets
+to refer to **this exact key** (convert to a compatible keystore format if needed):
 
-`31ece87c32219dfc98b1dead1e0713c2a2457f62955263492b2b08a4b3f6cb9a`
+- `RELEASE_KEYSTORE_B64` — base64 of the *same* signing keystore
+- `RELEASE_STORE_PASSWORD` — encrypted keystore password
+- `RELEASE_KEY_ALIAS` — the actual signing-key alias
+- `RELEASE_KEY_PASSWORD` — the actual key password
+
+CI's APK signing step verifies that the resulting APK matches
+`RELEASE_SIGNING_CERT_SHA256.txt` and aborts if the signer is different.
+If those secrets are absent, CI intentionally produces an **unsigned aligned**
+APK, which must then be signed offline with the preserved private key and
+verified against this certificate before distribution.
+
+The PEM in `RELEASE_SIGNING_CERT.pem` is a **public certificate only**,
+not a signing secret. Keep its contents and SHA-256 pin synchronized whenever
+checking releases. Never substitute a fresh-install signer silently.
