@@ -5,21 +5,27 @@ import java.util.TimeZone;
 
 /**
  * Pure Forecast lifecycle policy.
- * Session 1 is the trigger session; a call may remain live through the close of Session 3.
+ * Session 1 is the trigger session; Forecast targets can remain open through Session 5.
  * Terminal calls are archived from the live Forecast table on the next trading day.
  */
 final class ForecastPolicy {
     private static final TimeZone IST = TimeZone.getTimeZone("Asia/Kolkata");
+    static final int FORECAST_TARGET_MAX_SESSIONS = 5;
 
     private ForecastPolicy() {}
 
     static boolean horizonExpired(long entryAt, long now) {
-        if (entryAt <= 0 || now < entryAt) return false;
-        int sessions = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(entryAt, now));
-        if (sessions > UnivestBenchmark.PRIMARY_MAX_SESSIONS) return true;
-        if (sessions < UnivestBenchmark.PRIMARY_MAX_SESSIONS) return false;
+        return horizonExpired(entryAt, now, FORECAST_TARGET_MAX_SESSIONS);
+    }
 
-        // The complete third trading session is allowed. Expire only after that session closes.
+    /** Explicit separate horizon for the unchanged 3-session official benchmark / Formula. */
+    static boolean horizonExpired(long entryAt, long now, int allowedSessions) {
+        if (entryAt <= 0 || now < entryAt || allowedSessions < 1) return false;
+        int sessions = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(entryAt, now));
+        if (sessions > allowedSessions) return true;
+        if (sessions < allowedSessions) return false;
+
+        // Permit the complete final regular trading day. No failure at first-day close.
         if (!NseTradingCalendar.isTradingDay(now)) return true;
         return NseTradingCalendar.minuteOfDay(now) >= 15 * 60 + 30;
     }
@@ -49,7 +55,7 @@ final class ForecastPolicy {
             long t = day.getTimeInMillis();
             if (NseTradingCalendar.isTradingDay(t)) {
                 seen++;
-                if (seen >= UnivestBenchmark.PRIMARY_MAX_SESSIONS) return NseTradingCalendar.dayKey(t);
+                if (seen >= FORECAST_TARGET_MAX_SESSIONS) return NseTradingCalendar.dayKey(t);
             }
             day.add(Calendar.DAY_OF_MONTH, 1);
         }
