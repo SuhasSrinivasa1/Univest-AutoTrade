@@ -29,6 +29,10 @@ final class FormulaEngine {
     private static final long MIN_REFRESH_MS = 2 * 60_000L;
     private static final long CONFIRM_MS = 60_000L;
     private static final int MAX_CANDIDATES = 12;
+    // Only a small rotating slice may contact Groww on each 2-minute tick.
+    private static final int CHECKS_PER_SCAN = 3;
+    private static final int MAX_NEW_CALLS_PER_SCAN = 1;
+    private static final int MONITOR_QUOTES_PER_SCAN = 2;
     private FormulaEngine() {}
 
     static synchronized void refresh(Context context, boolean force) {
@@ -36,18 +40,28 @@ final class FormulaEngine {
         long now = System.currentTimeMillis();
         SharedPreferences pref = c.getSharedPreferences(PREF, Context.MODE_PRIVATE);
         JSONArray calls = readArray(pref.getString("calls", "[]"));
-        monitor(c, calls, now);
+        monitor(c, calls, now, now >= pref.getLong("network_cooldown_until", 0));
         saveCalls(pref, calls);
 
         if (!NseTradingCalendar.isRegularMarketOpen(now)) {
             pref.edit().putString("status", "NSE closed • existing Formula calls preserved").apply();
             return;
         }
+        long pauseUntil = pref.getLong("network_cooldown_until", 0);
+        if (now < pauseUntil) {
+            pref.edit().putString("status", "FORMULA V1 • market-data retry paused until "
+                    + new java.text.SimpleDateFormat("HH:mm", Locale.US).format(
+                        new java.util.Date(pauseUntil))
+                    + " • " + pref.getString("network_outage", "broker network issue")
+                    + " • existing calls preserved").apply();
+            return;
+        }
         if (!force && now - pref.getLong("last_refresh", 0) < MIN_REFRESH_MS) return;
         pref.edit().putLong("last_refresh", now).apply();
         String today = NseTradingCalendar.dayKey(now);
         JSONArray pool = ResearchStore.candidatePool(c);
-        JSONObject pending = readObject(pref.getString("pending", "{}"));
+        JSONObject pending = today.equals(pref.getString("pending_day", ""))
+                ? readObject(pref.getString("pending", "{}")) : new JSONObject();
         JSONArray champions = ResearchStore.playbookRegistry(c).optJSONArray("frozenChampions");
         List<JSONObject> eligible = new ArrayList<>();
         for (int i = 0; i < pool.length(); i++) {
@@ -61,22 +75,34 @@ final class FormulaEngine {
         }
         // Sort on frozen daily component evidence, NOT mutable Forecast ensemble rank.
         Collections.sort(eligible, (a,b) -> Integer.compare(rawBest(b), rawBest(a)));
-        int observed = 0, triggered = 0;
-        JSONObject nextPending = new JSONObject();
-        for (JSONObject p : eligible) {
-            if (observed >= MAX_CANDIDATES) break;
+        if (eligible.size() > MAX_CANDIDATES)
+            eligible = new ArrayList<>(eligible.subList(0, MAX_CANDIDATES));
+        int observed = 0, triggered = 0, progressed = 0;
+        boolean providerOutage = false;
+        JSONObject nextPending = pending;
+        int count = eligible.size();
+        int start = count == 0 ? 0 : Math.floorMod(pref.getInt("scan_cursor", 0), count);
+        for (int step = 0; step < count && observed < CHECKS_PER_SCAN; step++) {
+            JSONObject p = eligible.get((start + step) % count);
+            progressed = step + 1;
             String symbol = p.optString("symbol", "").trim().toUpperCase(Locale.US);
             if (symbol.isEmpty() || containsCall(calls, symbol, today)) continue;
             observed++;
             try {
                 double price = GrowwClient.getLtpForAutomation(c, symbol);
                 double low = p.optDouble("buyLow", 0), chase = p.optDouble("chaseLimit", 0);
-                if (!(price > 0 && low > 0 && price >= low && chase > low && price <= chase)) continue;
+                if (!(price > 0 && low > 0 && price >= low && chase > low && price <= chase)) {
+                    nextPending.remove(today + "|" + symbol);
+                    continue;
+                }
                 List<GrowwClient.Candle> minute = GrowwClient.getHistoricalCandles(
                         c, symbol, now - 80L * 60_000L, now, "1minute");
                 ResearchMath.Features intraday = ResearchMath.fromCandles(minute);
                 // Incomplete minute data is UNKNOWN, not a high-confirmation score.
-                if (intraday.dataPoints < 15) continue;
+                if (intraday.dataPoints < 15) {
+                    nextPending.remove(today + "|" + symbol);
+                    continue;
+                }
                 double ret5 = intraday.return5Pct;
                 double rsi = intraday.rsi14;
                 double rv = intraday.relativeVolume20;
@@ -91,15 +117,21 @@ final class FormulaEngine {
                         p.optString("marketRegimeStatus", "NOT_CONNECTED"), ret5,
                         p.optInt("positiveCatalysts", 0), p.optInt("negativeCatalysts", 0),
                         price, target, dailyAtr, false, 0);
-                if (!rejected.isEmpty()) continue;
+                if (!rejected.isEmpty()) {
+                    nextPending.remove(today + "|" + symbol);
+                    continue;
+                }
                 int best = rawBest(p), consensus = rawConsensus(p);
                 int confidence = p.optInt("dataConfidence", 0);
                 double[] factors = factorScores(p, champions, intraday, price, vwap);
                 double score = FixedFormulaMath.score(factors);
                 if (!FixedFormulaMath.qualified(
-                        score, best, consensus, confidence, price, target, dailyAtr)) continue;
+                        score, best, consensus, confidence, price, target, dailyAtr)) {
+                    nextPending.remove(today + "|" + symbol);
+                    continue;
+                }
                 long armed = pending.optLong(today + "|" + symbol, 0);
-                if (armed <= 0) {
+                if (armed <= 0 || now - armed > 15L * 60_000L) {
                     nextPending.put(today + "|" + symbol, now);
                     continue;
                 }
@@ -130,6 +162,7 @@ final class FormulaEngine {
                 call.put("factors", factorJson);
                 call.put("missing", p.optString("missingData", ""));
                 calls.put(call);
+                nextPending.remove(today + "|" + symbol);
                 saveCalls(pref, calls);
                 DiagnosticsStore.runtime(c, "FORMULA_V1_CALL", symbol,
                         "Fixed score " + score + "/100 • entry ₹" + price
@@ -137,15 +170,28 @@ final class FormulaEngine {
                                 + " • no automatic trade submitted.");
                 postCall(c, symbol, price, target, score);
                 triggered++;
+                if (triggered >= MAX_NEW_CALLS_PER_SCAN) break;
             } catch (Throwable t) {
+                if (applyNetworkBackoff(c, pref, t, now)) {
+                    providerOutage = true;
+                    break;
+                }
                 DiagnosticsStore.error(c, "FORMULA_CANDIDATE_FAILED", symbol,
                         "Fixed Formula candidate check failed; no call issued.", t);
             }
         }
-        pref.edit().putString("pending", nextPending.toString())
-                .putString("status", "FORMULA V1 FIXED • " + observed
-                        + " independently checked • " + triggered + " new confirmed calls • "
-                        + today + " • refresh follows Research monitor").apply();
+        SharedPreferences.Editor e = pref.edit()
+                .putString("pending", nextPending.toString())
+                .putString("pending_day", today)
+                .putInt("scan_cursor", count == 0 ? 0 : (start + Math.max(1, progressed)) % count);
+        if (!providerOutage) {
+            e.putInt("failure_streak", 0).putLong("network_cooldown_until", 0)
+             .putString("network_outage", "");
+            e.putString("status", "FORMULA V1 FIXED • " + observed
+                    + " independently checked • " + triggered + " new confirmed calls • "
+                    + today + " • gradual per-stock issuance");
+        }
+        e.apply();
     }
 
     static synchronized JSONArray calls(Context c) {
