@@ -62,6 +62,7 @@ public class DashboardActivity extends Activity {
     private long lastBrokerSyncAt = 0L;
     private String selectedResearchSymbol = "";
     private String selectedResearchAction = "";
+    private boolean showFormulaHistory = false;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -338,19 +339,52 @@ public class DashboardActivity extends Activity {
 
         LinearLayout decisions = card();
         JSONArray calls = FormulaEngine.calls(this);
-        decisions.addView(sectionRow("FORMULA STOCK CALLS", calls.length() + " archived"));
-        decisions.addView(forecastDecisionHeader(), margins(0, 12, 0, 4));
+        String session = NseTradingCalendar.dayKey(System.currentTimeMillis());
+        int todayCount = 0;
+        for (int i = 0; i < calls.length(); i++) {
+            JSONObject call = calls.optJSONObject(i);
+            if (call != null && session.equals(call.optString("session"))) todayCount++;
+        }
+        decisions.addView(sectionRow("TODAY'S FORMULA CALLS", todayCount + " confirmed"));
+        decisions.addView(meta("Only live-confirmed calls appear here, one new call per scanner tick. "
+                + "The earlier candidate watchlist is not a recommendation."),
+                margins(0, 8, 0, 6));
+        decisions.addView(forecastDecisionHeader(), margins(0, 9, 0, 4));
         int visible = 0;
         for (int i = calls.length() - 1; i >= 0 && visible < 20; i--) {
             JSONObject call = calls.optJSONObject(i);
-            if (call == null) continue;
-            visible++;
-            decisions.addView(formulaDecisionRow(visible, call), margins(0, 11, 0, 0));
+            if (call == null || !session.equals(call.optString("session"))) continue;
+            decisions.addView(formulaDecisionRow(++visible, call), margins(0, 11, 0, 0));
         }
         if (visible == 0)
-            decisions.addView(meta("No fixed-model Formula call yet. Qualifying recommendations need two confirmations during NSE hours, using the separately ranked EOD Research candidate pool."),
+            decisions.addView(meta("No Formula call confirmed today. Stocks appear individually "
+                    + "when the fixed mathematical criteria remain valid across live checks."),
                     margins(0, 12, 0, 0));
         root.addView(decisions, margins(0, 0, 0, 12));
+
+        int earlier = Math.max(0, calls.length() - todayCount);
+        if (earlier > 0) {
+            LinearLayout history = card();
+            history.addView(sectionRow("FORMULA HISTORY", earlier + " earlier calls"));
+            Button toggleHistory = secondaryButton(showFormulaHistory
+                    ? "HIDE EARLIER CALLS" : "SHOW EARLIER CALLS");
+            toggleHistory.setOnClickListener(v -> {
+                showFormulaHistory = !showFormulaHistory;
+                render();
+            });
+            history.addView(toggleHistory, margins(0, 10, 0, 0));
+            if (showFormulaHistory) {
+                history.addView(forecastDecisionHeader(), margins(0, 12, 0, 4));
+                int shown = 0;
+                for (int i = calls.length() - 1; i >= 0 && shown < 12; i--) {
+                    JSONObject previous = calls.optJSONObject(i);
+                    if (previous == null || session.equals(previous.optString("session"))) continue;
+                    history.addView(formulaDecisionRow(++shown, previous),
+                            margins(0, 10, 0, 0));
+                }
+            }
+            root.addView(history, margins(0, 0, 0, 12));
+        }
 
         LinearLayout status = card();
         status.addView(sectionRow("FORMULA ENGINE", FixedFormulaMath.VERSION));
@@ -378,6 +412,9 @@ public class DashboardActivity extends Activity {
         stock.addView(text(String.format(Locale.US, "%.1f/100 • %s",
                 p.optDouble("score", 0), p.optString("strategy", "Fixed")), 9, SUBTEXT, false),
                 margins(0, 3, 0, 0));
+        long calledAt = p.optLong("calledAt", 0);
+        if (calledAt > 0)
+            stock.addView(meta("Call " + clock(calledAt)), margins(0, 2, 0, 0));
         JSONArray factors = p.optJSONArray("factors");
         if (factors != null) {
             StringBuilder explanation = new StringBuilder();
