@@ -153,6 +153,10 @@ final class DiagnosticsStore {
                 }
                 File research = new File(c.getFilesDir(), "research_lab");
                 addDirectory(zip, research, "research_lab/");
+                // Formula uses private preferences, so its actual issued-call history was
+                // previously absent from exported research_lab. Export read-only snapshots.
+                addText(zip, "formula/calls.json", FormulaEngine.calls(c).toString(2));
+                addText(zip, "formula/status.json", FormulaEngine.diagnosticSnapshot(c).toString(2));
                 File durable = new File(c.getFilesDir(), "official-signal-queue.json");
                 if (durable.exists()) addFile(zip, durable, "official/official-signal-queue.json");
                 File historyDb = UnivestHistoryDb.databaseFile(c);
@@ -202,6 +206,7 @@ final class DiagnosticsStore {
             j.put("portableHistoryBackupConnected", HistoryBackupManager.isConnected(c));
             j.put("portableHistoryBackupStatus", AppPrefs.getHistoryBackupStatus(c));
             j.put("researchAutoTradeEnabled", AppPrefs.isResearchAutoTradeEnabled(c));
+            j.put("formulaEngine", FormulaEngine.diagnosticSnapshot(c));
             j.put("researchCapitalLimit", AppPrefs.getResearchCapitalLimit(c));
             j.put("researchCommittedCapital", ResearchTradeEngine.committedCapital(c));
             j.put("researchMaxPositions", AppPrefs.getResearchMaxPositions(c));
