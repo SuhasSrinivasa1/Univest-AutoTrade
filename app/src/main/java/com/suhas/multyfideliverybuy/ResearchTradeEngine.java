@@ -534,7 +534,7 @@ final class ResearchTradeEngine {
                     long now = System.currentTimeMillis();
                     int elapsed = Math.max(1, UnivestBenchmark.inclusiveTradingSessions(callAt, now));
                     p.put("evaluationSessionsElapsed", elapsed);
-                    p.put("evaluationHorizonSessions", horizon);
+                    p.put("evaluationHorizonSessions", ForecastPolicy.FORECAST_TARGET_MAX_SESSIONS);
                     p.put("benchmarkMaxSessions", horizon);
                     // This is the unchanged official 3-session benchmark outcome.
                     // Forecast's own observed price target stays active for 5 sessions.
@@ -560,8 +560,11 @@ final class ResearchTradeEngine {
                         p.put("benchmarkEvaluationLocked", true);
                         p.put("benchmarkResolvedAt", now);
                     } else {
-                        p.put("replaySummary", "OPEN • evaluation " + Math.min(elapsed, horizon) + "/" + horizon
-                                + " trading sessions; physical/shadow position remains independently managed.");
+                        p.put("replaySummary", "OPEN • official benchmark "
+                                + Math.min(elapsed, horizon) + "/" + horizon
+                                + " sessions; Forecast target remains eligible for up to "
+                                + ForecastPolicy.FORECAST_TARGET_MAX_SESSIONS
+                                + " sessions. No forced position exit.");
                     }
                 }
             }
