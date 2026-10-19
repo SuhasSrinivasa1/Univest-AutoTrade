@@ -283,7 +283,7 @@ public class DashboardActivity extends Activity {
 
         LinearLayout title = card();
         title.addView(text("LONG holding forecast", 22, TEXT, true));
-        title.addView(meta("Calls appear progressively during the NSE session only after the Forecast engine confirms the setup."),
+        title.addView(meta("Calls appear progressively when independently confirmed. A target stays eligible through 5 NSE trading sessions; missing it on Day 1 is NOT a failure."),
                 margins(0, 6, 0, 0));
         root.addView(title, margins(0, 20, 0, 12));
 
@@ -414,7 +414,8 @@ public class DashboardActivity extends Activity {
                 margins(0, 3, 0, 0));
         long calledAt = p.optLong("calledAt", 0);
         if (calledAt > 0)
-            stock.addView(meta("Call " + clock(calledAt)), margins(0, 2, 0, 0));
+            stock.addView(meta("Call " + formatTime(calledAt, "dd MMM • HH:mm:ss")
+                    + " IST"), margins(0, 2, 0, 0));
         JSONArray factors = p.optJSONArray("factors");
         if (factors != null) {
             StringBuilder explanation = new StringBuilder();
@@ -899,6 +900,14 @@ public class DashboardActivity extends Activity {
             stock.addView(text(r.companyName.trim(), 9, SUBTEXT, false), margins(0, 1, 0, 0));
         stock.addView(text(r.confidence + "% confidence • " + r.reason, 9, SUBTEXT, false),
                 margins(0, 3, 0, 0));
+        if (r.calledAt > 0) {
+            stock.addView(text("Call " + formatTime(r.calledAt, "dd MMM • HH:mm:ss")
+                    + " IST", 9, TEAL, false), margins(0, 3, 0, 0));
+            stock.addView(meta("Target window • Session "
+                    + Math.min(ForecastPolicy.FORECAST_TARGET_MAX_SESSIONS, r.sessionNumber)
+                    + "/" + ForecastPolicy.FORECAST_TARGET_MAX_SESSIONS
+                    + " NSE trading sessions"), margins(0, 2, 0, 0));
+        }
 
         row.addView(stock, new LinearLayout.LayoutParams(0, -2, 2.05f));
         row.addView(tableCell(r.entryPrice > 0 ? String.format(Locale.US, "₹%.2f", r.entryPrice) : "—",
