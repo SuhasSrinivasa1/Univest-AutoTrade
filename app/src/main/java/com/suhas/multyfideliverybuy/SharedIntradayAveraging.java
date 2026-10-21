@@ -55,13 +55,16 @@ final class SharedIntradayAveraging {
                 state.put("session", session);
                 state.put("anchor", anchor);
                 state.put("budgetPerLevel", budget);
+                state.put("maxCommitment", maxCommitment);
+                state.put("tickSize", tick);
                 state.put("unresolved", true);
                 state.put("levels", new JSONArray());
             }
             if (!session.equals(state.optString("session"))
                     || Math.abs(state.optDouble("anchor", 0) - anchor) > Math.max(0.0001, tick))
                 return;
-            int capacity = Math.min(LEVELS, Math.max(0, maxCommitment / budget));
+            int capacity = Math.min(LEVELS, Math.max(0,
+                    Math.min(maxCommitment, state.optInt("maxCommitment", 0)) / budget));
             int accepted = 0;
             for (int level=1;level<=capacity && accepted<ORDERS_PER_ARM;level++) {
                 JSONArray levels=state.optJSONArray("levels");
@@ -158,8 +161,8 @@ final class SharedIntradayAveraging {
                     ||"CREATE_RESERVED".equals(level.optString("state"))
                     ||"BROKER_REJECTED".equals(level.optString("state")))return;
         }
-        arm(c,symbol,cycle.substring(divider+1),state.optDouble("anchor",0),0.05,
-                LEVELS*state.optInt("budgetPerLevel",0));
+        arm(c,symbol,cycle.substring(divider+1),state.optDouble("anchor",0),
+                state.optDouble("tickSize",0.05),state.optInt("maxCommitment",0));
     }
 
     static JSONObject snapshot(Context c,String symbol) {
