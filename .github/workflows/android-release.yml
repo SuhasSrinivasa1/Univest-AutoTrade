@@ -81,6 +81,10 @@ jobs:
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
           grep -q "versionCode 309" app/build.gradle
           grep -q "versionName '2.9.19'" app/build.gradle
+          grep -Fq 'installedVersion()' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          ! grep -Fq '"v2.9.10"' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -q 'ForecastLiveQualityGate.reject' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
+          grep -q 'last_scan_summary' app/src/main/java/com/suhas/multyfideliverybuy/FormulaEngine.java
           grep -Fq 'appHeader("EXECUTION", "Live Univest status & actions")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("RESEARCH", "What the system has learned")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("FORECAST", "Univest-pattern LONG calls")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
