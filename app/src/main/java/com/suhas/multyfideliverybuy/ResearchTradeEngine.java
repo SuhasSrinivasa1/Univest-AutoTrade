@@ -317,57 +317,13 @@ final class ResearchTradeEngine {
             return "BUY blocked: " + symbol + " moved above the frozen chase ceiling ₹" + money(chase) + ".";
         }
 
-        GrowwClient.Result pending = GrowwClient.checkForActiveCncBuyOrder(c, symbol);
-        if (pending.unknown) return "BUY blocked because open-order status is unknown: " + pending.message;
-        if (pending.success) return "BUY blocked: broker already has an active CNC BUY for " + symbol + ".";
-
-        GrowwClient.PositionSnapshot beforeBroker = GrowwClient.getCncPosition(c, symbol);
-        if (!beforeBroker.success)
-            return "Research BUY blocked because broker holding attribution is unknown: " + beforeBroker.message;
-        if (beforeBroker.quantity > 0)
-            return "Research LIVE BUY blocked: broker already holds " + symbol
-                    + ". Research remains shadow-only so official/manual holdings are never mixed into Research attribution.";
-
-        String ref = UnivestManager.stableRef("RB", symbol,
-                p.optString("strategy") + "|" + p.optLong("predictionAt"), System.currentTimeMillis());
-        GrowwClient.ExecutionResult r = GrowwClient.placeResearchCncMarketBuy(c, symbol, budget, ref);
-        if (!r.submitted) {
-            DiagnosticsStore.trade(c, "RESEARCH_BUY_FAILED", symbol, r.message, r);
-            return "Research BUY not submitted: " + r.message;
-        }
-
-        try {
-            p.put("state", r.filled && r.filledQuantity > 0 ? "LIVE_OPEN" : "LIVE_PENDING");
-            p.put("live", true);
-            p.put("automaticEntry", automatic);
-            p.put("budget", budget);
-            p.put("orderId", r.orderId);
-            p.put("requestedQuantity", r.requestedQuantity);
-            p.put("brokerQtyBeforeResearch", beforeBroker.quantity);
-            p.put("entryAt", System.currentTimeMillis());
-            if (r.filled && r.averagePrice > 0) {
-                p.put("entryPrice", r.averagePrice);
-                p.put("lastPrice", r.averagePrice);
-                p.put("minPrice", r.averagePrice);
-                p.put("maxPrice", r.averagePrice);
-                p.put("quantity", r.filledQuantity);
-                p.put("initialFilledQty", r.filledQuantity);
-                p.put("initialPrincipal", r.averagePrice * r.filledQuantity);
-                p.put("mfePct", 0.0);
-                p.put("maePct", 0.0);
-             }
-            p.put("lastReason", automatic ? "Research AutoTrade entry executed." : "Manual Research BUY executed.");
-            p.put("exitState", "HOLD");
-            replacePosition(c, p);
-            if (r.filled && r.averagePrice > 0) armResearchAveraging(c, p);
-            ResearchEventStore.appendDecisionSnapshot(c, automatic ? "RESEARCH_AUTO_BUY" : "RESEARCH_MANUAL_BUY", p);
-        } catch (Exception ignored) {}
-
-        DiagnosticsStore.trade(c, r.filled ? "RESEARCH_BUY_EXECUTED" : "RESEARCH_BUY_PENDING",
-                symbol, r.message, r);
-        AppPrefs.setResearchAction(c, symbol, "HOLD");
-        return "Research BUY " + (r.filled ? "executed" : "submitted") + " • " + symbol
-                + " • " + rupees(budget) + " • " + r.message;
+        // User-selected entry is a broker-hosted CNC GTT, never an immediate
+        // market BUY. Keep this new execution plane separate from old Research
+        // positions (which remain managed by their original reconciliation).
+        double desired = p.optDouble("shadowEntryPrice",
+                p.optDouble("entryPrice",p.optDouble("buyLow",0)));
+        return SignalGttTrader.requestBuy(c,SignalGttTrader.FORECAST,
+                symbol,desired,budget,automatic);
     }
 
     static String executeSell(Context context, String symbol, boolean automatic, String reason) {
