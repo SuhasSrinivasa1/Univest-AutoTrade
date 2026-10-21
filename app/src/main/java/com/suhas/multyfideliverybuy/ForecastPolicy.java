@@ -5,12 +5,12 @@ import java.util.TimeZone;
 
 /**
  * Pure Forecast lifecycle policy.
- * Session 1 is the trigger session; Forecast targets can remain open through Session 5.
+ * Session 1 is the trigger session; Forecast target calls only remain open through the originating NSE session.
  * Terminal calls are archived from the live Forecast table on the next trading day.
  */
 final class ForecastPolicy {
     private static final TimeZone IST = TimeZone.getTimeZone("Asia/Kolkata");
-    static final int FORECAST_TARGET_MAX_SESSIONS = 5;
+    static final int FORECAST_TARGET_MAX_SESSIONS = 1;
 
     private ForecastPolicy() {}
 
@@ -25,7 +25,7 @@ final class ForecastPolicy {
         if (sessions > allowedSessions) return true;
         if (sessions < allowedSessions) return false;
 
-        // Permit the complete final regular trading day. No failure at first-day close.
+        // Only the originating regular NSE day is eligible. Intraday closure is tracked separately.
         if (!NseTradingCalendar.isTradingDay(now)) return true;
         return NseTradingCalendar.minuteOfDay(now) >= 15 * 60 + 30;
     }
