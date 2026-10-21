@@ -18,8 +18,8 @@ final class UnivestManager {
     static final int ENTRY_BUDGET = 20000;   // legacy/default value; runtime uses AppPrefs
     static final int REENTRY_BUDGET = 5000; // legacy/default value; runtime uses AppPrefs
     static final int AVERAGE_BUDGET = 5000; // legacy/default value; runtime uses AppPrefs
-    static final double AVERAGE_STEP_PCT = 2.0;
-    static final int MAX_AVERAGE_LEVELS = 3;
+    static final double AVERAGE_STEP_PCT = SameDayForecastPolicy.AVERAGE_STEP_PCT;
+    static final int MAX_AVERAGE_LEVELS = SameDayForecastPolicy.AVERAGE_LEVELS;
     private static final ConcurrentHashMap<String, Object> CAMPAIGN_LOCKS = new ConcurrentHashMap<>();
 
     private UnivestManager() {}
@@ -792,53 +792,14 @@ final class UnivestManager {
     }
 
     private static void armAveragingLadder(Context context, UnivestStateStore.State state, String entrySeed) {
-        if (state == null || !AppPrefs.isLiveMode(context) || !AppPrefs.isAveragingEnabled(context) || !(state.anchorPrice > 0)) return;
-        final String symbol = state.symbol;
-        final double expectedAnchor = state.anchorPrice;
-        final int averageBudget = AppPrefs.getUnivestAddBudget(context);
-        if (averageBudget <= 0) {
-            DiagnosticsStore.runtime(context, "AVERAGING_BUDGET_DISABLED", symbol,
-                    "Controlled downward averaging is enabled, but the shared re-entry/averaging budget is ₹0.");
+        if (state == null || !(state.anchorPrice > 0) || !phaseAllowsAveraging(state.phase))
             return;
-        }
-
-        int levels = Math.min(MAX_AVERAGE_LEVELS, AppPrefs.getAveragingLevels(context));
-        for (int level = 1; level <= levels; level++) {
-            synchronized (campaignLock(symbol)) {
-                UnivestStateStore.State current = UnivestStateStore.get(context, symbol);
-                if (current == null || !phaseAllowsAveraging(current.phase)
-                        || Math.abs(current.anchorPrice - expectedAnchor) > 0.0001) {
-                    DiagnosticsStore.runtime(context, "AVERAGING_BLOCKED_BY_CAMPAIGN_PHASE", symbol,
-                            "No averaging BUY armed because current campaign phase is "
-                                    + (current == null ? "missing" : current.phase) + ".");
-                    return;
-                }
-                if (!getAvgId(current, level).isEmpty()) continue;
-
-                double raw = current.anchorPrice * (1.0 - (AVERAGE_STEP_PCT * level / 100.0));
-                double trigger = GrowwClient.roundTarget(raw, current.tickSize, false);
-                int qty = (int)Math.floor(averageBudget / trigger);
-                if (qty < 1) {
-                    DiagnosticsStore.runtime(context, "AVERAGE_LEVEL_SKIPPED", symbol,
-                            "-" + (int)(AVERAGE_STEP_PCT * level) + "% level skipped because " + rupees(averageBudget)
-                                    + " cannot buy one share at trigger ₹" + money(trigger) + ".");
-                    continue;
-                }
-
-                String ref = stableRef("A" + level, symbol,
-                        entrySeed + "|" + level + "|" + money(current.anchorPrice), current.updatedAt);
-                GrowwClient.GttResult gtt = GrowwClient.createUnivestCncBuyGtt(context, symbol, qty, trigger, ref);
-                DiagnosticsStore.broker(context, "AVERAGE_GTT_LEVEL_" + level, symbol, gtt.success || gtt.unknown,
-                        rupees(averageBudget) + " CNC averaging level " + level + " • trigger -"
-                                + (int)(AVERAGE_STEP_PCT * level) + "% at ₹" + money(trigger)
-                                + " • qty " + qty + " • " + gtt.message);
-                if (gtt.success) {
-                    UnivestAveragingRegistry.record(context, symbol, gtt.smartOrderId, ref);
-                    setAvg(current, level, gtt.smartOrderId, trigger);
-                    UnivestStateStore.put(context, current);
-                }
-            }
-        }
+        // One shared 10-step GTT engine for official and Forecast campaigns.
+        // Anchored to the original filled BUY, not to a reentry/average fill.
+        SharedIntradayAveraging.arm(context, state.symbol,
+                "OFFICIAL|" + state.symbol + "|" + Math.round(state.anchorPrice * 1000),
+                state.anchorPrice, state.tickSize > 0 ? state.tickSize : 0.05,
+                SameDayForecastPolicy.AVERAGE_LEVELS * AppPrefs.getUnivestAddBudget(context));
     }
 
     private static void updateAverageLevelFromGtts(Context context, UnivestStateStore.State state) {
@@ -858,6 +819,7 @@ final class UnivestManager {
 
     private static void cancelAveragingLadder(Context context, UnivestStateStore.State s) {
         if (s == null) return;
+        SharedIntradayAveraging.cancel(context, s.symbol);
         cancelAveragingIds(context, s, knownAveragingIds(context, s));
     }
 
@@ -931,13 +893,15 @@ final class UnivestManager {
     private static String getAvgId(UnivestStateStore.State s, int level) {
         if (level == 1) return s.averageGtt1Id == null ? "" : s.averageGtt1Id;
         if (level == 2) return s.averageGtt2Id == null ? "" : s.averageGtt2Id;
-        return s.averageGtt3Id == null ? "" : s.averageGtt3Id;
+        if (level == 3) return s.averageGtt3Id == null ? "" : s.averageGtt3Id;
+        return ""; // levels 4-10 belong to SharedIntradayAveraging ledger only
     }
 
     private static void setAvg(UnivestStateStore.State s, int level, String id, double price) {
         if (level == 1) { s.averageGtt1Id = id; s.averageGtt1Price = price; }
         else if (level == 2) { s.averageGtt2Id = id; s.averageGtt2Price = price; }
-        else { s.averageGtt3Id = id; s.averageGtt3Price = price; }
+        else if (level == 3) { s.averageGtt3Id = id; s.averageGtt3Price = price; }
+        // levels 4-10 are deliberately never stored in the legacy 3-slot state
     }
 
     private static Object campaignLock(String symbol) {
