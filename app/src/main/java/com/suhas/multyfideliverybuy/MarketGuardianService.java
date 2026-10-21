@@ -51,6 +51,15 @@ public class MarketGuardianService extends Service {
                         try { ResearchTradeEngine.prioritizeSameDayExits(getApplicationContext()); }
                         catch (Throwable ignored) { DiagnosticsStore.runtime(getApplicationContext(),
                                 "FORECAST_EOD_PRIORITY_ERROR", "", "Priority Forecast exit check failed."); }
+                        // Independent broker-hosted CNC GTT trailing/entry manager.
+                        // Check/raise stops before slow live stock scanning; no official
+                        // Univest execution rules are changed by this isolated lane.
+                        try { SignalGttTrader.tick(getApplicationContext()); }
+                        catch (Throwable t) {
+                            DiagnosticsStore.error(getApplicationContext(),
+                                    "SIGNAL_GTT_GUARDIAN_FAILED", "",
+                                    "Formula/Forecast protective GTT monitoring failed.",t);
+                        }
                         ResearchOrchestrator.tick(getApplicationContext());
                         // Broker-risk cleanup has priority over market discovery. Exit only
                         // positions attributable to this app, with fill reconciliation.
