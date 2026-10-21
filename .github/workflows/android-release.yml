@@ -67,11 +67,11 @@ jobs:
           grep -q 'ENTRY_ACCEPTED_FRESH_CYCLE' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'EXIT_LIVE_QUANTITY_REFRESH' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'EXIT_FAST_PATH_START' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
-          grep -q 'AVERAGING_BLOCKED_BY_CAMPAIGN_PHASE' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          grep -q 'SharedIntradayAveraging.arm' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'RECONCILE_STALE_SNAPSHOT_DROPPED' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'POST_EXIT_AVERAGING_SWEEP' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
           grep -q 'EXIT_POST_CLEANUP_QUANTITY_REFRESH' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
-          grep -q 'UnivestAveragingRegistry.record' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          grep -q 'UnivestAveragingRegistry.record' app/src/main/java/com/suhas/multyfideliverybuy/SharedIntradayAveraging.java
           grep -q 'OfficialExecutionLatency' app/src/main/java/com/suhas/multyfideliverybuy/DurableOfficialSignalQueue.java
           grep -q 'settings/non-secret.json' app/src/main/java/com/suhas/multyfideliverybuy/HistoryBackupManager.java
           grep -q 'containsCredentials", false' app/src/main/java/com/suhas/multyfideliverybuy/HistoryBackupManager.java
@@ -79,14 +79,18 @@ jobs:
           grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
           grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
-          grep -q "versionCode 310" app/build.gradle
-          grep -q "versionName '2.9.20'" app/build.gradle
+          grep -q "versionCode 311" app/build.gradle
+          grep -q "versionName '2.9.21'" app/build.gradle
           grep -Fq 'installedVersion()' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           ! grep -Fq '"v2.9.10"' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -q 'ForecastLiveQualityGate.reject' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
           grep -q 'PositiveUnivestFortyModel.closest' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
           grep -q 'PositiveUnivestFortyModel.annotateCandidate' app/src/main/java/com/suhas/multyfideliverybuy/ResearchEngine.java
           grep -q 'PositiveUnivestFortyModelTest' app/src/test/java/com/suhas/multyfideliverybuy/PositiveUnivestFortyModelTest.java
+          grep -q 'SameDayForecastPolicy.evaluate' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
+          grep -q 'UnivestSameDayExitManager.tick' app/src/main/java/com/suhas/multyfideliverybuy/MarketGuardianService.java
+          grep -q 'SameDayForecastPolicyTest' app/src/test/java/com/suhas/multyfideliverybuy/SameDayForecastPolicyTest.java
+          grep -q 'SharedIntradayAveragingTest' app/src/test/java/com/suhas/multyfideliverybuy/SharedIntradayAveragingTest.java
           grep -q 'last_scan_summary' app/src/main/java/com/suhas/multyfideliverybuy/FormulaEngine.java
           grep -Fq 'appHeader("EXECUTION", "Live Univest status & actions")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("RESEARCH", "What the system has learned")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
