@@ -265,9 +265,33 @@ final class SignalGttTrader {
             String stop=t.optString("stopGttId","");
             if(stop.isEmpty()) {
                 urgent(c,t,"Broker shares disappeared without tracked SELL. Check Groww.");
-            }else {
-                t.put("state","CLOSED");t.put("closedAt",now);save(c,sym,t);
+                return;
             }
+            GrowwClient.GttStatusResult status=GrowwClient.getCashGttStatus(c,stop);
+            if(!status.success) {
+                urgent(c,t,"Broker holding flat but protective GTT status unknown.");
+                return;
+            }
+            String stopState=status.status.toUpperCase(Locale.US);
+            boolean finished=stopState.contains("COMPLET")||stopState.contains("EXECUT")
+                    ||stopState.contains("FILLED")||stopState.contains("CANCEL")
+                    ||stopState.contains("EXPIRE")||stopState.contains("REJECT");
+            if(!finished) {
+                GrowwClient.Result cancel=GrowwClient.cancelCashGtt(c,stop);
+                if(!cancel.success) {
+                    urgent(c,t,"Orphaned SELL GTT cancellation unconfirmed after shares became flat.");
+                    return;
+                }
+                GrowwClient.GttStatusResult check=GrowwClient.getCashGttStatus(c,stop);
+                if(!check.success || !check.status.toUpperCase(Locale.US).contains("CANCEL")) {
+                    urgent(c,t,"Orphaned SELL GTT may still be active; verify Groww before new shares.");
+                    return;
+                }
+            }
+            t.put("stopGttId","");
+            t.put("state","CLOSED");t.put("closedAt",now);
+            t.put("detail","Groww CNC position confirmed flat; protective GTT retired.");
+            save(c,sym,t);
             return;
         }
         if(qty!=owned || broker.netPrice<=0) {
