@@ -35,6 +35,10 @@ final class UnivestSameDayExitManager {
             attention(c,symbol,"Live official holding cannot be exited while mode is PAPER");
             return;
         }
+        if(!AppPrefs.isUnivestEnabled(c) || !AppPrefs.isArmed(c)) {
+            attention(c,symbol,"Official AutoTrade is disarmed. Same-day sale requires MANUAL Groww action.");
+            return;
+        }
         if(UnivestStateStore.EXITING_OFFICIAL.equals(state.phase)
                 && state.exitOrderId != null && !state.exitOrderId.isEmpty()) {
             if("EOD_SELL_RESERVED_UNKNOWN".equals(state.exitOrderId)) {
