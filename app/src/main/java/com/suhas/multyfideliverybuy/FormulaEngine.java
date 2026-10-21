@@ -61,6 +61,7 @@ final class FormulaEngine {
         pref.edit().putLong("last_refresh", now).apply();
         String today = NseTradingCalendar.dayKey(now);
         JSONArray pool = ResearchStore.candidatePool(c);
+        int datedPool = 0;
         JSONObject pending = today.equals(pref.getString("pending_day", ""))
                 ? readObject(pref.getString("pending", "{}")) : new JSONObject();
         JSONArray champions = ResearchStore.playbookRegistry(c).optJSONArray("frozenChampions");
@@ -68,6 +69,7 @@ final class FormulaEngine {
         for (int i = 0; i < pool.length(); i++) {
             JSONObject p = pool.optJSONObject(i);
             if (p == null || !today.equals(p.optString("forecastSessionKey"))) continue;
+            datedPool++;
             int best = rawBest(p), consensus = rawConsensus(p);
             if (best < FixedFormulaMath.MIN_DAILY_BEST
                     || consensus < FixedFormulaMath.MIN_CONSENSUS
@@ -78,6 +80,9 @@ final class FormulaEngine {
         Collections.sort(eligible, (a,b) -> Integer.compare(rawBest(b), rawBest(a)));
         // No top-N truncation: the entire qualified EOD candidate pool participates.
         int observed = 0, triggered = 0, progressed = 0;
+        int outsideZone = 0, inadequateMinuteData = 0, failedSafetyGate = 0;
+        int belowFixedScore = 0, waitingConfirmation = 0, duplicateCalls = 0;
+        double highestRejectedScore = 0;
         boolean providerOutage = false;
         JSONObject nextPending = pending;
         int count = eligible.size();
@@ -86,12 +91,14 @@ final class FormulaEngine {
             JSONObject p = eligible.get((start + step) % count);
             progressed = step + 1;
             String symbol = p.optString("symbol", "").trim().toUpperCase(Locale.US);
-            if (symbol.isEmpty() || containsCall(calls, symbol, today)) continue;
+            if (symbol.isEmpty()) continue;
+            if (containsCall(calls, symbol, today)) { duplicateCalls++; continue; }
             observed++;
             try {
                 double price = GrowwClient.getLtpForAutomation(c, symbol);
                 double low = p.optDouble("buyLow", 0), chase = p.optDouble("chaseLimit", 0);
                 if (!(price > 0 && low > 0 && price >= low && chase > low && price <= chase)) {
+                    outsideZone++;
                     nextPending.remove(today + "|" + symbol);
                     continue;
                 }
@@ -100,6 +107,7 @@ final class FormulaEngine {
                 ResearchMath.Features intraday = ResearchMath.fromCandles(minute);
                 // Incomplete minute data is UNKNOWN, not a high-confirmation score.
                 if (intraday.dataPoints < 15) {
+                    inadequateMinuteData++;
                     nextPending.remove(today + "|" + symbol);
                     continue;
                 }
@@ -118,6 +126,7 @@ final class FormulaEngine {
                         p.optInt("positiveCatalysts", 0), p.optInt("negativeCatalysts", 0),
                         price, target, dailyAtr, false, 0);
                 if (!rejected.isEmpty()) {
+                    failedSafetyGate++;
                     nextPending.remove(today + "|" + symbol);
                     continue;
                 }
@@ -127,6 +136,8 @@ final class FormulaEngine {
                 double score = FixedFormulaMath.score(factors);
                 if (!FixedFormulaMath.qualified(
                         score, best, consensus, confidence, price, target, dailyAtr)) {
+                    belowFixedScore++;
+                    highestRejectedScore = Math.max(highestRejectedScore, score);
                     nextPending.remove(today + "|" + symbol);
                     continue;
                 }
@@ -138,10 +149,12 @@ final class FormulaEngine {
                         * MIN_REFRESH_MS;
                 long confirmationWindowMs = Math.max(15L * 60_000L, revisitMs);
                 if (armed <= 0 || now - armed > confirmationWindowMs) {
+                    waitingConfirmation++;
                     nextPending.put(today + "|" + symbol, now);
                     continue;
                 }
                 if (now - armed < CONFIRM_MS) {
+                    waitingConfirmation++;
                     nextPending.put(today + "|" + symbol, armed);
                     continue;
                 }
@@ -186,16 +199,30 @@ final class FormulaEngine {
                         "Fixed Formula candidate check failed; no call issued.", t);
             }
         }
+        String scanSummary = "Formula V1 • EOD pool " + pool.length()
+                + " • today's session " + datedPool + " • qualified daily " + count
+                + " • checked " + observed + " • outside entry zone " + outsideZone
+                + " • minute feed insufficient " + inadequateMinuteData
+                + " • rejected safety " + failedSafetyGate
+                + " • below fixed score " + belowFixedScore
+                + " (best rejected " + String.format(Locale.US, "%.1f", highestRejectedScore) + ")"
+                + " • confirming " + waitingConfirmation
+                + " • previously called " + duplicateCalls
+                + " • new confirmed " + triggered + ".";
         SharedPreferences.Editor e = pref.edit()
+                .putString("last_scan_summary", scanSummary)
+                .putLong("last_scan_epoch", now)
+                .putString("last_scan_session", today)
                 .putString("pending", nextPending.toString())
                 .putString("pending_day", today)
                 .putInt("scan_cursor", count == 0 ? 0 : (start + Math.max(1, progressed)) % count);
         if (!providerOutage) {
             e.putInt("failure_streak", 0).putLong("network_cooldown_until", 0)
              .putString("network_outage", "");
-            e.putString("status", "FORMULA V1 FIXED • " + observed
-                    + " independently checked • " + triggered + " new confirmed calls • "
-                    + today + " • gradual per-stock issuance");
+            e.putString("status", scanSummary + " • rotating through all candidates");
+            if (triggered == 0) {
+                DiagnosticsStore.runtime(c, "FORMULA_NO_CALL_SCAN", "", scanSummary);
+            }
         }
         e.apply();
     }
@@ -299,6 +326,9 @@ final class FormulaEngine {
             out.put("scanCursor", p.getInt("scan_cursor", 0));
             out.put("monitorCursor", p.getInt("monitor_cursor", 0));
             out.put("pendingCount", readObject(p.getString("pending", "{}")).length());
+            out.put("lastScanSession", p.getString("last_scan_session", ""));
+            out.put("lastScanSummary", p.getString("last_scan_summary", "No completed session scan recorded"));
+            out.put("lastScanEpoch", p.getLong("last_scan_epoch", 0));
         } catch (Exception ignored) {}
         return out;
     }
