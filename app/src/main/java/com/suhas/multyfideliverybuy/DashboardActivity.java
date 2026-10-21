@@ -603,8 +603,9 @@ public class DashboardActivity extends Activity {
         root.addView(safety, margins(0, 0, 0, 14));
 
         LinearLayout researchTrading = card();
-        researchTrading.addView(sectionRow("RESEARCH TRADING", AppPrefs.isResearchAutoTradeEnabled(this) ? "AUTO" : "MANUAL"));
-        Switch researchAuto = styledSwitch("RESEARCH AUTOTRADE — REAL MONEY", AppPrefs.isResearchAutoTradeEnabled(this));
+        researchTrading.addView(sectionRow("FORECAST + FORMULA GTT TRADING", "CNC ONLY"));
+        Switch researchAuto=styledSwitch("AUTO BUY + AUTO SELL • FORECAST",
+                AppPrefs.isResearchAutoTradeEnabled(this));
         researchTrading.addView(researchAuto, margins(0, 8, 0, 0));
         researchAuto.setOnCheckedChangeListener((b, checked) -> {
             if (!checked) {
@@ -619,8 +620,8 @@ public class DashboardActivity extends Activity {
                 return;
             }
             new AlertDialog.Builder(this)
-                    .setTitle("Enable Research AutoTrade?")
-                    .setMessage("Qualified Research entry/exit signals may place real NSE CASH/CNC orders using the configured budgets. Official Univest AutoTrade remains a separate signal source.")
+                    .setTitle("Enable FORECAST CNC GTT AutoTrade?")
+                    .setMessage("Forecast will place broker-hosted CNC BUY GTTs; after confirmed fills, track +0.6% net activation and tighten its GTT SELL to ≥+0.5% net or peak−0.1 points. Same-day EOD SELL may incur losses. Official Univest orders remain separate.")
                     .setNegativeButton("Cancel", (d, w) -> render())
                     .setPositiveButton("Enable", (d, w) -> {
                         AppPrefs.setResearchAutoTradeEnabled(this, true);
@@ -629,8 +630,37 @@ public class DashboardActivity extends Activity {
                         render();
                     }).show();
         });
+        Switch formulaAuto=styledSwitch("AUTO BUY + AUTO SELL • FORMULA",
+                AppPrefs.isFormulaAutoTradeEnabled(this));
+        researchTrading.addView(formulaAuto,margins(0,11,0,0));
+        formulaAuto.setOnCheckedChangeListener((view,checked)->{
+            if(!checked){
+                AppPrefs.setFormulaAutoTradeEnabled(this,false);
+                DiagnosticsStore.runtime(this,"FORMULA_GTT_AUTO_OFF","",
+                        "No new Formula GTT buys; existing positions remain exit-monitored.");
+                return;
+            }
+            if(!AppPrefs.isLiveMode(this)||!AppPrefs.isReadyForBuy(this)){
+                AppPrefs.setFormulaAutoTradeEnabled(this,false);
+                Toast.makeText(this,"Formula needs LIVE mode and verified Groww connection.",
+                        Toast.LENGTH_LONG).show();render();return;
+            }
+            new AlertDialog.Builder(this)
+                    .setTitle("Enable FORMULA CNC GTT AutoTrade?")
+                    .setMessage("FIXED Formula V1 selection is never modified. When it publishes a call, BUY occurs only through a CNC GTT. Trailing protection starts at +0.6% NET and locks at least +0.5% NET. Same-day closes can lose money; GTTs cannot guarantee fills.")
+                    .setNegativeButton("Cancel",(d,w)->render())
+                    .setPositiveButton("Enable",(d,w)->{
+                        AppPrefs.setFormulaAutoTradeEnabled(this,true);
+                        DiagnosticsStore.runtime(this,"FORMULA_GTT_AUTO_ON","",
+                                "Formula fixed calls armed for separate CNC GTT execution.");
+                        render();
+                    }).show();
+        });
+        researchTrading.addView(meta("Both controls default OFF. BUY buttons arm CNC GTT entry, not immediate fills. Once filled, a broker-hosted SELL GTT begins after +0.6% estimated NET profit, with a +0.5% NET floor and 0.1-point trailing gap. Existing positions remain monitored if you turn automation OFF."),
+                margins(0,9,0,0));
         researchTrading.addView(researchCapitalGovernor(), margins(0, 12, 0, 0));
-        researchTrading.addView(meta("Research capital controls apply only to Research-originated entries. Official Univest execution remains separately attributed."), margins(0, 8, 0, 0));
+        researchTrading.addView(meta("Forecast/Formula CNC GTT orders share the Research capital governor. Official Univest execution is separate. Same-day exits are subject to Groww fill and DP authorization."),
+                margins(0,8,0,0));
         root.addView(researchTrading, margins(0, 0, 0, 14));
 
         LinearLayout scheduler = card();
