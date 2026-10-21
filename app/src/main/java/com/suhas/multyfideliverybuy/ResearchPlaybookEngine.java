@@ -129,13 +129,18 @@ final class ResearchPlaybookEngine {
                     + "|" + entry.optLong("signalAt", 0));
         }
 
+        Set<String> countedOfficialEntries = new HashSet<>();
         for (JSONObject row : ResearchStore.featureSnapshots(c)) {
             if (!"OFFICIAL_UNIVEST_ENTRY".equals(row.optString("source"))
-                    || !"ENTRY".equals(row.optString("signalType", "ENTRY"))) continue;
+                    || !"ENTRY".equals(row.optString("signalType"))) continue;
+            // Legacy signal snapshots can repeat the same official ENTRY.
+            // Only 40-key point-in-time profiles count as training evidence.
+            if (row.optInt("parameterCount", 0) != PositiveUnivestFortyModel.PARAMETERS) continue;
             long signalAt = row.optLong("signalAt", 0L);
             if (signalAt <= 0) continue;
-            if (!positiveKeys.contains(row.optString("symbol", "").trim()
-                    .toUpperCase(Locale.US) + "|" + signalAt)) continue;
+            String sampleKey = row.optString("symbol", "").trim()
+                    .toUpperCase(Locale.US) + "|" + signalAt;
+            if (!positiveKeys.contains(sampleKey) || !countedOfficialEntries.add(sampleKey)) continue;
             JSONObject v = componentVector(row);
             String sig = signature(v);
             Aggregate a = groups.get(sig);
