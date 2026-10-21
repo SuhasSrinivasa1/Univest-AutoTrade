@@ -409,6 +409,12 @@ public class DashboardActivity extends Activity {
         LinearLayout status = card();
         status.addView(sectionRow("FORMULA ENGINE", FixedFormulaMath.VERSION));
         status.addView(body(FormulaEngine.status(this)), margins(0, 10, 0, 0));
+        long scannedAt = FormulaEngine.lastScanAt(this);
+        status.addView(meta("LAST FORMULA SCAN"
+                + (scannedAt > 0 ? " • " + formatTime(scannedAt, "dd MMM • HH:mm:ss") + " IST" : "")),
+                margins(0, 12, 0, 0));
+        status.addView(body(FormulaEngine.lastScanSummary(this)),
+                margins(0, 5, 0, 0));
         status.addView(meta("Formula uses the Research monitor cadence, independent call history and Formula-only notifications. Existing Forecast/Research/Execution orders and forecasts are untouched."),
                 margins(0, 8, 0, 0));
         status.addView(meta("Data limitation: broker fundamentals, breadth and sector strength may be unavailable. No champion score is fabricated before frozen champions exist."),
