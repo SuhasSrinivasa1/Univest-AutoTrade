@@ -63,8 +63,8 @@ final class SharedIntradayAveraging {
             if (!session.equals(state.optString("session"))
                     || Math.abs(state.optDouble("anchor", 0) - anchor) > Math.max(0.0001, tick))
                 return;
-            int capacity = Math.min(LEVELS, Math.max(0,
-                    Math.min(maxCommitment, state.optInt("maxCommitment", 0)) / budget));
+            int capacity = Math.min(LEVELS,
+                    Math.max(0,state.optInt("maxCommitment",0)/budget));
             int accepted = 0;
             for (int level=1;level<=capacity && accepted<ORDERS_PER_ARM;level++) {
                 JSONArray levels=state.optJSONArray("levels");
@@ -160,6 +160,10 @@ final class SharedIntradayAveraging {
     static synchronized int committedBudget(Context c,String symbol) {
         JSONObject state=snapshot(c,symbol);
         if(!state.optString("cycle","").contains("|FORECAST|"))return 0;
+        if(!state.optBoolean("unresolved", false))return 0;
+        // Reserve the ENTIRE permitted ladder in Research's capital governor,
+        // including levels not yet submitted due Groww request throttling.
+        int planned=Math.max(0,state.optInt("maxCommitment",0));
         int budget=0;
         JSONArray levels=state.optJSONArray("levels");
         if(levels!=null)for(int i=0;i<levels.length();i++) {
@@ -171,7 +175,7 @@ final class SharedIntradayAveraging {
                     || "CREATE_RESERVED".equals(status))
                 budget+=Math.max(0,x.optInt("budget",0));
         }
-        return budget;
+        return Math.max(planned,budget);
     }
 
     static synchronized boolean cancel(Context c,String symbol) {
