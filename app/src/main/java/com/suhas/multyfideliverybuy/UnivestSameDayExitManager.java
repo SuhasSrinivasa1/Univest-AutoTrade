@@ -46,7 +46,7 @@ final class UnivestSameDayExitManager {
                         c,state.exitOrderId,Math.max(1,state.exitRequestedQty));
                 if(prior.filled && prior.filledQuantity>=state.exitRequestedQty) {
                     state.phase=UnivestStateStore.EXITED;
-                    state.quantity=0;state.principal=0;
+                    state.quantity=Math.max(0,state.brokerBaselineQty);state.principal=0;
                     state.lastAction="Same-day official position CLOSED after confirmed Groww fill.";
                     UnivestStateStore.put(c,state);
                 } else attention(c,symbol,"Existing broker SELL remains pending/partly filled");
@@ -100,9 +100,14 @@ final class UnivestSameDayExitManager {
             return;
         }
 
+        int appOwned = broker.quantity - Math.max(0,state.brokerBaselineQty);
+        if(appOwned <= 0) {
+            attention(c,symbol,"Only pre-existing holdings remain; no app-owned shares to sell.");
+            return;
+        }
         String reference=UnivestManager.stableRef("UD",symbol,
                 "SAME_DAY_CLOSE|"+state.entryAt, state.entryAt);
-        int qty=state.quantity;
+        int qty=appOwned;
         state.phase=UnivestStateStore.EXITING_OFFICIAL;
         state.exitOrderId="EOD_SELL_RESERVING";
         state.exitRequestedQty=qty;
@@ -134,7 +139,7 @@ final class UnivestSameDayExitManager {
         if(state.exitOrderId.isEmpty()) state.exitOrderId="EOD_SELL_RESERVED_UNKNOWN";
         if(result.filled && result.filledQuantity>=qty) {
             state.phase=UnivestStateStore.EXITED;
-            state.quantity=0;state.principal=0;
+            state.quantity=Math.max(0,state.brokerBaselineQty);state.principal=0;
             state.lastAction="Groww confirmed full forced same-session CNC SELL fill.";
         } else {
             state.phase=UnivestStateStore.EXITING_OFFICIAL;
@@ -147,5 +152,31 @@ final class UnivestSameDayExitManager {
     private static void attention(Context c,String symbol,String detail){
         DiagnosticsStore.runtime(c,"UNIVEST_EOD_EXIT_ATTENTION",symbol,detail);
         AppPrefs.setUnivestStatus(c,"SAME-DAY EXIT NEEDS ATTENTION • "+symbol+" • "+detail);
+        if(!AppPrefs.claimRecent(c,"univest_eod_attention_"+symbol,10L*60_000L))return;
+        try {
+            android.app.NotificationManager nm=(android.app.NotificationManager)
+                    c.getSystemService(Context.NOTIFICATION_SERVICE);
+            if(nm==null)return;
+            String channel="univest_same_day_exit";
+            if(android.os.Build.VERSION.SDK_INT>=26)
+                nm.createNotificationChannel(new android.app.NotificationChannel(channel,
+                        "Urgent same-day exits",android.app.NotificationManager.IMPORTANCE_HIGH));
+            android.content.Intent intent=new android.content.Intent(c,DashboardActivity.class);
+            int flags=android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+            if(android.os.Build.VERSION.SDK_INT>=23)flags|=android.app.PendingIntent.FLAG_IMMUTABLE;
+            android.app.PendingIntent pi=android.app.PendingIntent.getActivity(c,
+                    67000+Math.abs(symbol.hashCode()%3000),intent,flags);
+            android.app.Notification.Builder b=android.os.Build.VERSION.SDK_INT>=26
+                    ?new android.app.Notification.Builder(c,channel)
+                    :new android.app.Notification.Builder(c);
+            b.setSmallIcon(android.R.drawable.stat_notify_error)
+                    .setContentTitle("URGENT EOD SELL unresolved • "+symbol)
+                    .setContentText(detail)
+                    .setStyle(new android.app.Notification.BigTextStyle().bigText(detail))
+                    .setContentIntent(pi).setAutoCancel(true);
+            nm.notify(67000+Math.abs(symbol.hashCode()%3000),b.build());
+        } catch(Throwable t) {
+            DiagnosticsStore.error(c,"EOD_RISK_ALERT_FAILED",symbol,"Unable to notify unresolved exit.",t);
+        }
     }
 }
