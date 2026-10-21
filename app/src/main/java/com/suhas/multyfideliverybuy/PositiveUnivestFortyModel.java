@@ -15,7 +15,7 @@ import java.util.Set;
  * Forecast-only positive-pattern learner. 40 real point-in-time dimensions,
  * sourced from the immutable official Univest ENTRY fingerprint.
  *
- * Only official ENTRY -> EXIT campaigns with usable observed entry/exit prices
+ * Only SAME-DAY official ENTRY -> EXIT campaigns with usable observed entry/exit prices
  * and at least +0.5% observed GROSS price movement can become examples.
  * SELL, uncompleted, loss and unverified campaigns are not training references.
  * No future/outcome data is used as a feature; it is used only as the label.
@@ -73,7 +73,10 @@ final class PositiveUnivestFortyModel {
             if (!"OFFICIAL_UNIVEST_ENTRY".equals(entry.optString("source"))) continue;
             long enteredAt = entry.optLong("signalAt", 0);
             long exitedAt = campaign.optLong("exitAt", 0);
-            if (enteredAt <= 0 || exitedAt <= enteredAt) continue;
+            // A multi-day success is NOT a same-day training success.
+            if (enteredAt <= 0 || exitedAt <= enteredAt
+                    || !NseTradingCalendar.dayKey(enteredAt).equals(
+                            NseTradingCalendar.dayKey(exitedAt))) continue;
             // Distinguish independent campaigns from multiple snapshots.
             String symbol = entry.optString("symbol", "").trim().toUpperCase(Locale.US);
             String key = symbol + "|" + enteredAt;
@@ -185,7 +188,7 @@ final class PositiveUnivestFortyModel {
 
     static String evidenceSummary(List<JSONObject> winners) {
         int size = winners == null ? 0 : winners.size();
-        return VERSION + " • 40 measurable fields • " + size + " completed official"
+        return VERSION + " • 40 measurable fields • " + size + " SAME-DAY completed official"
                 + " positive-price ENTRY→EXIT campaigns • " + (size >= MIN_MATURE_WINNERS
                 ? "positive-pattern influence enabled"
                 : "learning-only until " + MIN_MATURE_WINNERS + " positive campaigns")
