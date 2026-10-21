@@ -367,7 +367,17 @@ final class ResearchTradeEngine {
         int qty = Math.max(0, p.optInt("quantity", 0));
         if (qty <= 0) return "Research lot quantity is not confirmed; no SELL sent.";
 
-        cancelResearchAveraging(c, p);
+        if (!cancelResearchAveraging(c, p))
+            return "Research SELL waiting: a previous averaging GTT is still active or unknown. Check Groww orders.";
+        GrowwClient.Result openSell = GrowwClient.checkForActiveCncSellOrder(c, symbol);
+        if (openSell.unknown || openSell.success)
+            return "Research SELL not duplicated: another CNC SELL exists or order status is unknown: " + openSell.message;
+        GrowwClient.PositionSnapshot broker = GrowwClient.getCncPosition(c, symbol);
+        if (!broker.success || broker.quantity <= 0)
+            return "Research SELL deferred: live Groww CNC quantity unavailable. " + broker.message;
+        if (broker.quantity != qty)
+            return "Research SELL deferred: broker qty " + broker.quantity
+                    + " differs from attributed Forecast qty " + qty + ". Manual reconciliation needed.";
         String ref = UnivestManager.stableRef("RX", symbol,
                 p.optString("strategy") + "|" + p.optLong("entryAt"), System.currentTimeMillis());
         GrowwClient.ExecutionResult r = GrowwClient.placeCncMarketSell(c, symbol, qty, ref);
@@ -961,53 +971,39 @@ final class ResearchTradeEngine {
     }
 
     private static void armResearchAveraging(Context c, JSONObject p) {
-        if (!AppPrefs.isAveragingEnabled(c)) return;
-        int budget = AppPrefs.getUnivestAddBudget(c);
-        if (budget <= 0) return;
+        if (p == null || !p.optBoolean("live", false)) return;
         double anchor = p.optDouble("entryPrice", 0);
-        int qtyHeld = p.optInt("quantity", 0);
-        if (!(anchor > 0) || qtyHeld <= 0) return;
-        InstrumentRepository.Instrument ins = InstrumentRepository.resolve(InstrumentRepository.load(c), p.optString("symbol"));
-        double tick = ins == null ? 0.05 : ins.tickSize;
-        for (int level = 1; level <= 3; level++) {
-            try {
-                if (!p.optString("avgGtt" + level + "Id", "").isEmpty()) continue;
-                double trigger = GrowwClient.roundTarget(anchor * (1.0 - level * 0.02), tick, false);
-                int qty = (int)Math.floor(budget / trigger);
-                if (qty < 1) continue;
-                int projected = committedOtherResearchCapital(c, p.optString("id")) + committedExposure(p) + budget;
-                if (projected > AppPrefs.getResearchCapitalLimit(c)) {
-                    DiagnosticsStore.runtime(c, "RESEARCH_AVERAGING_CAP_BLOCK", p.optString("symbol"),
-                            "Research averaging level " + level + " not armed: committed-capital ceiling would be exceeded.");
-                    continue;
-                }
-                String ref = UnivestManager.stableRef("RA" + level, p.optString("symbol"),
-                        p.optString("id") + "|" + level, p.optLong("entryAt"));
-                GrowwClient.GttResult g = GrowwClient.createUnivestCncBuyGtt(c, p.optString("symbol"), qty, trigger, ref);
-                if (g.success) {
-                    p.put("avgGtt" + level + "Id", g.smartOrderId);
-                    p.put("avgGtt" + level + "Price", trigger);
-                    p.put("avgGtt" + level + "Budget", budget);
-                    p.put("avgGtt" + level + "Qty", qty);
-                    p.put("avgGtt" + level + "Confirmed", false);
-                }
-                DiagnosticsStore.broker(c, "RESEARCH_AVERAGING_LEVEL_" + level, p.optString("symbol"),
-                        g.success || g.unknown, g.message);
-            } catch (Throwable ignored) {}
-        }
-        replacePosition(c, p);
+        if (!(anchor > 0) || p.optInt("quantity", 0) <= 0) return;
+        InstrumentRepository.Instrument ins = InstrumentRepository.resolve(
+                InstrumentRepository.load(c), p.optString("symbol"));
+        double tick = ins == null || ins.tickSize <= 0 ? 0.05 : ins.tickSize;
+        int remaining = Math.max(0, AppPrefs.getResearchCapitalLimit(c)
+                - committedOtherResearchCapital(c, p.optString("id"))
+                - committedExposure(p));
+        SharedIntradayAveraging.arm(c, p.optString("symbol"),
+                "FORECAST|" + p.optString("id"), anchor, tick, remaining);
     }
 
-    private static void cancelResearchAveraging(Context c, JSONObject p) {
+    private static boolean cancelResearchAveraging(Context c, JSONObject p) {
+        // The same shared engine owns both official and Forecast GTT ladders.
+        if (!SharedIntradayAveraging.cancel(c, p.optString("symbol"))) {
+            DiagnosticsStore.runtime(c,"RESEARCH_EXIT_AVERAGING_UNCERTAIN",
+                    p.optString("symbol"),
+                    "Cannot safely place SELL while Groww averaging GTT cancellation is unconfirmed.");
+            return false;
+        }
+        // Clean up legacy three-level research GTTs created by older app versions.
+        boolean all = true;
         for (int level = 1; level <= 3; level++) {
             String id = p.optString("avgGtt" + level + "Id", "");
             if (id.isEmpty()) continue;
-            GrowwClient.Result r = GrowwClient.cancelCashGtt(c, id);
-            DiagnosticsStore.broker(c, "CANCEL_RESEARCH_AVERAGING_" + level, p.optString("symbol"),
-                    r.success || r.unknown, r.message);
-            if (r.success) try { p.put("avgGtt" + level + "Id", ""); } catch (Exception ignored) {}
+            GrowwClient.Result result = GrowwClient.cancelCashGtt(c, id);
+            if (result.success) try { p.put("avgGtt" + level + "Id", ""); }
+            catch (Exception ignored) {}
+            else all = false;
         }
         replacePosition(c, p);
+        return all;
     }
 
     private static void reconcileResearchLivePosition(Context c, JSONObject p) {
