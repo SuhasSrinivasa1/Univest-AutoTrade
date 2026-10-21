@@ -99,6 +99,7 @@ final class UnivestManager {
         reservation.principal = before.netPrice > 0 ? before.netPrice * Math.max(0, before.quantity) : Math.max(0, reservation.principal);
         reservation.anchorPrice = 0.0; // set from the fresh BUY fill, not from an older cycle
         reservation.entryAt = System.currentTimeMillis(); // immutable opening session for EOD
+        reservation.brokerBaselineQty = Math.max(0,before.quantity);
         reservation.averageLevel = 0;
         reservation.reentryUsed = false;
         reservation.exitOrderId = "";
@@ -139,6 +140,7 @@ final class UnivestManager {
         state.phase = r.filled && r.filledQuantity > 0 ? UnivestStateStore.ACTIVE : UnivestStateStore.ENTRY_PENDING;
         state.anchorPrice = r.averagePrice > 0 ? r.averagePrice : 0.0; // fresh cycle averaging anchor
         state.entryAt = reservation.entryAt;
+        state.brokerBaselineQty = reservation.brokerBaselineQty;
         if (after.success && after.quantity >= 0) {
             state.quantity = after.quantity;
             state.principal = after.netPrice > 0 ? after.netPrice * Math.max(0, after.quantity)
