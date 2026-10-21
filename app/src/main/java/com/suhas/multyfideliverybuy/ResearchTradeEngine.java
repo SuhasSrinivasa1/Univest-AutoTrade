@@ -48,6 +48,8 @@ final class ResearchTradeEngine {
             JSONArray frozenStrategies = ResearchStore.playbookRegistry(c).optJSONArray("frozenChampions");
             boolean establishedChampions = frozenStrategies != null
                     && frozenStrategies.length() >= ResearchPlaybookEngine.MIN_FROZEN_FOR_STABLE_DECISIONS;
+            final List<JSONObject> positiveOfficialEntries =
+                    PositiveUnivestFortyModel.currentPositiveEntries(c);
             // Progressive confirmation: do not emit an entire ready shortlist in
             // one scanner tick. Remaining symbols are rechecked next tick and
             // retain their individual READY timers; no daily call quota added.
@@ -163,6 +165,33 @@ final class ResearchTradeEngine {
                         logSkip(c, symbol, "LIVE_INTRADAY_CONFIRMATION", liveReject);
                         continue;
                     }
+
+                    // Evaluate the SAME 40-key point-in-time fingerprint against
+                    // ONLY completed positive Univest BUY -> EXIT campaigns.
+                    // Before 8 winners from >=4 stocks this is study-only:
+                    // no invented confidence and no extra denial of calls.
+                    JSONObject live40 = PositiveUnivestFortyModel.liveCandidate(
+                            p, liveMinute, ltp, minuteVwap, minuteNow);
+                    PositiveUnivestFortyModel.Match positiveMatch =
+                            PositiveUnivestFortyModel.closest(live40, positiveOfficialEntries);
+                    p.put("positive40Model", PositiveUnivestFortyModel.VERSION);
+                    p.put("positive40ParameterCount", PositiveUnivestFortyModel.PARAMETERS);
+                    p.put("positive40WinningCampaigns", positiveMatch.winners);
+                    p.put("positive40Mature", positiveMatch.mature);
+                    p.put("positive40ObservedShared", positiveMatch.shared);
+                    p.put("positive40NearestWinner", positiveMatch.nearestSymbol);
+                    p.put("positive40MatchScore", positiveMatch.score);
+                    p.put("minuteDataPoints", liveMinute.dataPoints);
+                    p.put("minuteRsi14", liveMinute.rsi14);
+                    p.put("minuteReturn5Pct", liveMinute.return5Pct);
+                    p.put("minuteRelativeVolume20", liveMinute.relativeVolume20);
+                    p.put("minuteVwap", minuteVwap);
+                    p.put("lastMinuteCaptureAt", minuteNow);
+                    DiagnosticsStore.runtime(c, "FORECAST_POSITIVE40_MATCH", symbol,
+                            positiveMatch.shared + "/40 observed common dimensions, "
+                                    + positiveMatch.winners + " confirmed positive references, "
+                                    + "analogue " + positiveMatch.score + "/100, mature "
+                                    + positiveMatch.mature + ". No proprietary Univest weights assumed.");
                 } catch (Throwable minuteFailure) {
                     ResearchTriggerState.markNotReady(c, symbol, today);
                     logSkip(c, symbol, "LIVE_INTRADAY_DATA_UNAVAILABLE",
@@ -880,6 +909,13 @@ final class ResearchTradeEngine {
             p.put("minuteRsi14", prediction.optDouble("minuteRsi14", 0));
             p.put("minuteReturn5Pct", prediction.optDouble("minuteReturn5Pct", 0));
             p.put("minuteRelativeVolume20", prediction.optDouble("minuteRelativeVolume20", 0));
+            p.put("positive40Model", prediction.optString("positive40Model", PositiveUnivestFortyModel.VERSION));
+            p.put("positive40ParameterCount", prediction.optInt("positive40ParameterCount", 40));
+            p.put("positive40WinningCampaigns", prediction.optInt("positive40WinningCampaigns", 0));
+            p.put("positive40ObservedShared", prediction.optInt("positive40ObservedShared", 0));
+            p.put("positive40MatchScore", prediction.optDouble("positive40MatchScore", 0));
+            p.put("positive40Mature", prediction.optBoolean("positive40Mature", false));
+            p.put("positive40NearestWinner", prediction.optString("positive40NearestWinner", ""));
             p.put("positiveCatalysts", prediction.optInt("positiveCatalysts", 0));
             p.put("negativeCatalysts", prediction.optInt("negativeCatalysts", 0));
             p.put("marketRegimeStatus", prediction.optString("marketRegimeStatus", "NOT_CONNECTED"));
