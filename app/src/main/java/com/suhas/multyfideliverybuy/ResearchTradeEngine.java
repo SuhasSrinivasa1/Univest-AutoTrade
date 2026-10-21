@@ -493,6 +493,32 @@ final class ResearchTradeEngine {
                 reconcileResearchLivePosition(c, p);
                 if ("CLOSED".equals(p.optString("state"))) { changed = true; continue; }
                 if ("LIVE_EXIT_PENDING".equals(p.optString("state"))) { changed = true; continue; }
+                if (SameDayForecastPolicy.entryAllowed(System.currentTimeMillis()))
+                    SharedIntradayAveraging.refresh(c, symbol);
+
+                // A quote API outage must NOT prevent the closing SELL attempt.
+                // This operation verifies broker quantity and cancels GTTs before selling.
+                long nowClosing=System.currentTimeMillis();
+                long original=p.optLong("forecastCallAt", p.optLong("entryAt",0L));
+                boolean late=original>0 && NseTradingCalendar.isRegularMarketOpen(nowClosing)
+                        && NseTradingCalendar.dayKey(nowClosing).compareTo(
+                                NseTradingCalendar.dayKey(original))>0;
+                if (original>0 && (SameDayForecastPolicy.closingWindow(nowClosing)||late)) {
+                    String closeReason=late
+                            ?"URGENT OVERNIGHT RISK • Forecast should have closed previous session"
+                            :"SAME-DAY FORECAST CLOSE • sell even if target not reached";
+                    if (AppPrefs.isLiveMode(c) && AppPrefs.isResearchAutoTradeEnabled(c)) {
+                        replaceInArray(a,i,p);
+                        ResearchStore.savePositions(c,a);
+                        String attempted=executeSell(c,symbol,true,closeReason);
+                        DiagnosticsStore.runtime(c,"FORECAST_EOD_SELL_ATTEMPT",symbol,attempted);
+                        a=ResearchStore.positions(c);
+                    } else if (AppPrefs.claimRecent(c,"forecast_manual_eod_"+symbol,120000L)) {
+                        AppPrefs.setResearchAction(c,symbol,"SELL");
+                        postExitReady(c,p,closeReason+" • MANUAL CLOSE REQUIRED");
+                    }
+                    continue;
+                }
             }
             double ltp;
             try { ltp = GrowwClient.getLtpForAutomation(c, symbol); }
