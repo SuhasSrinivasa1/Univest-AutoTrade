@@ -244,7 +244,7 @@ public class DashboardActivity extends Activity {
         performance.addView(sectionRow("PERFORMANCE & ACCOUNTABILITY", "Historical"));
         performance.addView(subsectionTitle("Research accuracy"), margins(0, 12, 0, 4));
         performance.addView(body(ResearchTradeEngine.accuracyText(this)));
-        performance.addView(meta("Legacy ≥0.5% profitability remains visible for continuity; the primary Research objective is now the rolling Univest benchmark within two trading sessions."), margins(0, 6, 0, 10));
+        performance.addView(meta("Historical multi-session Univest benchmark remains reference-only. Forecast's new frozen objective is to select and close on the SAME NSE trading day; a forced close can realize a loss."), margins(0, 6, 0, 10));
         performance.addView(subsectionTitle("Forecast before Univest"), margins(0, 4, 0, 4));
         performance.addView(body(ResearchEngine.forecastAccountabilityText(this)));
         performance.addView(meta("The causal test is whether an eventual official Univest ENTRY was already ranked before its notification; intraday snapshots are timestamped so later information cannot leak backward."), margins(0, 6, 0, 10));
