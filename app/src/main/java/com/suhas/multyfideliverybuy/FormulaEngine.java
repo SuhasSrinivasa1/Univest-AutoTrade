@@ -44,6 +44,25 @@ final class FormulaEngine {
         monitor(c, calls, now, now >= pref.getLong("network_cooldown_until", 0));
         saveCalls(pref, calls);
 
+        // Order management is EXTERNAL to the immutable Formula calculation.
+        // Existing confirmed calls may arm CNC GTTs when the user opts in.
+        if (AppPrefs.isFormulaAutoTradeEnabled(c)
+                && SameDayForecastPolicy.entryAllowed(now)) {
+            int ordered=0;
+            for(int i=calls.length()-1;i>=0&&ordered<1;i--) {
+                JSONObject call=calls.optJSONObject(i);
+                if(call==null || !NseTradingCalendar.dayKey(now).equals(call.optString("session"))
+                        || !"OPEN".equals(call.optString("state")))continue;
+                if(SignalGttTrader.ticket(c,call.optString("symbol")).length()>0)continue;
+                String result=SignalGttTrader.requestBuy(c,SignalGttTrader.FORMULA,
+                        call.optString("symbol"),call.optDouble("entry",0),
+                        AppPrefs.getUnivestBudget(c),true);
+                DiagnosticsStore.runtime(c,"FORMULA_AUTO_GTT_RESULT",
+                        call.optString("symbol"),result);
+                ordered++;
+            }
+        }
+
         if (!NseTradingCalendar.isRegularMarketOpen(now)) {
             pref.edit().putString("status", "NSE closed • existing Formula calls preserved").apply();
             return;
@@ -225,6 +244,23 @@ final class FormulaEngine {
             }
         }
         e.apply();
+    }
+
+    /** Manual BUY button acts on an existing fixed, point-in-time recommendation only. */
+    static synchronized String buyCall(Context c,String symbol) {
+        if(!SameDayForecastPolicy.entryAllowed(System.currentTimeMillis()))
+            return "Formula CNC GTT entries stop at 14:00 IST.";
+        String now=NseTradingCalendar.dayKey(System.currentTimeMillis());
+        JSONArray rows=calls(c);
+        for(int i=rows.length()-1;i>=0;i--) {
+            JSONObject row=rows.optJSONObject(i);
+            if(row==null||!now.equals(row.optString("session"))
+                    ||!symbol.equalsIgnoreCase(row.optString("symbol"))
+                    ||!"OPEN".equals(row.optString("state")))continue;
+            return SignalGttTrader.requestBuy(c,SignalGttTrader.FORMULA,
+                    symbol,row.optDouble("entry",0),AppPrefs.getUnivestBudget(c),false);
+        }
+        return "No eligible Formula BUY recommendation for this NSE session.";
     }
 
     static synchronized JSONArray calls(Context c) {
