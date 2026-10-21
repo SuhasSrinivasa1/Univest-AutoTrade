@@ -45,6 +45,21 @@ public class MarketGuardianService extends Service {
                         // This makes Session-3 timeout scoring and post-close replay resilient on
                         // restrictive OEM firmware where the fallback JobScheduler may be delayed.
                         ResearchOrchestrator.tick(getApplicationContext());
+                        // Broker-risk cleanup has priority over market discovery. Exit only
+                        // positions attributable to this app, with fill reconciliation.
+                        try {
+                            for (UnivestStateStore.State managed :
+                                    UnivestStateStore.all(getApplicationContext())) {
+                                if (managed == null || managed.symbol.isEmpty()) continue;
+                                if (SameDayForecastPolicy.entryAllowed(System.currentTimeMillis()))
+                                    SharedIntradayAveraging.refresh(getApplicationContext(), managed.symbol);
+                            }
+                            UnivestSameDayExitManager.tick(getApplicationContext());
+                        } catch (Throwable exitFailure) {
+                            DiagnosticsStore.error(getApplicationContext(),
+                                    "SAME_DAY_GUARDIAN_EXIT_FAILED", "",
+                                    "Broker-aware same-day exit coordinator could not complete.",exitFailure);
+                        }
                         // Same 2-minute live cadence for Formula, on a separate worker.
                         // A slow Formula score may not delay official execution or Forecast.
                         new Thread(() -> {
