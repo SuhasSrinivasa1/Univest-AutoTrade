@@ -35,7 +35,7 @@ final class AppPrefs {
         String normalized = MODE_LIVE.equals(mode) ? MODE_LIVE : MODE_PAPER;
         p(c).edit().putString("execution_mode", normalized)
                 .putBoolean("univest_enabled", false)
-                .putBoolean("research_autotrade_enabled", false).apply();
+                .putBoolean("research_autotrade_enabled", false).putBoolean("formula_autotrade_enabled", false).apply();
     }
 
     static boolean isAveragingEnabled(Context c) { return p(c).getBoolean("downward_averaging_enabled", true); }
@@ -129,7 +129,7 @@ final class AppPrefs {
     static void invalidateConnectionReadiness(Context c) {
         p(c).edit().remove("access_token").putBoolean("auth_test_ok", false).putBoolean("static_ip_match", false)
                 .putBoolean("armed", false).putBoolean("univest_enabled", false)
-                .putBoolean("research_autotrade_enabled", false).apply();
+                .putBoolean("research_autotrade_enabled", false).putBoolean("formula_autotrade_enabled", false).apply();
     }
 
     static boolean isAuthTestFresh(Context c) {
@@ -190,8 +190,12 @@ final class AppPrefs {
 
 
     // v2.3 Research Lab is deliberately isolated from official Univest execution state.
+    // Separate opt-in switches. Turning off automation stops NEW entries,
+    // but existing opted-in GTT positions still require safe exit monitoring.
     static boolean isResearchAutoTradeEnabled(Context c) { return p(c).getBoolean("research_autotrade_enabled", false); }
     static void setResearchAutoTradeEnabled(Context c, boolean v) { p(c).edit().putBoolean("research_autotrade_enabled", v).apply(); }
+    static boolean isFormulaAutoTradeEnabled(Context c) { return p(c).getBoolean("formula_autotrade_enabled", false); }
+    static void setFormulaAutoTradeEnabled(Context c, boolean v) { p(c).edit().putBoolean("formula_autotrade_enabled", v).apply(); }
     static int getResearchBudget(Context c) { return Math.max(1000, Math.min(20000, p(c).getInt("research_budget", 5000))); }
     static void setResearchBudget(Context c, int v) { p(c).edit().putInt("research_budget", Math.max(1000, Math.min(20000, v))).apply(); }
     static int getResearchMaxPositions(Context c) { return Math.max(1, Math.min(5, p(c).getInt("research_max_positions", 2))); }
@@ -257,7 +261,7 @@ final class AppPrefs {
     static void setResearchCapitalLimit(Context c, int v) {
         int clamped = Math.max(10000, Math.min(500000, (v / 10000) * 10000));
         p(c).edit().putInt("research_capital_limit", clamped)
-                .putBoolean("research_autotrade_enabled", false).apply();
+                .putBoolean("research_autotrade_enabled", false).putBoolean("formula_autotrade_enabled", false).apply();
     }
 
     static String getResearchFailureSummary(Context c) {
