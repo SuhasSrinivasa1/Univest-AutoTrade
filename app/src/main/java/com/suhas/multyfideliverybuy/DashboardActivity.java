@@ -286,11 +286,15 @@ public class DashboardActivity extends Activity {
 
         LinearLayout title = card();
         title.addView(text("LONG holding forecast", 22, TEXT, true));
-        title.addView(meta("Calls appear progressively when independently confirmed. A target stays eligible through 5 NSE trading sessions; missing it on Day 1 is NOT a failure."),
+        title.addView(meta("UNIVEST SAME-DAY FORECAST V1 • locked 3-family selection • no entries after 14:00 IST • aim to exit by NSE close. Only broker fills count as actual closures."),
                 margins(0, 6, 0, 0));
         title.addView(meta(PositiveUnivestFortyModel.evidenceSummary(
                 PositiveUnivestFortyModel.currentPositiveEntries(this))),
                 margins(0, 8, 0, 0));
+        title.addView(meta("Three families: Momentum/Trend • Participation/Liquidity • Structure/Market context. 40 point-in-time parameters remain research evidence; missing inputs are not invented."),
+                margins(0, 7, 0, 0));
+        title.addView(meta("EOD exits may realize a loss. Same-day broker fills cannot be guaranteed. Shared averaging: -0.5% through -5%, ten budgeted legs maximum."),
+                margins(0, 7, 0, 0));
         root.addView(title, margins(0, 20, 0, 12));
 
         root.addView(forecastAverageCard(), margins(0, 0, 0, 12));
@@ -533,19 +537,21 @@ public class DashboardActivity extends Activity {
 
         safety.addView(budgetSlider(
                 "INITIAL ENTRY BUDGET",
-                "Used for a new eligible 1–3 month recommendation and a missed initial entry.",
+                "Used for new official entries; same-day CNC closing behavior can realize losses.",
                 AppPrefs.getUnivestBudget(this),
                 true,
                 arm), margins(0, 12, 0, 0));
 
         safety.addView(budgetSlider(
                 "RE-ENTRY + AVERAGING BUDGET",
-                "One shared amount for an idea back in entry range and for each -2% / -4% / -6% averaging level.",
+                "ONE shared averaging engine for Forecast and official calls: -0.5%, -1.0%, ... -5.0%, ten levels at most.",
                 AppPrefs.getUnivestAddBudget(this),
                 false,
                 arm), margins(0, 12, 0, 0));
 
         safety.addView(meta("₹0 disables that buy leg. Range: ₹0–₹1,00,000 in ₹1,000 steps."), margins(0, 10, 0, 0));
+        safety.addView(meta("Potential per-stock exposure = initial budget + 10 × averaging budget. At defaults: ₹20,000 + 10 × ₹5,000 = ₹70,000, subject to actual fills and available cash."),
+                margins(0, 7, 0, 0));
         safety.addView(meta("Budget changes apply to new orders and newly-created averaging GTTs. Existing broker-hosted averaging GTTs are left unchanged for safety."), margins(0, 6, 0, 10));
 
         safety.addView(live, margins(0, 2, 0, 0));
@@ -574,7 +580,7 @@ public class DashboardActivity extends Activity {
 
         safety.addView(meta("Official source only • NSE CASH • CNC delivery"), margins(0, 10, 0, 0));
         safety.addView(meta(formatRupees(AppPrefs.getUnivestBudget(this)) + " initial • "
-                + formatRupees(AppPrefs.getUnivestAddBudget(this)) + " re-entry / each averaging level • -2% / -4% / -6% ladder"),
+                + formatRupees(AppPrefs.getUnivestAddBudget(this)) + " re-entry / each averaging level • -0.5% to -5% (10 shared levels)"),
                 margins(0, 6, 0, 0));
         root.addView(safety, margins(0, 0, 0, 14));
 
@@ -771,7 +777,7 @@ public class DashboardActivity extends Activity {
         c.addView(body(AppPrefs.isUnivestEnabled(this) ? "AutoTrade is ARMED" : "AutoTrade is DISARMED"), margins(0, 10, 0, 0));
         c.addView(meta(formatRupees(AppPrefs.getUnivestBudget(this)) + " initial • "
                 + formatRupees(AppPrefs.getUnivestAddBudget(this))
-                + " back-in-range / each averaging level at -2% / -4% / -6%"), margins(0, 8, 0, 0));
+                + " back-in-range / each averaging level from -0.5% to -5%"), margins(0, 8, 0, 0));
         c.addView(meta("Official book-profit/exit cancels tracked averaging orders and sells the actual broker CNC holding."), margins(0, 6, 0, 0));
 
         Button manage = secondaryButton("MANAGE EXECUTION SETTINGS");
@@ -1068,6 +1074,14 @@ public class DashboardActivity extends Activity {
         if (s.averageGtt1Id != null && !s.averageGtt1Id.isEmpty()) armed++;
         if (s.averageGtt2Id != null && !s.averageGtt2Id.isEmpty()) armed++;
         if (s.averageGtt3Id != null && !s.averageGtt3Id.isEmpty()) armed++;
+        org.json.JSONArray shared = SharedIntradayAveraging.snapshot(this,s.symbol).optJSONArray("levels");
+        if (shared != null) {
+            armed = 0;
+            for (int i=0;i<shared.length();i++) {
+                JSONObject g=shared.optJSONObject(i);
+                if (g!=null && "BROKER_ACCEPTED".equals(g.optString("state"))) armed++;
+            }
+        }
         if (armed > 0) return armed + "/3 armed";
         if (s.averageLevel > 0) return "Level " + s.averageLevel;
         return "Ready";
