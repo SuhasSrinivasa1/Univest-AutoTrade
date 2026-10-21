@@ -193,6 +193,18 @@ final class SharedIntradayAveraging {
                     ||"BROKER_FILLED".equals(status))continue;
             String id=row.optString("gttId","");
             if (id.isEmpty()) { all=false;continue; } // unknown acceptance -> fail closed
+            // Once broker confirms a GTT completed, it is part of the holding,
+            // NOT an open BUY to cancel. Groww may reject cancel of a filled GTT.
+            GrowwClient.GttStatusResult check=GrowwClient.getCashGttStatus(c,id);
+            String brokerState=check.status==null?"":check.status.toUpperCase(Locale.US);
+            if (check.success && (brokerState.contains("COMPLET")
+                    || brokerState.contains("EXECUT") || brokerState.contains("FILLED"))) {
+                try{row.put("state","BROKER_FILLED");}catch(Exception ignored){}
+                UnivestAveragingRegistry.remove(c,id);
+                continue;
+            }
+            // If status is unknown, cancel may still be submitted, but never
+            // claim safe liquidation without a confirmed broker response.
             GrowwClient.Result result=GrowwClient.cancelCashGtt(c,id);
             if(result.success) {
                 try {row.put("state","CANCELLED");}catch(Exception ignored){}
