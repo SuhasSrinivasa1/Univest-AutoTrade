@@ -227,7 +227,15 @@ final class SignalGttTrader {
                 if(cancel.success) {
                     GrowwClient.GttStatusResult finalStatus=GrowwClient.getCashGttStatus(c,id);
                     if(finalStatus.success&&finalStatus.status.toUpperCase(Locale.US).contains("CANCEL")) {
-                        t.put("state","ENTRY_CANCELLED_EOD");save(c,sym,t);
+                        // A cancellation/trigger race can leave CNC shares held.
+                        // Reconcile broker quantity BEFORE declaring an old GTT harmless.
+                        GrowwClient.PositionSnapshot after=GrowwClient.getCncPosition(c,sym);
+                        if(after.success&&after.quantity==0) {
+                            t.put("state","ENTRY_CANCELLED_EOD");save(c,sym,t);
+                        }else {
+                            t.put("state","BUY_TRIGGERED_UNCONFIRMED");save(c,sym,t);
+                            urgent(c,t,"BUY GTT cancelled but broker holdings are uncertain or nonzero.");
+                        }
                     }else {
                         t.put("state","BUY_TRIGGERED_UNCONFIRMED");
                         save(c,sym,t);
