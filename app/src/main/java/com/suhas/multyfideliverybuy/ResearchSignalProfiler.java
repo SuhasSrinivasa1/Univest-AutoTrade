@@ -97,14 +97,17 @@ final class ResearchSignalProfiler {
             ResearchMath.Features m1 = ResearchMath.fromCandles(oneMinute);
             copyDaily(row, d);
             row.put("minute1Points", oneMinute == null ? 0 : oneMinute.size());
-            row.put("minute1Rsi14", m1.rsi14);
-            row.put("minute1Return5Pct", m1.return5Pct);
-            row.put("minute1RelativeVolume20", m1.relativeVolume20);
+            row.put("minute1Rsi14", m1.dataPoints >= 15 ? m1.rsi14 : JSONObject.NULL);
+            row.put("minute1Return5Pct", m1.dataPoints >= 15 ? m1.return5Pct : JSONObject.NULL);
+            row.put("minute1RelativeVolume20", m1.dataPoints >= 20
+                    ? m1.relativeVolume20 : JSONObject.NULL);
             row.put("minute15Points", fifteen == null ? 0 : fifteen.size());
-            row.put("minute15Rsi14", m15.rsi14);
-            row.put("minute15Return5Pct", m15.return5Pct);
-            row.put("minute15Return20Pct", m15.return20Pct);
-            row.put("minute15RelativeVolume20", m15.relativeVolume20);
+            row.put("minute15Rsi14", m15.dataPoints >= 15 ? m15.rsi14 : JSONObject.NULL);
+            row.put("minute15Return5Pct", m15.dataPoints >= 15 ? m15.return5Pct : JSONObject.NULL);
+            row.put("minute15Return20Pct", m15.dataPoints >= 21
+                    ? m15.return20Pct : JSONObject.NULL);
+            row.put("minute15RelativeVolume20", m15.dataPoints >= 20
+                    ? m15.relativeVolume20 : JSONObject.NULL);
             row.put("preSignal1mVwap", vwap(oneMinute));
             row.put("preSignal15mVwap", vwap(fifteen));
             row.put("dailyCandlePattern", candlePattern(daily));
