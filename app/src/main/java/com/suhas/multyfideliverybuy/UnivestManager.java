@@ -265,6 +265,8 @@ final class UnivestManager {
             state.phase = r.filled && r.filledQuantity > 0 ? UnivestStateStore.ACTIVE : UnivestStateStore.ENTRY_PENDING;
             state.quantity = Math.max(0, r.filledQuantity);
             state.anchorPrice = r.filled ? r.averagePrice : 0;
+            state.entryAt = System.currentTimeMillis();
+            state.brokerBaselineQty = 0;
             state.principal = Math.max(0, r.averagePrice) * Math.max(0, r.filledQuantity);
             state.estimatedBuyCharges = state.principal > 0 ? DeliveryNetTarget.buyCharges(state.principal) : 0;
             state.averageLevel = 0; state.reentryUsed = false; state.exitOrderId = r.orderId;
