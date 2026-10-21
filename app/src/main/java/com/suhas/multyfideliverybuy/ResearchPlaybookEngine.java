@@ -121,12 +121,21 @@ final class ResearchPlaybookEngine {
         JSONObject previous = ResearchStore.playbookRegistry(c);
         Map<String, Aggregate> groups = new LinkedHashMap<>();
         List<JSONObject> history = ResearchStore.forecastHistory(c, 500);
+        // Train champion signatures from POSITIVE, COMPLETED official BUY campaigns
+        // only. Neither losing, open nor bearish/SELL calls can be an exemplar.
+        Set<String> positiveKeys = new HashSet<>();
+        for (JSONObject entry : PositiveUnivestFortyModel.currentPositiveEntries(c)) {
+            positiveKeys.add(entry.optString("symbol", "").trim().toUpperCase(Locale.US)
+                    + "|" + entry.optLong("signalAt", 0));
+        }
 
         for (JSONObject row : ResearchStore.featureSnapshots(c)) {
             if (!"OFFICIAL_UNIVEST_ENTRY".equals(row.optString("source"))
                     || !"ENTRY".equals(row.optString("signalType", "ENTRY"))) continue;
             long signalAt = row.optLong("signalAt", 0L);
             if (signalAt <= 0) continue;
+            if (!positiveKeys.contains(row.optString("symbol", "").trim()
+                    .toUpperCase(Locale.US) + "|" + signalAt)) continue;
             JSONObject v = componentVector(row);
             String sig = signature(v);
             Aggregate a = groups.get(sig);
@@ -166,6 +175,9 @@ final class ResearchPlaybookEngine {
                 if (old == null) continue;
                 JSONObject kept = copy(old);
                 JSONObject live = currentById.get(kept.optString("id"));
+                // Do not preserve legacy champions if their signatures have no
+                // verifiable winning official campaigns in the current history.
+                if (live == null) continue;
                 try {
                     kept.put("status", "FROZEN_CHAMPION");
                     kept.put("decisionCoreFrozen", true);
@@ -231,7 +243,9 @@ final class ResearchPlaybookEngine {
         try {
             root.put("schemaVersion", SCHEMA_VERSION);
             root.put("updatedAt", System.currentTimeMillis());
-            root.put("objective", "Predict official Univest ENTRY before notification and preserve proven generic patterns without endless drift");
+            root.put("objective", "Forecast positive official BUY patterns from completed winning campaigns; never learn SELL/loss templates");
+            root.put("positiveOfficialTrainingCampaigns", positiveKeys.size());
+            root.put("positiveOnlyTraining", true);
             root.put("componentModel", "NON_EXCLUSIVE_COMPOSITE");
             root.put("frozenTarget", FROZEN_TARGET);
             root.put("minimumFrozenForStableDecisionCore", MIN_FROZEN_FOR_STABLE_DECISIONS);
