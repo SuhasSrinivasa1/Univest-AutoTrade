@@ -74,7 +74,11 @@ final class StockStrategyMemory {
         if (candidate == null) return;
         String symbol = candidate.optString("symbol", "").trim().toUpperCase();
         if (symbol.isEmpty()) return;
-        JSONObject stocks = ResearchStore.stockStrategyMemory(c).optJSONObject("stocks");
+        JSONObject memory = ResearchStore.stockStrategyMemory(c);
+        // Legacy memory from unverified ENTRY notifications is not a valid
+        // positive-only reference, even before the first overnight rebuild.
+        if (!memory.optBoolean("positiveOnly", false)) return;
+        JSONObject stocks = memory.optJSONObject("stocks");
         if (stocks == null) return;
         JSONObject x = stocks.optJSONObject(symbol);
         if (x == null) return;
