@@ -44,6 +44,13 @@ public class MarketGuardianService extends Service {
                         // Drive all orchestrator stages, not only the live market stage.
                         // This makes Session-3 timeout scoring and post-close replay resilient on
                         // restrictive OEM firmware where the fallback JobScheduler may be delayed.
+                        // Same-day broker exits must precede slow scanner operations.
+                        try { UnivestSameDayExitManager.tick(getApplicationContext()); }
+                        catch (Throwable ignored) { DiagnosticsStore.runtime(getApplicationContext(),
+                                "OFFICIAL_EOD_PRIORITY_ERROR", "", "Priority exit check failed."); }
+                        try { ResearchTradeEngine.prioritizeSameDayExits(getApplicationContext()); }
+                        catch (Throwable ignored) { DiagnosticsStore.runtime(getApplicationContext(),
+                                "FORECAST_EOD_PRIORITY_ERROR", "", "Priority Forecast exit check failed."); }
                         ResearchOrchestrator.tick(getApplicationContext());
                         // Broker-risk cleanup has priority over market discovery. Exit only
                         // positions attributable to this app, with fill reconciliation.
