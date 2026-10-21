@@ -33,6 +33,10 @@ final class ResearchTradeEngine {
     static void evaluateLive(Context context) {
         Context c = context.getApplicationContext();
         if (!isMarketHoursIst()) return;
+        if (!SameDayForecastPolicy.entryAllowed(System.currentTimeMillis())) {
+            monitorOpenPositions(c);
+            return; // no new positions too late for a controlled same-day exit
+        }
         try {
             String today = NseTradingCalendar.dayKey(System.currentTimeMillis());
             if (!today.equals(AppPrefs.getResearchForecastTargetKey(c))) {
@@ -104,10 +108,9 @@ final class ResearchTradeEngine {
                 // Price feasibility, regime, news and learned champion-family evidence
                 // are checked before issuing a new Forecast recommendation.
                 JSONObject targetBenchmark = UnivestBenchmark.snapshot(c);
-                double targetPct = ForecastTargetPolicy.nextNetPct(
-                        AppPrefs.getForecastTargetPolicyPct(c),
-                        targetBenchmark.optInt("completed", 0),
-                        targetBenchmark.optDouble("averageUpsidePct", 0));
+                // Immutable intraday target: previous multi-day Univest averages
+                // cannot ratchet a one-session target into an unreachable objective.
+                double targetPct = 1.0;
                 double tick = 0.05;
                 try {
                     InstrumentRepository.Instrument instrument = InstrumentRepository.resolve(
@@ -187,6 +190,27 @@ final class ResearchTradeEngine {
                     p.put("minuteRelativeVolume20", liveMinute.relativeVolume20);
                     p.put("minuteVwap", minuteVwap);
                     p.put("lastMinuteCaptureAt", minuteNow);
+                    GrowwClient.QuoteSnapshot depth = GrowwClient.getQuoteForAutomation(c, symbol);
+                    double spread = depth.success ? depth.spreadPct() : Double.NaN;
+                    double closeVsSma20 = p.optDouble("sma20", 0) > 0
+                            ? 100.0 * (ltp / p.optDouble("sma20") - 1.0) : Double.NaN;
+                    double dayAtr = p.optDouble("atr14", 0) > 0
+                            ? 100.0 * p.optDouble("atr14") / ltp : Double.NaN;
+                    SameDayForecastPolicy.Vote sameDayVote = SameDayForecastPolicy.evaluate(
+                            liveMinute.return5Pct, liveMinute.rsi14,
+                            liveMinute.relativeVolume20, ltp, minuteVwap, spread,
+                            closeVsSma20, dayAtr, p.optString("marketRegimeStatus", ""),
+                            p.optDouble("sampleBreadthRatio", Double.NaN));
+                    p.put("sameDayStrategyVersion", SameDayForecastPolicy.VERSION);
+                    p.put("sameDayMomentumFamily", sameDayVote.momentum);
+                    p.put("sameDayParticipationFamily", sameDayVote.participation);
+                    p.put("sameDayStructureFamily", sameDayVote.structure);
+                    p.put("sameDayPositiveFamilies", sameDayVote.positiveFamilies);
+                    if (!sameDayVote.admissible) {
+                        ResearchTriggerState.markNotReady(c,symbol,today);
+                        logSkip(c,symbol,"SAME_DAY_FAMILY_REJECT",sameDayVote.reason);
+                        continue;
+                    }
                     DiagnosticsStore.runtime(c, "FORECAST_POSITIVE40_MATCH", symbol,
                             positiveMatch.shared + "/40 observed common dimensions, "
                                     + positiveMatch.winners + " confirmed positive references, "
@@ -224,7 +248,8 @@ final class ResearchTradeEngine {
         if (symbol.isEmpty()) return "No Research symbol selected.";
         if (!AppPrefs.isLiveMode(c)) return "Research broker BUY requires LIVE mode.";
         if (!AppPrefs.isReadyForBuy(c)) return "Groww/static-IP readiness is not current. Test connection first.";
-        if (!NseTradingCalendar.isRegularMarketOpen(System.currentTimeMillis())) return "Research BUY is allowed only during a regular NSE trading session.";
+        if (!SameDayForecastPolicy.entryAllowed(System.currentTimeMillis()))
+            return "Same-day Forecast entries close at 14:00 IST to allow time for broker execution.";
         if (automatic && !NseTradingCalendar.calendarCoverageKnown(System.currentTimeMillis()))
             return "Research AutoTrade BUY blocked: the NSE holiday calendar is not verified for the current year.";
         if (!NseTradingCalendar.dayKey(System.currentTimeMillis()).equals(AppPrefs.getResearchForecastTargetKey(c)))
@@ -910,6 +935,11 @@ final class ResearchTradeEngine {
             p.put("rank", rank);
             p.put("strategy", prediction.optString("strategy"));
             p.put("strategyVersion", prediction.optString("strategyVersion", ResearchEngine.STRATEGY_VERSION));
+            p.put("sameDayStrategyVersion", prediction.optString("sameDayStrategyVersion", SameDayForecastPolicy.VERSION));
+            p.put("sameDayMomentumFamily", prediction.optDouble("sameDayMomentumFamily", 0));
+            p.put("sameDayParticipationFamily", prediction.optDouble("sameDayParticipationFamily", 0));
+            p.put("sameDayStructureFamily", prediction.optDouble("sameDayStructureFamily", 0));
+            p.put("sameDayPositiveFamilies", prediction.optInt("sameDayPositiveFamilies", 0));
             p.put("dataConfidence", prediction.optInt("dataConfidence", ResearchDataQuality.score(prediction)));
             p.put("missingData", prediction.optString("missingData", ResearchDataQuality.missing(prediction)));
             p.put("forecastSessionKey", prediction.optString("forecastSessionKey", AppPrefs.getResearchForecastTargetKey(c)));
@@ -947,8 +977,7 @@ final class ResearchTradeEngine {
             p.put("benchmarkTargetUpsidePct", benchmark.optDouble("targetUpsidePct", MIN_NET_WIN_PCT));
             // The objective tracks the official Univest completed-call reference, rising
             // from a 1% NET floor. The achieved Forecast average remains independent.
-            double forecastTargetPct = AppPrefs.advanceForecastTargetPolicyPct(c,
-                    benchmark.optInt("completed", 0), benchmark.optDouble("averageUpsidePct", 0));
+            double forecastTargetPct = 1.0; // locked same-session target; fee-adjusted
             p.put("forecastTargetUpsidePct", forecastTargetPct);
             p.put("forecastTargetPrice", forecastBenchmarkTargetPrice(c, p, ltp));
             p.put("forecastObservedHigh", ltp);
@@ -960,7 +989,7 @@ final class ResearchTradeEngine {
             p.put("evaluationHorizonSessions", ForecastPolicy.FORECAST_TARGET_MAX_SESSIONS);
             p.put("evaluationState", "OPEN");
             p.put("benchmarkOpportunityOutcome", "OPEN");
-            p.put("lastReason", "Entry trigger reached inside frozen Research buy/chase range.");
+            p.put("lastReason", "Same-day strategy V1: frozen 3-family confirmation and net target.");
         } catch (Exception ignored) {}
         if (!ResearchStore.appendPositionIfAbsent(c, p)) return null;
         AppPrefs.setResearchAction(c, p.optString("symbol"), "BUY");
