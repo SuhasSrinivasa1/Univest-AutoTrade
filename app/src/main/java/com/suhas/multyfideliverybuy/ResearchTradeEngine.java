@@ -1070,7 +1070,7 @@ final class ResearchTradeEngine {
         double tick = ins == null || ins.tickSize <= 0 ? 0.05 : ins.tickSize;
         int remaining = Math.max(0, AppPrefs.getResearchCapitalLimit(c)
                 - committedOtherResearchCapital(c, p.optString("id"))
-                - committedExposure(p));
+                - committedExposure(c,p));
         SharedIntradayAveraging.arm(c, p.optString("symbol"),
                 "FORECAST|" + p.optString("id"), anchor, tick, remaining);
     }
@@ -1143,8 +1143,9 @@ final class ResearchTradeEngine {
             int initialQty = Math.max(0, p.optInt("initialFilledQty", p.optInt("quantity", 0)));
             double initialPrincipal = p.optDouble("initialPrincipal",
                     p.optDouble("entryPrice", 0) * initialQty);
-            int intendedQty = initialQty;
-            double principal = initialPrincipal;
+            double[] confirmedAverages=SharedIntradayAveraging.confirmedFills(c,symbol);
+            int intendedQty=initialQty+(int)Math.round(confirmedAverages[0]);
+            double principal=initialPrincipal+confirmedAverages[1];
             for (int level = 1; level <= 3; level++) {
                 String id = p.optString("avgGtt" + level + "Id", "");
                 if (id.isEmpty() && !p.optBoolean("avgGtt" + level + "Confirmed", false)) continue;
@@ -1172,7 +1173,12 @@ final class ResearchTradeEngine {
                 p.put("quantity", reconciledQty);
                 p.put("brokerResearchAttributableQty", attributableAtBroker);
                 p.put("reconciledAt", System.currentTimeMillis());
-                if (intendedQty > 0 && principal > 0) p.put("entryPrice", principal / intendedQty);
+                if (intendedQty > 0 && principal > 0) {
+                    double verifiedBrokerAverage = broker.netPrice > 0
+                            && broker.quantity == reconciledQty ? broker.netPrice : 0;
+                    p.put("entryPrice", verifiedBrokerAverage > 0
+                            ? verifiedBrokerAverage : principal / intendedQty);
+                }
                 p.put("researchPrincipalEstimate", principal);
             }
             replacePosition(c, p);
@@ -1770,7 +1776,7 @@ final class ResearchTradeEngine {
         for (int i = 0; i < a.length(); i++) {
             JSONObject p = a.optJSONObject(i);
             if (p != null && p.optBoolean("live", false) && !"CLOSED".equals(p.optString("state")))
-                total += committedExposure(p);
+                total += committedExposure(c,p);
         }
         return total;
     }
@@ -1781,9 +1787,13 @@ final class ResearchTradeEngine {
             JSONObject p = a.optJSONObject(i);
             if (p == null || !p.optBoolean("live", false) || "CLOSED".equals(p.optString("state"))) continue;
             if (excludeId != null && excludeId.equals(p.optString("id"))) continue;
-            total += committedExposure(p);
+            total += committedExposure(c,p);
         }
         return total;
+    }
+
+    private static int committedExposure(Context c,JSONObject p) {
+        return committedExposure(p)+SharedIntradayAveraging.committedBudget(c,p.optString("symbol",""));
     }
 
     static int committedExposure(JSONObject p) {
