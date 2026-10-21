@@ -46,4 +46,6 @@ android {
 
 dependencies {
     testImplementation 'junit:junit:4.13.2'
+    // Local JVM tests need real JSONObject semantics (Android's mockable jar throws).
+    testImplementation 'org.json:json:20240303'
 }
