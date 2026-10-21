@@ -785,6 +785,59 @@ final class GrowwClient {
         return createGttDetailed(context, symbol, quantity, "CNC", "BUY", "DOWN", target, referenceId);
     }
 
+    /** Only FORECAST/FORMULA, never official Univest. CNC BUY executes after broker GTT trigger. */
+    static GttResult createSignalCncBuyGtt(Context c,String symbol,int qty,double trigger,
+                                          boolean rising,String ref) {
+        if(qty<1 || !(trigger>0))return new GttResult(false,false,"","Invalid BUY GTT size/trigger");
+        // MARKET child avoids an unmarketable LIMIT after UP-direction trigger.
+        return createGttMarketDetailed(c,symbol,qty,"CNC","BUY",
+                rising?"UP":"DOWN",trigger,ref);
+    }
+
+    /** Dedicated Forecast/Formula protective GTT; global official stop policy stays disabled. */
+    static GttResult createSignalCncTrailSellGtt(Context c,String symbol,int qty,
+                                                 double trigger,String ref) {
+        if(qty<1 || !(trigger>0))return new GttResult(false,false,"","Invalid protective SELL GTT");
+        return createGttMarketDetailed(c,symbol,qty,"CNC","SELL","DOWN",trigger,ref);
+    }
+
+    /** Modify the existing broker-hosted DOWN-direction MARKET GTT, never cancel/create blindly. */
+    static Result modifySignalCncTrailGtt(Context c,String id,int qty,double trigger) {
+        if(id==null||id.isEmpty()||qty<1||!(trigger>0))
+            return new Result(false,false,0,"Invalid trailing GTT modification");
+        try {
+            JSONObject order=new JSONObject();
+            order.put("order_type","MARKET");
+            order.put("price",JSONObject.NULL);
+            order.put("transaction_type","SELL");
+            JSONObject body=new JSONObject();
+            body.put("smart_order_type","GTT");
+            body.put("segment","CASH");
+            body.put("quantity",qty);
+            body.put("trigger_price",money(trigger));
+            body.put("trigger_direction","DOWN");
+            body.put("order",order);
+            HttpResponse result=put(SMART_MODIFY_URL
+                    +URLEncoder.encode(id,StandardCharsets.UTF_8.name()),
+                    ensureToken(c),body.toString(),true);
+            if(result.code==401||result.code==403) {
+                AppPrefs.clearAccessToken(c);
+                Result auth=authenticate(c);
+                if(!auth.success)return auth;
+                result=put(SMART_MODIFY_URL+URLEncoder.encode(id,StandardCharsets.UTF_8.name()),
+                        AppPrefs.getAccessToken(c),body.toString(),true);
+            }
+            if(result.code>=200&&result.code<300)
+                return new Result(true,false,result.code,"Trailing CNC GTT modification accepted");
+            return new Result(false,false,result.code,"Trailing GTT modify HTTP "
+                    +result.code+": "+shortText(result.body));
+        } catch(SocketTimeoutException e) {
+            return new Result(false,true,0,"Trailing GTT modify status UNKNOWN after timeout");
+        } catch(Exception e) {
+            return new Result(false,true,0,"Trailing GTT modify error: "+safeMessage(e));
+        }
+    }
+
     static GttResult createUnivestCncStopGtt(Context context, String symbol, int quantity, double trigger, String referenceId) {
         DiagnosticsStore.runtime(context, "STOP_LOSS_BLOCKED", symbol,
                 "Global no-stop-loss policy blocked legacy protective-stop creation.");
