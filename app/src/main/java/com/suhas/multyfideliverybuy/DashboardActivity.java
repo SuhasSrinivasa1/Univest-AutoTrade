@@ -702,7 +702,7 @@ public class DashboardActivity extends Activity {
 
         LinearLayout about = card();
         about.addView(sectionRow("ABOUT", "Orchestrated Research"));
-        about.addView(body("Univest AutoTrade v2.9.10"), margins(0, 10, 0, 0));
+        about.addView(body("Univest AutoTrade " + installedVersion()), margins(0, 10, 0, 0));
         about.addView(meta("Package: com.suhas.multyfideliverybuy"), margins(0, 6, 0, 0));
         about.addView(meta("Official Univest execution and Research decisions remain separately attributed; Research→Univest same-symbol confirmation is intentionally additive."), margins(0, 6, 0, 0));
         root.addView(about, margins(0, 0, 0, 22));
@@ -721,7 +721,7 @@ public class DashboardActivity extends Activity {
         left.addView(text(subtitle, 12, SUBTEXT, false), margins(0, 3, 0, 0));
         row.addView(left, new LinearLayout.LayoutParams(0, -2, 1f));
 
-        TextView version = text("v2.9.10", 11, TEAL, true);
+        TextView version = text(installedVersion(), 11, TEAL, true);
         version.setGravity(Gravity.CENTER);
         version.setPadding(dp(10), dp(6), dp(10), dp(6));
         GradientDrawable chip = new GradientDrawable();
@@ -918,7 +918,7 @@ public class DashboardActivity extends Activity {
         stock.addView(text(r.symbol, 12, TEXT, true));
         if (r.companyName != null && !r.companyName.trim().isEmpty())
             stock.addView(text(r.companyName.trim(), 9, SUBTEXT, false), margins(0, 1, 0, 0));
-        stock.addView(text(r.confidence + "% confidence • " + r.reason, 9, SUBTEXT, false),
+        stock.addView(text(r.confidence + "/100 setup score • " + r.reason, 9, SUBTEXT, false),
                 margins(0, 3, 0, 0));
         if (r.calledAt > 0) {
             stock.addView(text("Call " + formatTime(r.calledAt, "dd MMM • HH:mm:ss")
@@ -1366,6 +1366,16 @@ public class DashboardActivity extends Activity {
         return t > 0 ? formatTime(t, "dd MMM • HH:mm") : "Not run";
     }
 
+    private String installedVersion() {
+        try {
+            android.content.pm.PackageInfo info = getPackageManager()
+                    .getPackageInfo(getPackageName(), 0);
+            if (info.versionName != null && !info.versionName.trim().isEmpty())
+                return "v" + info.versionName.trim();
+        } catch (Exception ignored) {}
+        return "version unavailable";
+    }
+
     private String clock(long t) {
         return formatTime(t, "HH:mm:ss");
     }
@@ -1388,7 +1398,7 @@ public class DashboardActivity extends Activity {
         i.setType("application/zip");
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-v2.9.10.zip");
+        i.putExtra(Intent.EXTRA_TITLE, "Univest-History-Portable-" + installedVersion() + ".zip");
         startActivityForResult(i, REQUEST_HISTORY_CREATE);
     }
 
