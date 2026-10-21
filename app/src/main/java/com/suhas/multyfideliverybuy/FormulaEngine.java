@@ -236,6 +236,16 @@ final class FormulaEngine {
                 "status", "Waiting for first Formula scan during NSE market hours.");
     }
 
+    static String lastScanSummary(Context c) {
+        return c.getSharedPreferences(PREF, Context.MODE_PRIVATE).getString(
+                "last_scan_summary", "No Formula candidate audit captured yet; the first regular NSE scan will record every rejection stage.");
+    }
+
+    static long lastScanAt(Context c) {
+        return c.getSharedPreferences(PREF, Context.MODE_PRIVATE)
+                .getLong("last_scan_epoch", 0L);
+    }
+
     static int[] statistics(Context c) {
         JSONArray a = calls(c);
         int hits = 0, missed = 0, open = 0;
