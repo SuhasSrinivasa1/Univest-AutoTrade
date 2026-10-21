@@ -44,21 +44,30 @@ final class ResearchEntryFingerprint {
             double sma50 = row.optDouble("sma50", 0);
             double atr = row.optDouble("atr14", 0);
             double priorHigh = row.optDouble("prior20High", 0);
-            row.put("dailyReturn1Pct", returnPct(daily, 1));
-            row.put("distanceSma20Pct", distancePct(close, sma20));
-            row.put("distanceSma50Pct", distancePct(close, sma50));
-            row.put("sma20Vs50Pct", distancePct(sma20, sma50));
-            row.put("atrPct", close > 0 ? atr / close * 100.0 : 0);
-            row.put("distancePrior20HighPct", priorHigh > 0 ? (close / priorHigh - 1.0) * 100.0 : 0);
+            row.put("dailyReturn1Pct", daily != null && daily.size() >= 2
+                    ? returnPct(daily, 1) : JSONObject.NULL);
+            row.put("distanceSma20Pct", close > 0 && sma20 > 0
+                    ? distancePct(close, sma20) : JSONObject.NULL);
+            row.put("distanceSma50Pct", close > 0 && sma50 > 0
+                    ? distancePct(close, sma50) : JSONObject.NULL);
+            row.put("sma20Vs50Pct", sma20 > 0 && sma50 > 0
+                    ? distancePct(sma20, sma50) : JSONObject.NULL);
+            row.put("atrPct", close > 0 && atr > 0 ? atr / close * 100.0 : JSONObject.NULL);
+            row.put("distancePrior20HighPct", close > 0 && priorHigh > 0
+                    ? (close / priorHigh - 1.0) * 100.0 : JSONObject.NULL);
 
             double v15 = vwap(fifteen);
             double c15 = lastClose(fifteen);
-            row.put("minute15Return1Pct", returnPct(fifteen, 1));
-            row.put("minute15VwapDistancePct", distancePct(c15, v15));
+            row.put("minute15Return1Pct", fifteen != null && fifteen.size() >= 2
+                    ? returnPct(fifteen, 1) : JSONObject.NULL);
+            row.put("minute15VwapDistancePct", c15 > 0 && v15 > 0
+                    ? distancePct(c15, v15) : JSONObject.NULL);
             double v1 = vwap(oneMinute);
             double c1 = lastClose(oneMinute);
-            row.put("minute1Return1Pct", returnPct(oneMinute, 1));
-            row.put("minute1VwapDistancePct", distancePct(c1, v1));
+            row.put("minute1Return1Pct", oneMinute != null && oneMinute.size() >= 2
+                    ? returnPct(oneMinute, 1) : JSONObject.NULL);
+            row.put("minute1VwapDistancePct", c1 > 0 && v1 > 0
+                    ? distancePct(c1, v1) : JSONObject.NULL);
 
             if (marketContext != null && "AVAILABLE".equals(marketContext.optString("status"))) {
                 row.put("marketRegimeStatus", ResearchMarketContext.label(marketContext));
