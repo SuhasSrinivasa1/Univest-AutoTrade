@@ -79,8 +79,8 @@ jobs:
           grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
           grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
-          grep -q "versionCode 311" app/build.gradle
-          grep -q "versionName '2.9.21'" app/build.gradle
+          grep -q "versionCode 312" app/build.gradle
+          grep -q "versionName '2.9.22'" app/build.gradle
           grep -Fq 'installedVersion()' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           ! grep -Fq '"v2.9.10"' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -q 'ForecastLiveQualityGate.reject' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
@@ -91,6 +91,12 @@ jobs:
           grep -q 'UnivestSameDayExitManager.tick' app/src/main/java/com/suhas/multyfideliverybuy/MarketGuardianService.java
           grep -q 'SameDayForecastPolicyTest' app/src/test/java/com/suhas/multyfideliverybuy/SameDayForecastPolicyTest.java
           grep -q 'SharedIntradayAveragingTest' app/src/test/java/com/suhas/multyfideliverybuy/SharedIntradayAveragingTest.java
+          grep -q 'GttProfitTrailPolicyTest' app/src/test/java/com/suhas/multyfideliverybuy/GttProfitTrailPolicyTest.java
+          grep -q 'SignalGttTraderTest' app/src/test/java/com/suhas/multyfideliverybuy/SignalGttTraderTest.java
+          grep -q 'SignalGttTrader.requestBuy' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
+          grep -q 'createSignalCncTrailSellGtt' app/src/main/java/com/suhas/multyfideliverybuy/GrowwClient.java
+          grep -q 'SignalGttTrader.tick' app/src/main/java/com/suhas/multyfideliverybuy/MarketGuardianService.java
+          grep -q 'isFormulaAutoTradeEnabled' app/src/main/java/com/suhas/multyfideliverybuy/AppPrefs.java
           grep -q 'last_scan_summary' app/src/main/java/com/suhas/multyfideliverybuy/FormulaEngine.java
           grep -Fq 'appHeader("EXECUTION", "Live Univest status & actions")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'appHeader("RESEARCH", "What the system has learned")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
