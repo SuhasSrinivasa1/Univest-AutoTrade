@@ -1226,10 +1226,16 @@ final class ResearchTradeEngine {
         final boolean buyable;
         final long calledAt;
         final int sessionNumber;
+        final int positive40Shared;
+        final int positive40Winners;
+        final double positive40Match;
+        final String positive40Nearest;
 
         ForecastDecisionRow(String symbol, String companyName, int confidence, String reason,
                             double entryPrice, double targetPrice, double observedHighPrice, String state,
-                            String averageImpact, boolean buyable, long calledAt, int sessionNumber) {
+                            String averageImpact, boolean buyable, long calledAt, int sessionNumber,
+                            int positive40Shared, int positive40Winners, double positive40Match,
+                            String positive40Nearest) {
             this.symbol = symbol;
             this.companyName = companyName;
             this.confidence = confidence;
@@ -1242,6 +1248,10 @@ final class ResearchTradeEngine {
             this.buyable = buyable;
             this.calledAt = calledAt;
             this.sessionNumber = sessionNumber;
+            this.positive40Shared = positive40Shared;
+            this.positive40Winners = positive40Winners;
+            this.positive40Match = positive40Match;
+            this.positive40Nearest = positive40Nearest;
         }
     }
 
@@ -1291,7 +1301,11 @@ final class ResearchTradeEngine {
             out.add(new ForecastDecisionRow(symbol, company, confidence, forecastReasonLabel(p),
                     entry, target, p.optDouble("forecastObservedHigh", 0), state, impact, buyable,
                     forecastCallAt(p), Math.max(1,
-                            UnivestBenchmark.inclusiveTradingSessions(forecastCallAt(p), now))));
+                            UnivestBenchmark.inclusiveTradingSessions(forecastCallAt(p), now)),
+                    p.optInt("positive40ObservedShared", 0),
+                    p.optInt("positive40WinningCampaigns", 0),
+                    p.optDouble("positive40MatchScore", 0),
+                    p.optString("positive40NearestWinner", "")));
         }
         return out;
     }
