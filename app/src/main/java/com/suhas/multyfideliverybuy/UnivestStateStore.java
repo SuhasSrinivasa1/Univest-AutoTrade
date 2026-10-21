@@ -27,6 +27,7 @@ final class UnivestStateStore {
         String symbol = "";
         String phase = ACTIVE;
         double anchorPrice = 0.0;
+        long entryAt = 0L; // frozen initial fill/campaign session; never from updatedAt
         double tickSize = 0.05;
         int quantity = 0;
         double principal = 0.0;
@@ -63,6 +64,7 @@ final class UnivestStateStore {
                 j.put("symbol", symbol);
                 j.put("phase", phase);
                 j.put("anchorPrice", anchorPrice);
+                j.put("entryAt", entryAt);
                 j.put("tickSize", tickSize);
                 j.put("quantity", quantity);
                 j.put("principal", principal);
@@ -101,6 +103,7 @@ final class UnivestStateStore {
             s.symbol = j.optString("symbol", "");
             s.phase = j.optString("phase", ACTIVE);
             s.anchorPrice = j.optDouble("anchorPrice", 0.0);
+            s.entryAt = j.optLong("entryAt", 0L);
             s.tickSize = j.optDouble("tickSize", 0.05);
             s.quantity = j.optInt("quantity", 0);
             s.principal = j.optDouble("principal", 0.0);
