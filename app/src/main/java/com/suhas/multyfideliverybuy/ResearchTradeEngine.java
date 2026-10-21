@@ -137,6 +137,39 @@ final class ResearchTradeEngine {
                     continue;
                 }
 
+                // A frozen strategy score is NOT a live probability of success.
+                // Confirm point-in-time 1-minute momentum, RSI, actual VWAP and volume
+                // before turning a watched stock into a visible Forecast call.
+                try {
+                    long minuteNow = System.currentTimeMillis();
+                    List<GrowwClient.Candle> liveCandles = GrowwClient.getHistoricalCandles(
+                            c, symbol, minuteNow - 80L * 60_000L, minuteNow, "1minute");
+                    ResearchMath.Features liveMinute = ResearchMath.fromCandles(liveCandles);
+                    long latestBar = 0L;
+                    double turnover = 0, tradedVolume = 0;
+                    for (GrowwClient.Candle candle : liveCandles) {
+                        if (candle == null) continue;
+                        latestBar = Math.max(latestBar, candle.epochSeconds);
+                        if (candle.volume > 0 && candle.high > 0 && candle.low > 0) {
+                            tradedVolume += candle.volume;
+                            turnover += candle.volume * (candle.high + candle.low + candle.close) / 3.0;
+                        }
+                    }
+                    double minuteVwap = tradedVolume > 0 ? turnover / tradedVolume : 0;
+                    String liveReject = ForecastLiveQualityGate.reject(
+                            liveMinute, ltp, minuteVwap, latestBar, minuteNow);
+                    if (!liveReject.isEmpty()) {
+                        ResearchTriggerState.markNotReady(c, symbol, today);
+                        logSkip(c, symbol, "LIVE_INTRADAY_CONFIRMATION", liveReject);
+                        continue;
+                    }
+                } catch (Throwable minuteFailure) {
+                    ResearchTriggerState.markNotReady(c, symbol, today);
+                    logSkip(c, symbol, "LIVE_INTRADAY_DATA_UNAVAILABLE",
+                            "Cannot verify live entry setup: " + safe(minuteFailure));
+                    continue;
+                }
+
                 JSONObject pos = openShadow(c, p, ltp, i + 1);
                 if (pos == null) {
                     DiagnosticsStore.runtime(c, "RESEARCH_RECOMMENDATION_DUPLICATE_BLOCK", symbol,
