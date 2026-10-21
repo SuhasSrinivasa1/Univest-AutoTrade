@@ -734,7 +734,7 @@ final class ResearchTradeEngine {
                     p.put("evaluationHorizonSessions", ForecastPolicy.FORECAST_TARGET_MAX_SESSIONS);
                     p.put("benchmarkMaxSessions", horizon);
                     // This is the unchanged official 3-session benchmark outcome.
-                    // Forecast's own observed price target stays active for 5 sessions.
+                    // Forecast target expires on the same NSE session; official benchmark is separate.
                     boolean horizonExpired = ForecastPolicy.horizonExpired(
                             callAt, now, UnivestBenchmark.PRIMARY_MAX_SESSIONS);
                     if (horizonExpired && "OPEN".equals(p.optString("evaluationState", "OPEN"))) {
@@ -752,7 +752,7 @@ final class ResearchTradeEngine {
                             p.put("benchmarkOpportunityPct", mfe);
                             p.put("failureBucket", "HORIZON_TIMEOUT_NO_EDGE");
                             p.put("replaySummary", "HORIZON TIMEOUT • Univest benchmark target was not reached within "
-                                    + horizon + " trading sessions. Independent 5-session Forecast target tracking continues; no forced position exit.");
+                                    + horizon + " trading sessions for historical official benchmarking. Same-day Forecast positions are handled by the separate broker-aware closing engine.");
                         }
                         p.put("benchmarkEvaluationLocked", true);
                         p.put("benchmarkResolvedAt", now);
@@ -1486,7 +1486,7 @@ final class ResearchTradeEngine {
         if (p == null) return true;
         if ("CLOSED".equals(p.optString("state", ""))) return true;
         if (p.optLong("forecastTargetHitAt", 0L) > 0) return true;
-        // A 3-session benchmark timeout is not a terminal 5-session Forecast call.
+        // Historical 3-session benchmark is separate from the same-day Forecast closure.
         return false;
     }
 
