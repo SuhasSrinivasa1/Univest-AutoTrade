@@ -303,7 +303,7 @@ public class DashboardActivity extends Activity {
         return scroll;
     }
 
-    /** FORMULA is an independent, non-trading fixed strategy, not an alternate Forecast view. */
+    /** Formula scoring stays fixed; its separate CNC/GTT trading layer requires opt-in. */
     private View buildFormulaTab() {
         ScrollView scroll = baseScroll();
         LinearLayout root = scrollRoot(scroll);
@@ -323,7 +323,7 @@ public class DashboardActivity extends Activity {
         int mature = stats[0] + stats[1];
         metrics.addView(text("Fixed Recommendation Upside", 11, SUBTEXT, false));
         metrics.addView(text("+1.00% NET", 26, GREEN, true), margins(0, 8, 0, 0));
-        metrics.addView(meta("Fee-adjusted, frozen target at call time • no automatic Groww trading"),
+        metrics.addView(meta("Frozen Formula V1 target • optional broker-hosted CASH/CNC GTT entries"),
                 margins(0, 4, 0, 0));
         metrics.addView(meta("Verified target touches: " + stats[0] + " • Misses after 3 sessions: "
                 + stats[1] + " • Open: " + stats[2] + " • Hit rate on matured calls: "
@@ -365,6 +365,24 @@ public class DashboardActivity extends Activity {
             JSONObject call = calls.optJSONObject(i);
             if (call == null || !session.equals(call.optString("session"))) continue;
             decisions.addView(formulaDecisionRow(++visible, call), margins(0, 11, 0, 0));
+            String fs=call.optString("symbol","");
+            JSONObject ft=SignalGttTrader.ticket(this,fs);
+            if(ft.length()>0)decisions.addView(meta("GTT "+ft.optString("lane")+" • "+
+                    ft.optString("state")+
+                    (ft.optDouble("floorNetPct",0)>0
+                            ?String.format(Locale.US," • protected ≥%+.2f%% net",
+                                    ft.optDouble("floorNetPct")):"")),
+                    margins(0,5,0,0));
+            boolean formulaBuy="OPEN".equals(call.optString("state"))
+                    && ft.length()==0
+                    && SameDayForecastPolicy.entryAllowed(System.currentTimeMillis());
+            Button formulaBuyButton=formulaBuy
+                    ?primaryButton("BUY "+fs+" • CNC GTT")
+                    :disabledActionButton("BUY "+fs+" • CNC GTT");
+            formulaBuyButton.setEnabled(formulaBuy);
+            if(formulaBuy)formulaBuyButton.setOnClickListener(v ->
+                    executeFormulaGttBuy(formulaBuyButton,fs));
+            decisions.addView(formulaBuyButton,fixedMargins(-1,46,0,8,0,0));
         }
         if (visible == 0)
             decisions.addView(meta("No Formula call confirmed today. Stocks appear individually "
@@ -894,12 +912,19 @@ public class DashboardActivity extends Activity {
         int index = 1;
         for (ResearchTradeEngine.ForecastDecisionRow r : rows) {
             c.addView(forecastDecisionRow(index++, r), margins(0, 10, 0, 0));
-            Button buy = r.buyable
-                    ? primaryButton("BUY " + r.symbol + " • CNC")
-                    : disabledActionButton("BUY " + r.symbol + " • CNC");
-            buy.setEnabled(r.buyable);
-            if (r.buyable) buy.setOnClickListener(v -> executeResearchAction(buy, r.symbol, "BUY"));
-            c.addView(buy, fixedMargins(-1, 48, 0, 8, 0, 0));
+            JSONObject tr=SignalGttTrader.ticket(this,r.symbol);
+            if(tr.length()>0)c.addView(meta("CNC GTT • "+tr.optString("state")
+                    +(tr.optDouble("floorNetPct",0)>0
+                    ?String.format(Locale.US," • protected ≥%+.2f%% net",
+                            tr.optDouble("floorNetPct")):"")),margins(0,5,0,0));
+            boolean eligible=r.buyable && tr.length()==0
+                    && SameDayForecastPolicy.entryAllowed(System.currentTimeMillis());
+            Button buy=eligible
+                    ?primaryButton("BUY "+r.symbol+" • CNC GTT")
+                    :disabledActionButton("BUY "+r.symbol+" • CNC GTT");
+            buy.setEnabled(eligible);
+            if(eligible)buy.setOnClickListener(v ->executeResearchAction(buy,r.symbol,"BUY"));
+            c.addView(buy,fixedMargins(-1,48,0,8,0,0));
         }
         return c;
     }
@@ -1251,6 +1276,18 @@ public class DashboardActivity extends Activity {
                 });
             }
         }, "forecast-manual-refresh").start();
+    }
+
+    private void executeFormulaGttBuy(Button button,String symbol) {
+        button.setEnabled(false);
+        button.setText("ARMING CNC BUY GTT • "+symbol+"…");
+        new Thread(() -> {
+            String result=FormulaEngine.buyCall(getApplicationContext(),symbol);
+            runOnUiThread(() -> {
+                Toast.makeText(this,result,Toast.LENGTH_LONG).show();
+                render();
+            });
+        },"formula-cnc-gtt-manual").start();
     }
 
     private void executeResearchAction(Button button, String symbol, String action) {
