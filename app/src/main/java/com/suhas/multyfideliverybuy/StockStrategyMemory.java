@@ -14,6 +14,24 @@ final class StockStrategyMemory {
     static final int SCHEMA_VERSION = 1;
     private StockStrategyMemory() {}
 
+    /**
+     * Nightly positive-only rebuild. Unverified historical entry memory is
+     * replaced rather than silently reused as successful Forecast evidence.
+     */
+    static synchronized void rebuildPositiveOnly(Context c, java.util.List<JSONObject> winners) {
+        try {
+            JSONObject clean = new JSONObject();
+            clean.put("schemaVersion", SCHEMA_VERSION);
+            clean.put("positiveOnly", true);
+            clean.put("sourceModel", PositiveUnivestFortyModel.VERSION);
+            clean.put("stocks", new JSONObject());
+            ResearchStore.saveStockStrategyMemory(c, clean);
+            if (winners != null) for (JSONObject entry : winners) {
+                updateFromOfficialEntry(c, entry);
+            }
+        } catch (Exception ignored) {}
+    }
+
     static synchronized void updateFromOfficialEntry(Context c, JSONObject row) {
         if (row == null || !"ENTRY".equals(row.optString("signalType"))) return;
         String symbol = row.optString("symbol", "").trim().toUpperCase();
