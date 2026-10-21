@@ -193,7 +193,8 @@ final class ResearchSignalProfiler {
             ResearchEventStore.appendDecisionSnapshot(c, "POINT_IN_TIME_SIGNAL_PROFILE", row);
 
             if (signal.type == UnivestParser.Type.ENTRY) {
-                StockStrategyMemory.updateFromOfficialEntry(c, row);
+                // Positive-only Forecast memory updates at nightly rebuild, AFTER a
+                // completed profitable official EXIT verifies this entry.
                 ResearchPlaybookEngine.captureMatchedControls(c, row);
                 ResearchPlaybookEngine.rebuildRegistry(c);
             }
