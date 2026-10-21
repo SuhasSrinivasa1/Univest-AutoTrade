@@ -288,6 +288,9 @@ public class DashboardActivity extends Activity {
         title.addView(text("LONG holding forecast", 22, TEXT, true));
         title.addView(meta("Calls appear progressively when independently confirmed. A target stays eligible through 5 NSE trading sessions; missing it on Day 1 is NOT a failure."),
                 margins(0, 6, 0, 0));
+        title.addView(meta(PositiveUnivestFortyModel.evidenceSummary(
+                PositiveUnivestFortyModel.currentPositiveEntries(this))),
+                margins(0, 8, 0, 0));
         root.addView(title, margins(0, 20, 0, 12));
 
         root.addView(forecastAverageCard(), margins(0, 0, 0, 12));
@@ -933,6 +936,15 @@ public class DashboardActivity extends Activity {
                     + Math.min(ForecastPolicy.FORECAST_TARGET_MAX_SESSIONS, r.sessionNumber)
                     + "/" + ForecastPolicy.FORECAST_TARGET_MAX_SESSIONS
                     + " NSE trading sessions"), margins(0, 2, 0, 0));
+        }
+        if (r.positive40Winners > 0) {
+            stock.addView(meta("Positive Univest analogues • "
+                    + r.positive40Shared + "/40 comparable • "
+                    + r.positive40Winners + " verified wins"
+                    + (r.positive40Shared >= PositiveUnivestFortyModel.MIN_SHARED_FEATURES
+                        ? String.format(Locale.US, " • similarity %.1f/100", r.positive40Match)
+                        : " • insufficient common data")),
+                    margins(0, 3, 0, 0));
         }
 
         row.addView(stock, new LinearLayout.LayoutParams(0, -2, 2.05f));
