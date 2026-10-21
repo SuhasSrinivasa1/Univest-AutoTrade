@@ -57,6 +57,10 @@ final class ResearchEngine {
 
             JSONObject strategies = strategies(c);
             ResearchStore.saveStrategies(c, strategies);
+            // Rebuild local strategy memory only from matched positive official
+            // outcomes. Unfinished or losing BUY signals are not learning templates.
+            StockStrategyMemory.rebuildPositiveOnly(c,
+                    PositiveUnivestFortyModel.currentPositiveEntries(c));
             ResearchPlaybookEngine.rebuildRegistry(c);
 
             AppPrefs.setResearchStatus(c, "Scanning entire eligible NSE CASH universe…");
@@ -276,9 +280,11 @@ final class ResearchEngine {
         // News can modestly re-order the technically qualified shortlist, but cannot rescue an
         // instrument that failed the full-NSE technical/liquidity data scan.
         // Composite playbooks are non-exclusive: one stock may receive several independent votes.
+        List<JSONObject> provenPositiveEntries = PositiveUnivestFortyModel.currentPositiveEntries(c);
         for (JSONObject candidate : candidates) {
             ResearchPlaybookEngine.applyToCandidate(c, candidate);
             StockStrategyMemory.applyToCandidate(c, candidate);
+            PositiveUnivestFortyModel.annotateCandidate(candidate, provenPositiveEntries);
         }
         candidates.sort((a, b) -> Double.compare(
                 b.optDouble("ensembleScore", b.optInt("similarity")),
@@ -362,6 +368,9 @@ final class ResearchEngine {
             j.put("marketRegimeText", ResearchMarketContext.text(marketContext));
             j.put("sectorContextStatus", "NOT_CONNECTED");
             j.put("strategyVersion", STRATEGY_VERSION);
+            // The same 40-key point-in-time schema is used on BOTH official
+            // winners and future Forecast candidates. Unknown data stays missing.
+            ResearchEntryFingerprint.annotate(c, j, candles, null, null, marketContext);
             ResearchDataQuality.annotate(j);
             return j;
         } catch (Throwable ignored) {
