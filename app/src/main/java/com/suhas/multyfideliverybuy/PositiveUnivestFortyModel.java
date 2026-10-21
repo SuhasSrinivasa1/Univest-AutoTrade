@@ -195,9 +195,21 @@ final class PositiveUnivestFortyModel {
 
     private static Object readable(JSONObject x, String field) {
         if (x == null || !x.has(field) || x.isNull(field)) return null;
+        // Official quote/order-book captures occur AFTER receiving the alert.
+        // Without a timestamp proving they preceded that alert, exclude them
+        // from historical positive templates (prevent post-event leakage).
+        if ("OFFICIAL_UNIVEST_ENTRY".equals(x.optString("source"))
+                && ("liveSpreadPct".equals(field) || "orderBookImbalancePct".equals(field)))
+            return null;
+        // Post-notification news lookup is also not fair pre-notification data.
+        if ("OFFICIAL_UNIVEST_ENTRY".equals(x.optString("source"))
+                && ("positiveCatalysts".equals(field) || "negativeCatalysts".equals(field))
+                && !x.optBoolean("cachedContextCausal", false))
+            return null;
         Object v = x.opt(field);
         if (v instanceof Number) {
             double d = ((Number)v).doubleValue();
+            if ("liveSpreadPct".equals(field) && d < 0) return null;
             return Double.isFinite(d) ? v : null;
         }
         if (!(v instanceof String)) return null;
