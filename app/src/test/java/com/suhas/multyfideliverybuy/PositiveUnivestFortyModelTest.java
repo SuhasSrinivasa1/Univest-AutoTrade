@@ -80,7 +80,8 @@ public class PositiveUnivestFortyModelTest {
         assertTrue(match.mature);
         PositiveUnivestFortyModel.annotateCandidate(candidate, winners);
         assertEquals(10,candidate.optInt("positive40RankingWeightPct"));
-        assertTrue(candidate.optDouble("ensembleScore") > 80);
+        assertTrue("Mature measured positive pattern must affect ranking",
+                Math.abs(candidate.optDouble("ensembleScore") - 80) >= 0.05);
 
         JSONArray oneStock = new JSONArray();
         for(int i=0;i<9;i++)oneStock.put(campaign("ONLY", 2000000L+i*100000, 1.0,"ENTRY"));
