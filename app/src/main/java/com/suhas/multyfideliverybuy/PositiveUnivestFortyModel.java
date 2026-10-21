@@ -89,6 +89,10 @@ final class PositiveUnivestFortyModel {
 
     static Match closest(JSONObject candidate, List<JSONObject> winners) {
         int n = winners == null ? 0 : winners.size();
+        Set<String> distinctSymbols = new HashSet<>();
+        if (winners != null) for (JSONObject winner : winners)
+            if (winner != null) distinctSymbols.add(winner.optString("symbol", ""));
+        boolean mature = n >= MIN_MATURE_WINNERS && distinctSymbols.size() >= 4;
         double best = 0;
         int sharedBest = 0;
         String symbol = "";
@@ -123,7 +127,7 @@ final class PositiveUnivestFortyModel {
             }
         }
         return new Match(Math.round(best * 10.0) / 10.0,
-                sharedBest, n, symbol, n >= MIN_MATURE_WINNERS);
+                sharedBest, n, symbol, mature);
     }
 
     static void annotateCandidate(JSONObject candidate, List<JSONObject> winners) {
@@ -165,6 +169,14 @@ final class PositiveUnivestFortyModel {
             c.put("minute1RelativeVolume20", minute.relativeVolume20);
             if (minuteVwap > 0 && livePrice > 0)
                 c.put("minute1VwapDistancePct", (livePrice / minuteVwap - 1) * 100);
+            // Live recommendation hour is not the overnight EOD scan time.
+            java.util.Calendar ist = java.util.Calendar.getInstance(
+                    java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+            ist.setTimeInMillis(when);
+            int minuteOfDay = ist.get(java.util.Calendar.HOUR_OF_DAY) * 60
+                    + ist.get(java.util.Calendar.MINUTE);
+            c.put("timeOfDayBucket", minuteOfDay < 630 ? "OPENING"
+                    : minuteOfDay < 810 ? "MIDDAY" : "AFTERNOON");
             // Only real, just-observed factors. No invented fundamentals/sector/book.
             c.put("positive40ObservedAt", when);
         } catch (Exception ignored) {}
@@ -177,6 +189,7 @@ final class PositiveUnivestFortyModel {
                 + " positive-price ENTRY→EXIT campaigns • " + (size >= MIN_MATURE_WINNERS
                 ? "positive-pattern influence enabled"
                 : "learning-only until " + MIN_MATURE_WINNERS + " positive campaigns")
+                + " • at least 4 independent symbols required to mature"
                 + " • missing sources never estimated • bearish/loss campaigns excluded";
     }
 
