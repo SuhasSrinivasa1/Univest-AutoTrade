@@ -284,6 +284,9 @@ final class ResearchPlaybookEngine {
     static void applyToCandidate(Context c, JSONObject candidate) {
         if (candidate == null) return;
         JSONObject registry = ResearchStore.playbookRegistry(c);
+        // Do not let legacy unverified official ENTRY playbooks act as
+        // proven winners before a positive-only nightly rebuild.
+        if (!registry.optBoolean("positiveOnlyTraining", false)) return;
         JSONArray active = registry.optJSONArray("decisionPlaybooks");
         if (active == null || active.length() == 0) active = registry.optJSONArray("activeTop5");
         if (active == null || active.length() == 0) return;
