@@ -538,6 +538,42 @@ final class ResearchTradeEngine {
                 p.put("lastReason", exitStateReason(exitState, netPct, mfe));
             } catch (Exception ignored) {}
 
+            // SAME-DAY CLOSE: target hit is optional; at the closing cutoff
+            // the model exits even if the marked position is at a loss.
+            // Broker-executed exits are never assumed filled until Groww verifies them.
+            long nowEod = System.currentTimeMillis();
+            long openedAt = p.optLong("forecastCallAt", p.optLong("entryAt", 0L));
+            boolean closing = SameDayForecastPolicy.closingWindow(nowEod);
+            boolean overnight = openedAt > 0 && NseTradingCalendar.isRegularMarketOpen(nowEod)
+                    && NseTradingCalendar.dayKey(nowEod).compareTo(
+                            NseTradingCalendar.dayKey(openedAt)) > 0;
+            if ((closing || overnight) && openedAt > 0) {
+                String reason = overnight
+                        ? "OVERNIGHT RISK RECOVERY • earlier same-day exit was not completed"
+                        : "MANDATORY SAME-DAY CLOSE • do not carry Forecast holdings overnight";
+                try {
+                    p.put("exitState", overnight ? "OVERDUE_EXIT" : "EOD_EXIT_REQUIRED");
+                    p.put("lastReason", reason);
+                } catch (Exception ignored) {}
+                if (p.optBoolean("live", false)) {
+                    // Never auto-sell unless the user explicitly opted into live
+                    // Forecast automation. Manual trades get an urgent SELL alert.
+                    if (AppPrefs.isResearchAutoTradeEnabled(c) && AppPrefs.isLiveMode(c)) {
+                        replaceInArray(a,i,p);
+                        ResearchStore.savePositions(c,a);
+                        String result=executeSell(c,symbol,true,reason);
+                        DiagnosticsStore.runtime(c,"RESEARCH_EOD_EXIT_ATTEMPT",symbol,result);
+                        a=ResearchStore.positions(c);
+                    } else if (AppPrefs.claimRecent(c,"research_urgent_eod_"+symbol,2L*60_000L)) {
+                        AppPrefs.setResearchAction(c,symbol,"SELL");
+                        postExitReady(c,p,reason+" • manual broker action required");
+                    }
+                } else {
+                    closePositionInArray(c,a,i,p,ltp,"SHADOW_SAME_DAY_CLOSE",reason);
+                }
+                continue;
+            }
+
             if ("EXIT_READY".equals(exitState)) {
                 String reason = exitStateReason(exitState, netPct, mfe);
                 if (p.optBoolean("live", false)) {
