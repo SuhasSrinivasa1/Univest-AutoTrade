@@ -98,6 +98,7 @@ final class UnivestManager {
         reservation.quantity = Math.max(0, before.quantity);
         reservation.principal = before.netPrice > 0 ? before.netPrice * Math.max(0, before.quantity) : Math.max(0, reservation.principal);
         reservation.anchorPrice = 0.0; // set from the fresh BUY fill, not from an older cycle
+        reservation.entryAt = System.currentTimeMillis(); // immutable opening session for EOD
         reservation.averageLevel = 0;
         reservation.reentryUsed = false;
         reservation.exitOrderId = "";
@@ -137,6 +138,7 @@ final class UnivestManager {
         state.tickSize = instrument.tickSize;
         state.phase = r.filled && r.filledQuantity > 0 ? UnivestStateStore.ACTIVE : UnivestStateStore.ENTRY_PENDING;
         state.anchorPrice = r.averagePrice > 0 ? r.averagePrice : 0.0; // fresh cycle averaging anchor
+        state.entryAt = reservation.entryAt;
         if (after.success && after.quantity >= 0) {
             state.quantity = after.quantity;
             state.principal = after.netPrice > 0 ? after.netPrice * Math.max(0, after.quantity)
@@ -904,7 +906,7 @@ final class UnivestManager {
         // levels 4-10 are deliberately never stored in the legacy 3-slot state
     }
 
-    private static Object campaignLock(String symbol) {
+    static Object campaignLock(String symbol) {
         String key = symbol == null ? "" : symbol.trim().toUpperCase(Locale.US);
         return CAMPAIGN_LOCKS.computeIfAbsent(key, ignored -> new Object());
     }
