@@ -138,7 +138,7 @@ jobs:
           grep -Fq 'Forecasted Stocks Avg Upside %' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'REFRESH SCANNER' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'RUN RESEARCH' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
-          grep -Fq 'BUY " + r.symbol + " • CNC' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
+          grep -Fq 'primaryButton("BUY "+r.symbol+" • CNC GTT")' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'r.confidence + "/100 setup score • " + r.reason' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -q 'UNIVEST 30-DAY BENCHMARK' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -Fq 'UNIVEST AVG UPSIDE' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
