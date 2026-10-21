@@ -8,8 +8,8 @@ public class UnivestStrategyContractTest {
         assertEquals(20000, UnivestManager.ENTRY_BUDGET);
         assertEquals(5000, UnivestManager.REENTRY_BUDGET);
         assertEquals(5000, UnivestManager.AVERAGE_BUDGET);
-        assertEquals(2.0, UnivestManager.AVERAGE_STEP_PCT, 0.0001);
-        assertEquals(3, UnivestManager.MAX_AVERAGE_LEVELS);
+        assertEquals(0.5, UnivestManager.AVERAGE_STEP_PCT, 0.0001);
+        assertEquals(10, UnivestManager.MAX_AVERAGE_LEVELS);
     }
     @Test public void exitedSymbolCanStartNewRecommendationCycle() {
         assertTrue(UnivestStateStore.canReservePhase(UnivestStateStore.EXITED));
