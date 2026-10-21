@@ -42,6 +42,17 @@ final class SignalGttTrader {
     }
     static JSONObject ticket(Context c,String sym){synchronized(LOCK){return load(c,sym);}}
     private static String state(JSONObject t){return t.optString("state","");}
+    static int committedCapital(Context c) {
+        synchronized(LOCK) {
+            int total=0;
+            for(Map.Entry<String,?> e:prefs(c).getAll().entrySet()) {
+                if(!e.getKey().startsWith(KEY))continue;
+                JSONObject t=load(c,e.getKey().substring(KEY.length()));
+                if(pendingOrHeld(t))total+=Math.max(0,t.optInt("reservedCapital",t.optInt("budget",0)));
+            }
+            return total;
+        }
+    }
     static boolean pendingOrHeld(JSONObject t){
         String s=state(t);
         return "BUY_RESERVED".equals(s)||"BUY_GTT_OPEN".equals(s)
@@ -68,12 +79,29 @@ final class SignalGttTrader {
             if(!AppPrefs.isLiveMode(c)||!AppPrefs.isReadyForBuy(c))
                 return "Enable LIVE and verify Groww account/static-IP connection first.";
             JSONObject prior=load(c,sym);
+            if(prior.optLong("placedAt",0)>0
+                    && NseTradingCalendar.dayKey(prior.optLong("placedAt",0))
+                            .equals(NseTradingCalendar.dayKey(now)))
+                return "Already attempted CNC GTT BUY today for "+sym+"; no duplicate order.";
             if(pendingOrHeld(prior))return "No duplicate entry: "+sym+" "+state(prior)
                     +" in "+prior.optString("lane")+"; reconcile before another BUY.";
             UnivestStateStore.State official=UnivestStateStore.get(c,sym);
             if(official!=null && official.quantity>0
                     && !UnivestStateStore.EXITED.equals(official.phase))
                 return "GTT BUY blocked: official Univest is managing this symbol.";
+            int otherCapital=committedCapital(c);
+            int planned=budget+(FORECAST.equals(lane)
+                    ?SameDayForecastPolicy.AVERAGE_LEVELS*AppPrefs.getUnivestAddBudget(c):0);
+            if(otherCapital+planned>AppPrefs.getResearchCapitalLimit(c))
+                return "GTT BUY blocked: planned CNC exposure including averaging exceeds Research capital ceiling.";
+            int activeCampaigns=0;
+            for(Map.Entry<String,?> entry:prefs(c).getAll().entrySet()) {
+                if(!entry.getKey().startsWith(KEY))continue;
+                if(pendingOrHeld(load(c,entry.getKey().substring(KEY.length()))))
+                    activeCampaigns++;
+            }
+            if(activeCampaigns>=AppPrefs.getResearchMaxPositions(c))
+                return "GTT BUY blocked: maximum managed Forecast/Formula live positions reached.";
             GrowwClient.PositionSnapshot held=GrowwClient.getCncPosition(c,sym);
             if(!held.success||held.quantity!=0)
                 return "GTT BUY blocked: broker holding is not confirmed flat for "+sym+".";
@@ -103,6 +131,7 @@ final class SignalGttTrader {
                 ticket.put("lane",lane);ticket.put("symbol",sym);
                 ticket.put("session",session);ticket.put("entryTrigger",trigger);
                 ticket.put("quantity",qty);ticket.put("budget",budget);
+                ticket.put("reservedCapital",planned);
                 ticket.put("tick",tick);ticket.put("buyRef",ref);
                 ticket.put("risingTrigger",rising);
                 ticket.put("placedAt",now);ticket.put("automatic",automatic);
@@ -222,6 +251,10 @@ final class SignalGttTrader {
             return;
         }
         if(!"HOLDING".equals(st))return;
+        if(FORECAST.equals(t.optString("lane"))
+                && t.optString("stopGttId","").isEmpty()
+                && SameDayForecastPolicy.entryAllowed(now))
+            SharedIntradayAveraging.refresh(c,sym);
         double[] averaged=FORECAST.equals(t.optString("lane"))
                 ?SharedIntradayAveraging.confirmedFills(c,sym):new double[]{0,0};
         GrowwClient.PositionSnapshot broker=GrowwClient.getCncPosition(c,sym);
