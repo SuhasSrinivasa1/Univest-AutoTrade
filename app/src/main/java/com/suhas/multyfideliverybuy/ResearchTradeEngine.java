@@ -481,6 +481,44 @@ final class ResearchTradeEngine {
                 && ("LIVE_OPEN".equals(p.optString("state")) || "LIVE_PENDING".equals(p.optString("state")));
     }
 
+    /**
+     * Exit-priority lane invoked BEFORE discovery/market-data scans. Does not
+     * depend on Groww LTP: the actual order path checks live broker positions,
+     * pending sells, shared GTT cancellation and quantity attribution.
+     */
+    static void prioritizeSameDayExits(Context c) {
+        long now=System.currentTimeMillis();
+        if(!SameDayForecastPolicy.closingWindow(now)
+                && !NseTradingCalendar.isRegularMarketOpen(now))return;
+        JSONArray positions=ResearchStore.positions(c);
+        for(int i=0;i<positions.length();i++) {
+            JSONObject p=positions.optJSONObject(i);
+            if(p==null || !p.optBoolean("live",false)
+                    || "CLOSED".equals(p.optString("state")))continue;
+            long entered=p.optLong("forecastCallAt",p.optLong("entryAt",0L));
+            if(entered<=0)continue;
+            boolean overdue=NseTradingCalendar.isRegularMarketOpen(now)
+                    && NseTradingCalendar.dayKey(now).compareTo(
+                            NseTradingCalendar.dayKey(entered))>0;
+            if(!SameDayForecastPolicy.closingWindow(now) && !overdue)continue;
+            String symbol=p.optString("symbol","");
+            if(symbol.isEmpty())continue;
+            if("LIVE_EXIT_PENDING".equals(p.optString("state"))) {
+                reconcileResearchLivePosition(c,p); // no duplicate SELL
+                continue;
+            }
+            String why=overdue ? "URGENT PREVIOUS-SESSION FORECAST RISK"
+                    : "MANDATORY SAME-DAY FORECAST BROKER CLOSE";
+            if(AppPrefs.isLiveMode(c) && AppPrefs.isResearchAutoTradeEnabled(c)) {
+                String result=executeSell(c,symbol,true,why);
+                DiagnosticsStore.runtime(c,"FORECAST_PRIORITY_EOD_SELL",symbol,result);
+            } else if(AppPrefs.claimRecent(c,"forecast_eod_priority_"+symbol,120_000L)) {
+                AppPrefs.setResearchAction(c,symbol,"SELL");
+                postExitReady(c,p,why+" • manual Groww closure required");
+            }
+        }
+    }
+
     static void monitorOpenPositions(Context c) {
         JSONArray a = ResearchStore.positions(c);
         boolean changed = false;
