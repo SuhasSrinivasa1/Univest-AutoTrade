@@ -40,9 +40,12 @@ final class AppPrefs {
 
     static boolean isAveragingEnabled(Context c) { return p(c).getBoolean("downward_averaging_enabled", true); }
     static void setAveragingEnabled(Context c, boolean v) { p(c).edit().putBoolean("downward_averaging_enabled", v).apply(); }
-    static int getAveragingLevels(Context c) { return Math.max(1, Math.min(3, p(c).getInt("downward_averaging_levels", 3))); }
-    static void setAveragingLevels(Context c, int v) { p(c).edit().putInt("downward_averaging_levels", Math.max(1, Math.min(3, v))).apply(); }
-    static double getAveragingStepPct(Context c) { return 2.0; }
+    static int getAveragingLevels(Context c) { return SameDayForecastPolicy.AVERAGE_LEVELS; }
+    static void setAveragingLevels(Context c, int v) {
+        // No independent averaging ladder count: both lanes share exactly ten 0.5% steps.
+        p(c).edit().putInt("downward_averaging_levels", SameDayForecastPolicy.AVERAGE_LEVELS).apply();
+    }
+    static double getAveragingStepPct(Context c) { return SameDayForecastPolicy.AVERAGE_STEP_PCT; }
 
     static final int UNIVEST_BUDGET_MAX = 100000;
     static final int UNIVEST_BUDGET_STEP = 1000;
