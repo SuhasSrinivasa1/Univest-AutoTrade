@@ -72,12 +72,28 @@ final class ResearchIntradayScanner {
             refineMinuteScore(c, x, now);
             refined.add(x);
         }
+        // A measured sample of the *scanned research universe* (not exchange
+        // advance/decline breadth). Unknown if too few valid intraday samples.
+        int observedBreadth = 0, advancing = 0;
+        for (JSONObject x : refined) {
+            if (x.optInt("minuteDataPoints", 0) < 15) continue;
+            double ret = x.optDouble("minuteReturn5Pct", Double.NaN);
+            if (!Double.isFinite(ret)) continue;
+            observedBreadth++;
+            if (ret > 0) advancing++;
+        }
+        double sampleBreadth = observedBreadth >= 5
+                ? advancing / (double) observedBreadth : Double.NaN;
         refined.sort((a,b) -> Double.compare(b.optDouble("intradayActionScore", 0), a.optDouble("intradayActionScore", 0)));
         JSONArray out = new JSONArray();
         for (int i = 0; i < refined.size(); i++) {
             JSONObject x = refined.get(i);
             try {
                 x.put("intradayRank", i + 1);
+                x.put("sampleBreadthObserved", observedBreadth);
+                x.put("sampleBreadthRatio", Double.isFinite(sampleBreadth)
+                        ? sampleBreadth : JSONObject.NULL);
+                x.put("breadthBasis", "ROTATING_SCANNED_RESEARCH_UNIVERSE_NOT_NSE_EXCHANGE_BREADTH");
                 x.put("forecastSessionKey", NseTradingCalendar.dayKey(now));
                 x.put("freezeType", "INTRADAY_REFRESH");
                 x.put("similarity", (int)Math.round(x.optDouble("intradayActionScore", x.optDouble("similarity", 0))));
