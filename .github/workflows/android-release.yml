@@ -79,8 +79,8 @@ jobs:
           grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
           grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
-          grep -q "versionCode 313" app/build.gradle
-          grep -q "versionName '2.9.23'" app/build.gradle
+          grep -q "versionCode 314" app/build.gradle
+          grep -q "versionName '2.9.24'" app/build.gradle
           grep -Fq 'installedVersion()' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           ! grep -Fq '"v2.9.10"' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -q 'ForecastLiveQualityGate.reject' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java

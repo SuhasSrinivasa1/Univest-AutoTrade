@@ -537,7 +537,8 @@ final class ResearchTradeEngine {
                         && !ForecastPolicy.horizonExpired(callAt, quoteAt)) {
                     double observed = Math.max(p.optDouble("forecastObservedHigh", entry), ltp);
                     p.put("forecastObservedHigh", observed);
-                    double frozenTarget = forecastBenchmarkTargetPrice(c, p, entry);
+                    double frozenTarget = forecastBenchmarkTargetPrice(c, p,
+                            p.optDouble("shadowEntryPrice", entry));
                     if (p.optLong("forecastTargetHitAt", 0L) <= 0
                             && ForecastTargetMath.observedHit(ltp, frozenTarget))
                         p.put("forecastTargetHitAt", quoteAt);
@@ -732,10 +733,12 @@ final class ResearchTradeEngine {
         try {
             long now = System.currentTimeMillis();
             String today = NseTradingCalendar.dayKey(now);
-            if (today.equals(p.optString("minuteReplayKey", ""))) return;
-            long entryAt = p.optLong("entryAt", 0L);
+            if (today.equals(p.optString("verifiedMinuteReplayKey", ""))) return;
+            long entryAt = forecastCallAt(p);
             if (entryAt <= 0) return;
             boolean closed = "CLOSED".equals(p.optString("state"));
+            // Midday replay is incomplete: do not freeze the full-session high.
+            if (!closed && NseTradingCalendar.isRegularMarketOpen(now)) return;
             long exitAt = p.optLong("exitAt", 0L);
             boolean relevantToday = today.equals(NseTradingCalendar.dayKey(entryAt))
                     || (exitAt > 0 && today.equals(NseTradingCalendar.dayKey(exitAt))) || !closed;
@@ -764,16 +767,34 @@ final class ResearchTradeEngine {
             double min = p.optDouble("minPrice", entry);
             double max = p.optDouble("maxPrice", entry);
             long peakSec = 0L, troughSec = 0L;
+            double postCallHigh = p.optDouble("forecastObservedHigh", entry);
+            double signalEntry = p.optDouble("shadowEntryPrice", entry);
+            double target = forecastBenchmarkTargetPrice(c, p, signalEntry);
+            long verifiedHitAt = 0L;
+            int verifiedMinutes = 0;
             for (GrowwClient.Candle x : candles) {
+                if (x == null || !ForecastTargetMath.fullyObservedMinute(
+                        x.epochSeconds, entryAt, end)) continue;
+                verifiedMinutes++;
                 if (x.low > 0 && x.low < min) { min = x.low; troughSec = x.epochSeconds; }
                 if (x.high > 0 && x.high > max) { max = x.high; peakSec = x.epochSeconds; }
+                if (x.high > 0) {
+                    postCallHigh = Math.max(postCallHigh, x.high);
+                    if (verifiedHitAt <= 0 && ForecastTargetMath.observedHit(x.high, target))
+                        verifiedHitAt = x.epochSeconds * 1000L;
+                }
             }
+            if (verifiedMinutes == 0) return;
+            p.put("forecastObservedHigh", postCallHigh);
+            if (verifiedHitAt > 0 && p.optLong("forecastTargetHitAt", 0L) <= 0)
+                p.put("forecastTargetHitAt", verifiedHitAt);
             p.put("minPrice", min);
             p.put("maxPrice", max);
             p.put("maePct", (min / entry - 1.0) * 100.0);
             p.put("mfePct", (max / entry - 1.0) * 100.0);
             p.put("minuteReplayKey", today);
-            p.put("minuteReplayPoints", candles.size());
+            p.put("verifiedMinuteReplayKey", today);
+            p.put("minuteReplayPoints", verifiedMinutes);
             if (peakSec > 0) p.put("timeToPeakMinutes", Math.max(0L, (peakSec * 1000L - entryAt) / 60000L));
             if (troughSec > 0) p.put("timeToTroughMinutes", Math.max(0L, (troughSec * 1000L - entryAt) / 60000L));
         } catch (Throwable t) {
@@ -1399,27 +1420,28 @@ final class ResearchTradeEngine {
 
     private static double forecastBenchmarkTargetPrice(Context c, JSONObject p, double entry) {
         if (!Double.isFinite(entry) || !(entry > 0)) return 0;
+        int qty = p.optInt("shadowQuantity", 0);
+        // Never fall back to the unrelated official Univest benchmark or
+        // unverified legacy sell-zone projections.
+        double pct = p.optDouble("forecastTargetUpsidePct", Double.NaN);
         double locked = p.optDouble("forecastTargetPrice", 0);
-        if (Double.isFinite(locked) && locked > entry) return locked;
-        int qty = p.optInt("shadowQuantity", p.optInt("quantity", 0));
-        double pct = p.optDouble("forecastTargetUpsidePct",
-                p.optDouble("benchmarkTargetUpsidePct", 0));
-        if (qty <= 0 || !Double.isFinite(pct) || pct <= 0) return 0;
+        if (qty <= 0 || !SameDayForecastPolicy.VERSION.equals(
+                p.optString("sameDayStrategyVersion", ""))) return 0;
         double tick = 0.05;
         try {
             InstrumentRepository.Instrument ins = InstrumentRepository.resolve(
                     InstrumentRepository.load(c), p.optString("symbol", ""));
             if (ins != null && ins.tickSize > 0) tick = ins.tickSize;
         } catch (Throwable ignored) {}
-        // Sell-zone projections are not observed price targets. The frozen
-        // fee-adjusted target cannot be raised by an unsupported model sellLow.
-        return ForecastTargetMath.netPrice(entry, qty, tick, pct);
+        // Invalid historical targets are unverified, not retroactively "hit".
+        return ForecastTargetMath.verifiedSameDayTarget(entry, qty, tick, pct, locked);
     }
 
     private static String forecastDecisionState(JSONObject p, long now, double target) {
-        String eval = p.optString("evaluationState", "");
         String raw = p.optString("state", "");
         double net = p.optDouble("netPct", 0);
+        // An unavailable/stale target must not be shown as hit or offered for BUY.
+        if (!(target > 0)) return "TARGET UNVERIFIED";
         // An actual post-call observed high must meet the displayed target.
         long callAt = forecastCallAt(p);
         long hitAt = p.optLong("forecastTargetHitAt", 0L);
