@@ -38,17 +38,39 @@ final class ResearchEngine {
         return !NseTradingCalendar.isRegularMarketOpen(System.currentTimeMillis());
     }
 
-    static void runNightly(Context c) {
+    static synchronized boolean runNightly(Context c) {
         long now = System.currentTimeMillis();
         if (!NseTradingCalendar.isTradingDay(now)) {
             AppPrefs.setResearchStatus(c, "NSE closed • " + NseTradingCalendar.describe(now)
                     + " • no new candle forecast generated; latest frozen forecast retained.");
-            return;
+            return false;
         }
         if (!isOffMarketNowIst()) {
             AppPrefs.setResearchStatus(c, "Research is locked during regular NSE market hours.");
-            return;
+            return false;
         }
+        return generate(c, NseTradingCalendar.nextTradingDayKey(now),
+                Long.MAX_VALUE, false);
+    }
+
+    /**
+     * Restore a missing current-session pool after a clean installation.
+     * Only PREVIOUSLY COMPLETED daily candles are eligible (strictly before
+     * midnight IST of the target session). No same-day candle leaks into the
+     * pre-open baseline, even if first launched mid-session.
+     */
+    static synchronized boolean recoverForSession(Context c, long now) {
+        String today = NseTradingCalendar.dayKey(now);
+        if (!NseTradingCalendar.isTradingDay(now)
+                || NseTradingCalendar.minuteOfDay(now) >= 14 * 60) return false;
+        if (ResearchSessionRecovery.sessionReady(c, today)) return true;
+        long midnightIst = ResearchSessionRecovery.startOfSession(now);
+        return generate(c, today, midnightIst, true);
+    }
+
+    private static boolean generate(Context c, String targetSession,
+                                    long dailyCutoff, boolean recovery) {
+        if (ResearchSessionRecovery.sessionReady(c, targetSession)) return true;
         try {
             ResearchDiagnosticsImporter.importOfficialSignals(c);
             InstrumentRepository.refreshIfStale(c);
@@ -64,20 +86,32 @@ final class ResearchEngine {
             ResearchPlaybookEngine.rebuildRegistry(c);
 
             AppPrefs.setResearchStatus(c, "Scanning entire eligible NSE CASH universe…");
-            JSONArray predictions = scanEntireNse(c, all);
+            JSONArray predictions = scanEntireNse(c, all, targetSession, dailyCutoff);
             long frozenAt = System.currentTimeMillis();
-            String targetSession = NseTradingCalendar.nextTradingDayKey(frozenAt);
+            JSONArray candidatePool = ResearchStore.candidatePool(c);
+            if (predictions.length() == 0 || candidatePool.length() == 0) {
+                AppPrefs.setResearchStatus(c, "No usable eligible daily stock pool for "
+                        + targetSession + "; will retry after backoff.");
+                DiagnosticsStore.runtime(c,"RESEARCH_ZERO_POOL","",
+                        "Target " + targetSession + ", predictions " + predictions.length()
+                                + ", eligible candidates " + candidatePool.length()
+                                + "; no false session freeze.");
+                return false;
+            }
             for (int i = 0; i < predictions.length(); i++) {
                 JSONObject p = predictions.optJSONObject(i);
                 if (p == null) continue;
                 try {
                     p.put("forecastSessionKey", targetSession);
-                    p.put("freezeType", "EOD_FROZEN");
+                    p.put("freezeType", recovery ? "RECOVERED_PRIOR_DAILY" : "EOD_FROZEN");
+                    p.put("dailyEvidenceCutoff", dailyCutoff == Long.MAX_VALUE
+                            ? JSONObject.NULL : dailyCutoff);
                     ResearchDataQuality.annotate(p);
                 } catch (Exception ignored) {}
             }
             ResearchStore.savePredictions(c, predictions);
-            ResearchStore.appendForecastSnapshot(c, predictions, frozenAt, "EOD_FROZEN", targetSession);
+            ResearchStore.appendForecastSnapshot(c, predictions, frozenAt,
+                    recovery ? "RECOVERED_PRIOR_DAILY" : "EOD_FROZEN", targetSession);
             AppPrefs.setResearchForecastTargetKey(c, targetSession);
             JSONObject freeze = new JSONObject();
             try {
@@ -85,19 +119,29 @@ final class ResearchEngine {
                 freeze.put("targetSessionKey", targetSession);
                 freeze.put("candidateCount", predictions.length());
                 freeze.put("strategyVersion", STRATEGY_VERSION);
+                freeze.put("recovery", recovery);
+                freeze.put("dailyEvidenceCutoff", dailyCutoff == Long.MAX_VALUE
+                        ? JSONObject.NULL : dailyCutoff);
             } catch (Exception ignored) {}
             ResearchEventStore.appendDecisionSnapshot(c, "EOD_FORECAST_FREEZE", freeze);
 
             ResearchTradeEngine.replayAndScore(c);
             ResearchMonitorScheduler.ensureScheduled(c);
             AppPrefs.setResearchLastNightlyRun(c, frozenAt);
-            AppPrefs.setResearchStatus(c, "Full NSE research complete • " + predictions.length()
-                    + " frozen next-session candidates • " + all.size() + " instruments loaded.");
-            DiagnosticsStore.runtime(c, "RESEARCH_COMPLETE", "", AppPrefs.getResearchStatus(c));
+            AppPrefs.setResearchStatus(c, (recovery
+                    ? "Current-session RECOVERY complete • " : "Full NSE research complete • ")
+                    + predictions.length() + " frozen predictions for "
+                    + targetSession + " • " + candidatePool.length()
+                    + " eligible daily candidates • " + all.size() + " instruments loaded.");
+            DiagnosticsStore.runtime(c, recovery ? "RESEARCH_SESSION_RECOVERED"
+                    : "RESEARCH_COMPLETE", "", AppPrefs.getResearchStatus(c));
+            return true;
         } catch (Throwable t) {
             AppPrefs.setResearchStatus(c, "Research error: "
                     + (t.getMessage() == null ? t.getClass().getSimpleName() : t.getMessage()));
-            DiagnosticsStore.error(c, "RESEARCH_FAILED", "", "Research Lab failed.", t);
+            DiagnosticsStore.error(c, recovery ? "RESEARCH_RECOVERY_FAILED"
+                    : "RESEARCH_FAILED", "", "Research Lab failed.", t);
+            return false;
         }
     }
 
@@ -225,7 +269,9 @@ final class ResearchEngine {
         return out;
     }
 
-    private static JSONArray scanEntireNse(Context c, List<InstrumentRepository.Instrument> all) {
+    private static JSONArray scanEntireNse(Context c,
+                    List<InstrumentRepository.Instrument> all, String targetSession,
+                    long dailyCutoff) {
         List<InstrumentRepository.Instrument> eligible = new ArrayList<>();
         for (InstrumentRepository.Instrument i : all) if (i.buyAllowed) eligible.add(i);
         eligible.sort(Comparator.comparing(x -> x.symbol));
@@ -237,7 +283,8 @@ final class ResearchEngine {
         ExecutorService pool = Executors.newFixedThreadPool(SCAN_THREADS);
         List<Future<JSONObject>> futures = new ArrayList<>();
         for (InstrumentRepository.Instrument ins : eligible) {
-            futures.add(pool.submit(() -> scoreInstrument(c, ins, now, marketContext)));
+            futures.add(pool.submit(() -> scoreInstrument(c, ins, now, marketContext,
+                    dailyCutoff)));
         }
         pool.shutdown();
 
@@ -294,7 +341,7 @@ final class ResearchEngine {
         // Preserve every technically qualified EOD candidate for eventual live evaluation.
         // The live scanner rotates a bounded network batch, not a bounded daily shortlist.
         int poolLimit = candidates.size();
-        String poolTarget = NseTradingCalendar.nextTradingDayKey(now);
+        String poolTarget = targetSession;
         for (int i = 0; i < poolLimit; i++) {
             JSONObject p = candidates.get(i);
             try {
@@ -339,11 +386,22 @@ final class ResearchEngine {
         }
     }
 
-    private static JSONObject scoreInstrument(Context c, InstrumentRepository.Instrument ins, long now, JSONObject marketContext) {
+    private static JSONObject scoreInstrument(Context c,
+                InstrumentRepository.Instrument ins, long now,
+                JSONObject marketContext, long dailyCutoff) {
         try {
             throttleScanRequest();
-            List<GrowwClient.Candle> candles = GrowwClient.getHistoricalCandles(
-                    c, ins.symbol, now - 140 * DAY, now, "1day");
+            long queryEnd = dailyCutoff == Long.MAX_VALUE ? now : dailyCutoff;
+            List<GrowwClient.Candle> requested = GrowwClient.getHistoricalCandles(
+                    c, ins.symbol, queryEnd - 140 * DAY, queryEnd, "1day");
+            // API boundaries can be inclusive. Enforce completed, pre-session
+            // bars at the candle level, not just through HTTP query arguments.
+            List<GrowwClient.Candle> candles = new ArrayList<>();
+            for (GrowwClient.Candle bar : requested) {
+                if (bar != null && (dailyCutoff == Long.MAX_VALUE
+                        || bar.epochSeconds * 1000L < dailyCutoff))
+                    candles.add(bar);
+            }
             ResearchMath.Features f = ResearchMath.fromCandles(candles);
             if (!(f.close > 0) || f.dataPoints < 20) return null;
             ResearchMath.StrategyScores sc = ResearchMath.score(f, 0, 0, false);
