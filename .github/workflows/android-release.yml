@@ -129,8 +129,10 @@ jobs:
           grep -q 'ResearchIntradayScanner.refresh' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
           ! grep -q 'DAILY_RECOMMENDATION_CAP' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
           grep -q 'ResearchTriggerState.shouldTrigger' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
+          grep -q 'ResearchEntryFreshness.reject' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
+          grep -q 'getResearchLtpBatch' app/src/main/java/com/suhas/multyfideliverybuy/FormulaEngine.java
           grep -q 'appendPositionIfAbsent' app/src/main/java/com/suhas/multyfideliverybuy/ResearchStore.java
-          grep -q 'MIN_REFRESH_MS = 2L' app/src/main/java/com/suhas/multyfideliverybuy/ResearchIntradayScanner.java
+          grep -q 'MIN_REFRESH_MS = 60_000L' app/src/main/java/com/suhas/multyfideliverybuy/ResearchIntradayScanner.java
           grep -q 'MarketGuardianService' app/src/main/AndroidManifest.xml
           grep -q 'FOREGROUND_SERVICE_SPECIAL_USE' app/src/main/AndroidManifest.xml
           grep -q 'PARTIAL_WAKE_LOCK' app/src/main/java/com/suhas/multyfideliverybuy/DurableOfficialSignalQueue.java
