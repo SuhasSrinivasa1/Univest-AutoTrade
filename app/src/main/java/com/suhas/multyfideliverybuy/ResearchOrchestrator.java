@@ -38,6 +38,12 @@ final class ResearchOrchestrator {
 
             if (minute >= 17 * 60 + 30) {
                 if (!today.equals(AppPrefs.getResearchEodScanKey(c))) {
+                    if (!ResearchSessionRecovery.reserveEodAttempt(c, now)) {
+                        AppPrefs.setResearchOrchestrator(c,"EOD_SCAN_COOLDOWN",
+                                "Full NSE EOD retry paused to avoid Groww HTTP 429. "
+                                        + "Unverified scans are never marked successful.");
+                        return;
+                    }
                     AppPrefs.setResearchOrchestrator(c, STAGE_EOD,
                             "Running full eligible NSE CASH EOD scan for the next trading session…");
                     boolean completed = ResearchEngine.runNightly(c);
