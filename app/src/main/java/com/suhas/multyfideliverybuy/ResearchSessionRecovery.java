@@ -53,6 +53,21 @@ final class ResearchSessionRecovery {
                 && session.equals(firstPrediction.optString("forecastSessionKey"));
     }
 
+    /**
+     * Full-universe EOD is expensive. Persist an attempt reservation so a
+     * failed Groww scan cannot restart on every two-minute guardian tick.
+     */
+    static synchronized boolean reserveEodAttempt(Context c,long now) {
+        SharedPreferences p=c.getSharedPreferences(PREF,Context.MODE_PRIVATE);
+        String day=NseTradingCalendar.dayKey(now);
+        long previous=day.equals(p.getString("eodDay",""))
+                ?p.getLong("eodLastAttempt",0):0;
+        if(previous>0 && now>=previous && now-previous<RETRY_COOLDOWN_MS)
+            return false;
+        return p.edit().putString("eodDay",day)
+                .putLong("eodLastAttempt",now).commit();
+    }
+
     static synchronized boolean recoverIfMissing(Context context, long now) {
         Context c = context.getApplicationContext();
         String session = NseTradingCalendar.dayKey(now);
