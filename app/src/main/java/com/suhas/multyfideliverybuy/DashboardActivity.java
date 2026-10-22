@@ -279,6 +279,26 @@ public class DashboardActivity extends Activity {
         return scroll;
     }
 
+    /** Shared DATA-INPUT warning, not a new selection rule or invented recommendation. */
+    private View missingDailyBaselineNotice() {
+        long now = System.currentTimeMillis();
+        if (!NseTradingCalendar.isTradingDay(now)
+                || NseTradingCalendar.minuteOfDay(now) < 7 * 60 + 15
+                || NseTradingCalendar.minuteOfDay(now) >= 15 * 60 + 30
+                || ResearchSessionRecovery.sessionReady(this,
+                        NseTradingCalendar.dayKey(now))) return null;
+        LinearLayout warning = card();
+        warning.addView(text("TODAY'S STOCK DATA NEEDS RECOVERY", 14, RED, true));
+        warning.addView(body("No verified previous-session stock candidate pool exists for "
+                + NseTradingCalendar.dayKey(now) + ". Zero calls here does NOT mean "
+                + "every stock failed the Forecast or Formula criteria."),
+                margins(0, 7, 0, 0));
+        warning.addView(meta("Recovery: " + ResearchSessionRecovery.diagnosticStatus(this)
+                + " • " + ResearchOrchestrator.statusText(this)),
+                margins(0, 7, 0, 0));
+        return warning;
+    }
+
     private View buildForecastTab() {
         ScrollView scroll = baseScroll();
         LinearLayout root = scrollRoot(scroll);
@@ -297,6 +317,9 @@ public class DashboardActivity extends Activity {
                 margins(0, 7, 0, 0));
         root.addView(title, margins(0, 20, 0, 12));
 
+        View forecastBaseline = missingDailyBaselineNotice();
+        if (forecastBaseline != null)
+            root.addView(forecastBaseline, margins(0, 0, 0, 12));
         root.addView(forecastAverageCard(), margins(0, 0, 0, 12));
         root.addView(forecastActionButtons(), margins(0, 0, 0, 12));
         root.addView(forecastDecisionTableCard(), margins(0, 0, 0, 22));
@@ -332,6 +355,9 @@ public class DashboardActivity extends Activity {
         metrics.addView(meta("Outcomes are observed price touches, NOT realized trading returns."),
                 margins(0, 6, 0, 0));
         root.addView(metrics, margins(0, 0, 0, 12));
+        View formulaBaseline = missingDailyBaselineNotice();
+        if (formulaBaseline != null)
+            root.addView(formulaBaseline, margins(0, 0, 0, 12));
 
         LinearLayout actions = new LinearLayout(this);
         actions.setOrientation(LinearLayout.HORIZONTAL);
