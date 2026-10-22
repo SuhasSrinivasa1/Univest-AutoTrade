@@ -46,6 +46,18 @@ final class ResearchEntryFingerprint {
             double priorHigh = row.optDouble("prior20High", 0);
             row.put("dailyReturn1Pct", daily != null && daily.size() >= 2
                     ? returnPct(daily, 1) : JSONObject.NULL);
+            row.put("return5Pct", daily != null && daily.size() >= 6
+                    ? returnPct(daily, 5) : JSONObject.NULL);
+            row.put("return20Pct", daily != null && daily.size() >= 21
+                    ? returnPct(daily, 20) : JSONObject.NULL);
+            row.put("return60Pct", daily != null && daily.size() >= 61
+                    ? returnPct(daily, 60) : JSONObject.NULL);
+            ResearchMath.Features d = ResearchMath.fromCandles(daily);
+            row.put("rsi14", d.dataPoints >= 15 ? d.rsi14 : JSONObject.NULL);
+            row.put("relativeVolume20", d.dataPoints >= 21
+                    ? d.relativeVolume20 : JSONObject.NULL);
+            row.put("volatility20Pct", d.dataPoints >= 21
+                    ? d.volatility20Pct : JSONObject.NULL);
             row.put("distanceSma20Pct", close > 0 && sma20 > 0
                     ? distancePct(close, sma20) : JSONObject.NULL);
             row.put("distanceSma50Pct", close > 0 && sma50 > 0
@@ -60,12 +72,26 @@ final class ResearchEntryFingerprint {
             double c15 = lastClose(fifteen);
             row.put("minute15Return1Pct", fifteen != null && fifteen.size() >= 2
                     ? returnPct(fifteen, 1) : JSONObject.NULL);
+            ResearchMath.Features f15 = ResearchMath.fromCandles(fifteen);
+            row.put("minute15Return5Pct", fifteen != null && fifteen.size() >= 6
+                    ? returnPct(fifteen, 5) : JSONObject.NULL);
+            row.put("minute15Return20Pct", fifteen != null && fifteen.size() >= 21
+                    ? returnPct(fifteen, 20) : JSONObject.NULL);
+            row.put("minute15Rsi14", f15.dataPoints >= 15 ? f15.rsi14 : JSONObject.NULL);
+            row.put("minute15RelativeVolume20", f15.dataPoints >= 21
+                    ? f15.relativeVolume20 : JSONObject.NULL);
             row.put("minute15VwapDistancePct", c15 > 0 && v15 > 0
                     ? distancePct(c15, v15) : JSONObject.NULL);
             double v1 = vwap(oneMinute);
             double c1 = lastClose(oneMinute);
             row.put("minute1Return1Pct", oneMinute != null && oneMinute.size() >= 2
                     ? returnPct(oneMinute, 1) : JSONObject.NULL);
+            ResearchMath.Features f1 = ResearchMath.fromCandles(oneMinute);
+            row.put("minute1Return5Pct", oneMinute != null && oneMinute.size() >= 6
+                    ? returnPct(oneMinute, 5) : JSONObject.NULL);
+            row.put("minute1Rsi14", f1.dataPoints >= 15 ? f1.rsi14 : JSONObject.NULL);
+            row.put("minute1RelativeVolume20", f1.dataPoints >= 21
+                    ? f1.relativeVolume20 : JSONObject.NULL);
             row.put("minute1VwapDistancePct", c1 > 0 && v1 > 0
                     ? distancePct(c1, v1) : JSONObject.NULL);
 

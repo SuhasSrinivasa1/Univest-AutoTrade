@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MarketGuardianService extends Service {
     private static final String CHANNEL = "market_guardian";
     private static final int NOTIFICATION_ID = 2967;
-    private static final long TICK_MS = 2L * 60L * 1000L;
+    private static final long TICK_MS = 30_000L;
     private static final String PREF = "market_guardian_state";
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final AtomicBoolean busy = new AtomicBoolean(false);
@@ -76,7 +76,7 @@ public class MarketGuardianService extends Service {
                                     "SAME_DAY_GUARDIAN_EXIT_FAILED", "",
                                     "Broker-aware same-day exit coordinator could not complete.",exitFailure);
                         }
-                        // Same 2-minute live cadence for Formula, on a separate worker.
+                        // Formula retains its own 60-second scan limiter, on a separate worker.
                         // A slow Formula score may not delay official execution or Forecast.
                         new Thread(() -> {
                             try { FormulaEngine.refresh(getApplicationContext(), false); }
@@ -107,7 +107,7 @@ public class MarketGuardianService extends Service {
                 .apply();
         handler.post(tick);
         DiagnosticsStore.runtime(getApplicationContext(), "MARKET_GUARDIAN_STARTED", "",
-                "Foreground guardian active • two-minute Research live cadence • official execution remains notification-driven.");
+                "Foreground guardian active • 30-second Research decision pulse • official execution remains notification-driven.");
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
@@ -166,7 +166,7 @@ public class MarketGuardianService extends Service {
         if (Build.VERSION.SDK_INT >= 23) flags |= PendingIntent.FLAG_IMMUTABLE;
         PendingIntent pi = PendingIntent.getActivity(this, 2967, open, flags);
         String text = NseTradingCalendar.isRegularMarketOpen(System.currentTimeMillis())
-                ? "Active • official notifications protected • Forecast scans every 2 min"
+                ? "Active • official notifications protected • Forecast checks every 30s; pool refresh every 60s"
                 : "Active • background protection ready for the next NSE session";
         Notification.Builder b = Build.VERSION.SDK_INT >= 26
                 ? new Notification.Builder(this, CHANNEL) : new Notification.Builder(this);

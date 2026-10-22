@@ -16,6 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Locale;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 final class ResearchEventStore {
     static final int SCHEMA_VERSION = 2;
@@ -85,37 +90,54 @@ final class ResearchEventStore {
         }
     }
 
+    /** Fetch up to eight 1-minute windows with three bounded workers, then record
+     * snapshots serially to avoid concurrent JSON/file writes and future-data leakage. */
     static void captureTopCandidates(Context c, JSONArray predictions, long now, int limit) {
         if (predictions == null || predictions.length() == 0) return;
         int n = Math.min(Math.max(1, limit), predictions.length());
+        ExecutorService workers = Executors.newFixedThreadPool(Math.min(3, n));
+        List<Future<List<GrowwClient.Candle>>> results = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             JSONObject p = predictions.optJSONObject(i);
-            if (p == null) continue;
+            String symbol = p == null ? "" : p.optString("symbol", "");
+            if (symbol.isEmpty()) { results.add(null); continue; }
+            results.add(workers.submit(() -> GrowwClient.getHistoricalCandles(
+                    c, symbol, now - 50L * 60L * 1000L, now, "1minute")));
+        }
+        workers.shutdown();
+        long deadline = System.currentTimeMillis() + 17_000L;
+        for (int i = 0; i < n; i++) {
+            JSONObject p = predictions.optJSONObject(i);
+            Future<List<GrowwClient.Candle>> result = results.get(i);
+            if (p == null || result == null) continue;
             String symbol = p.optString("symbol", "");
-            if (symbol.isEmpty()) continue;
             try {
-                List<GrowwClient.Candle> candles = GrowwClient.getHistoricalCandles(
-                        c, symbol, now - 50L * 60L * 1000L, now, "1minute");
+                long remaining = deadline - System.currentTimeMillis();
+                if (remaining <= 0) throw new java.util.concurrent.TimeoutException("Minute batch deadline reached");
+                List<GrowwClient.Candle> candles = result.get(remaining, TimeUnit.MILLISECONDS);
+                if (candles == null || candles.isEmpty()) continue;
+                // Do not label an older candle as a live observation.
+                GrowwClient.Candle last = candles.get(candles.size() - 1);
+                if (last.epochSeconds * 1000L < now - 8L * 60_000L) continue;
                 appendMinuteCandles(c, symbol, candles, "LIVE_TOP_CANDIDATE", now);
-                if (candles != null && !candles.isEmpty()) {
-                    GrowwClient.Candle last = candles.get(candles.size() - 1);
-                    ResearchMath.Features live = ResearchMath.fromCandles(candles);
-                    p.put("lastMinuteCaptureAt", now);
-                    p.put("lastMinuteClose", last.close);
-                    p.put("lastMinuteVolume", last.volume);
-                    p.put("minuteDataPoints", candles.size());
-                    p.put("minuteRsi14", live.rsi14);
-                    p.put("minuteReturn5Pct", live.return5Pct);
-                    p.put("minuteRelativeVolume20", live.relativeVolume20);
-                    p.put("minuteVwap", vwap(candles));
-                    ResearchDataQuality.annotate(p);
-                }
+                ResearchMath.Features live = ResearchMath.fromCandles(candles);
+                p.put("lastMinuteCaptureAt", System.currentTimeMillis());
+                p.put("lastMinuteBarEpoch", last.epochSeconds);
+                p.put("lastMinuteClose", last.close);
+                p.put("lastMinuteVolume", last.volume);
+                p.put("minuteDataPoints", candles.size());
+                p.put("minuteRsi14", live.rsi14);
+                p.put("minuteReturn5Pct", live.return5Pct);
+                p.put("minuteRelativeVolume20", live.relativeVolume20);
+                p.put("minuteVwap", vwap(candles));
+                ResearchDataQuality.annotate(p);
             } catch (Throwable t) {
-                try {
-                    p.put("minuteCaptureError", t.getMessage() == null ? t.getClass().getSimpleName() : t.getMessage());
-                } catch (Exception ignored) {}
+                try { p.put("minuteCaptureError", t.getClass().getSimpleName()); }
+                catch (Exception ignored) {}
+                result.cancel(true);
             }
         }
+        workers.shutdownNow();
         ResearchStore.savePredictions(c, predictions);
     }
 

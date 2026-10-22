@@ -223,7 +223,33 @@ final class ResearchTradeEngine {
                     continue;
                 }
 
-                JSONObject pos = openShadow(c, p, ltp, i + 1);
+                // Final live quote prevents publishing the first price after a
+                // spike has already escaped the qualified entry zone. This is a
+                // research-only read and never reroutes official Univest orders.
+                double executableReference;
+                long quoteStart = System.currentTimeMillis();
+                try { executableReference = GrowwClient.getLtpForAutomation(c, symbol); }
+                catch (Throwable freshError) {
+                    ResearchTriggerState.markNotReady(c, symbol, today);
+                    logSkip(c, symbol, "FINAL_QUOTE_UNAVAILABLE", safe(freshError));
+                    continue;
+                }
+                long quoteAt = System.currentTimeMillis();
+                String moved = ResearchEntryFreshness.reject(ltp, executableReference,
+                        p.optDouble("buyLow", 0), p.optDouble("chaseLimit", 0),
+                        quoteAt - quoteStart);
+                if (!moved.isEmpty()) {
+                    ResearchTriggerState.markNotReady(c, symbol, today);
+                    logSkip(c, symbol, "SPIKE_OR_STALE_QUOTE_SKIP", moved);
+                    continue;
+                }
+                try {
+                    p.put("decisionQuoteAt", quoteAt);
+                    p.put("decisionQuoteLatencyMs", quoteAt - quoteStart);
+                    p.put("decisionSignalReferencePrice", executableReference);
+                    p.put("positive40DecisionEvaluatedAt", quoteAt);
+                } catch (Exception ignored) {}
+                JSONObject pos = openShadow(c, p, executableReference, i + 1);
                 if (pos == null) {
                     DiagnosticsStore.runtime(c, "RESEARCH_RECOMMENDATION_DUPLICATE_BLOCK", symbol,
                             "Atomic Research position claim rejected a duplicate recommendation.");
@@ -971,8 +997,7 @@ final class ResearchTradeEngine {
                     .append(one(p.optDouble("mfePct", 0))).append("%")
                     .append("\nExit model: ").append(p.optString("exitState", "HOLD"))
                     .append(" • attribution: ").append(p.optString("signalAttribution", "RESEARCH_ONLY"))
-                    .append("\nBenchmark target +").append(one(p.optDouble("benchmarkTargetUpsidePct", MIN_NET_WIN_PCT)))
-                    .append("% ≤").append(p.optInt("benchmarkMaxSessions", UnivestBenchmark.PRIMARY_MAX_SESSIONS))
+                    .append("\nBenchmark target +").append(one(p.optDouble("benchmarkTargetUpsidePct", MIN_NET_WIN_PCT)))                    .append("% ≤").append(p.optInt("benchmarkMaxSessions", UnivestBenchmark.PRIMARY_MAX_SESSIONS))
                     .append(" sessions • ").append(p.optString("benchmarkOpportunityOutcome", "OPEN"))
                     .append("\n").append(p.optString("lastReason", "Monitoring entry/exit conditions."));
         }
