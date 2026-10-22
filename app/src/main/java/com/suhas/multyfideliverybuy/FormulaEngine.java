@@ -67,6 +67,18 @@ final class FormulaEngine {
             pref.edit().putString("status", "NSE closed • existing Formula calls preserved").apply();
             return;
         }
+        String todaySession = NseTradingCalendar.dayKey(now);
+        if (!ResearchSessionRecovery.sessionReady(c, todaySession)) {
+            pref.edit().putString("status", "Today's candidate pool is missing • "
+                    + "research recovery/retry needed • no Formula criteria have "
+                    + "been evaluated yet. Fixed Formula V1 unchanged.").apply();
+            if (AppPrefs.claimRecent(c, "formula_missing_daily_"+todaySession,
+                    12L * 60_000L))
+                DiagnosticsStore.runtime(c, "FORMULA_MISSING_DAILY_POOL", "",
+                        "The immutable model cannot evaluate candidates until "
+                                + "Research recovers current-session prior-day input data.");
+            return;
+        }
         long pauseUntil = pref.getLong("network_cooldown_until", 0);
         if (now < pauseUntil) {
             pref.edit().putString("status", "FORMULA V1 • market-data retry paused until "
