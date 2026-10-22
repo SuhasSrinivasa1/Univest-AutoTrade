@@ -20,7 +20,7 @@ final class ResearchOrchestrator {
 
     private ResearchOrchestrator() {}
 
-    static void tick(Context context) {
+    static synchronized void tick(Context context) {
         Context c = context.getApplicationContext();
         long now = System.currentTimeMillis();
         String today = NseTradingCalendar.dayKey(now);
@@ -40,15 +40,22 @@ final class ResearchOrchestrator {
                 if (!today.equals(AppPrefs.getResearchEodScanKey(c))) {
                     AppPrefs.setResearchOrchestrator(c, STAGE_EOD,
                             "Running full eligible NSE CASH EOD scan for the next trading session…");
-                    ResearchEngine.runNightly(c);
-                    UnivestStrategyStudy.runNightly(c);
-                    HistoryBackupManager.forceAutoBackup(c);
-                    AppPrefs.setResearchEodScanKey(c, today);
-                    String target = NseTradingCalendar.nextTradingDayKey(now);
-                    AppPrefs.setResearchForecastTargetKey(c, target);
-                    AppPrefs.setResearchOrchestrator(c, STAGE_EOD,
-                            "Full NSE EOD scan complete • target session " + target
-                                    + " • frozen forecast ready for overnight/pre-open enrichment.");
+                    boolean completed = ResearchEngine.runNightly(c);
+                    if (completed) {
+                        UnivestStrategyStudy.runNightly(c);
+                        HistoryBackupManager.forceAutoBackup(c);
+                        AppPrefs.setResearchEodScanKey(c, today);
+                        String target = NseTradingCalendar.nextTradingDayKey(now);
+                        AppPrefs.setResearchOrchestrator(c, STAGE_EOD,
+                                "Full NSE EOD scan complete • target session " + target
+                                        + " • candidate pool verified for pre-open monitoring.");
+                    } else {
+                        AppPrefs.setResearchOrchestrator(c, "EOD_SCAN_UNAVAILABLE",
+                                "EOD scan did not produce a valid candidate pool. "
+                                        + "The next session will automatically attempt a prior-day-only recovery.");
+                        DiagnosticsStore.runtime(c, "RESEARCH_EOD_RETRY_NEEDED", "",
+                                "EOD unsuccessful; NOT marking scan complete or claiming a valid pool.");
+                    }
                 } else {
                     AppPrefs.setResearchOrchestrator(c, STAGE_EOD,
                             "Today's full NSE EOD scan is complete • target session "
@@ -73,6 +80,9 @@ final class ResearchOrchestrator {
             }
 
             if (NseTradingCalendar.isRegularMarketOpen(now)) {
+                // Clean-install and missed-EOD recovery happens BEFORE either
+                // Forecast or Formula is allowed to see an empty daily universe.
+                if (!ResearchSessionRecovery.recoverIfMissing(c, now)) return;
                 if (today.equals(AppPrefs.getResearchForecastTargetKey(c))
                         && !today.equals(AppPrefs.getResearchPreopenFreezeKey(c))) {
                     preopenFreeze(c, now, today);
@@ -88,6 +98,9 @@ final class ResearchOrchestrator {
             }
 
             if (minute >= 8 * 60 + 45 && minute < 9 * 60 + 15) {
+                // If installation happened AFTER yesterday's scan, create a
+                // verified baseline from candles ending before this session.
+                if (!ResearchSessionRecovery.recoverIfMissing(c, now)) return;
                 if (today.equals(AppPrefs.getResearchForecastTargetKey(c))
                         && !today.equals(AppPrefs.getResearchPreopenFreezeKey(c))) {
                     preopenFreeze(c, now, today);
@@ -100,8 +113,12 @@ final class ResearchOrchestrator {
                 return;
             }
 
+            if (minute >= 7 * 60 + 15 && minute < 8 * 60 + 45) {
+                if (!ResearchSessionRecovery.recoverIfMissing(c, now)) return;
+            }
             AppPrefs.setResearchOrchestrator(c, STAGE_OVERNIGHT,
-                    "Overnight stage • frozen EOD forecast retained. Pre-open enrichment/freeze begins from 08:45 IST.");
+                    "Overnight stage • verified frozen daily pool or prior-session recovery ready. "
+                            + "Pre-open enrichment begins at 08:45 IST.");
         } catch (Throwable t) {
             AppPrefs.setResearchOrchestrator(c, "ERROR",
                     "Research orchestration error: " + safe(t));
