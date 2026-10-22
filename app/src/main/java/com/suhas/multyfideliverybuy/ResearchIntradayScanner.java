@@ -9,6 +9,8 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -22,7 +24,7 @@ final class ResearchIntradayScanner {
     private static final String PREF = "research_intraday_scanner";
     // Request budget per 2-minute tick, NOT an upper limit on qualified stocks/day.
     private static final int LIVE_CHECKS_PER_TICK = 8;
-    private static final long MIN_REFRESH_MS = 2L * 60L * 1000L;
+    private static final long MIN_REFRESH_MS = 60_000L;
 
     private ResearchIntradayScanner() {}
 
@@ -52,9 +54,20 @@ final class ResearchIntradayScanner {
         p.edit().putInt("pool_cursor", (cursor + Math.max(1, inspected)) % poolSize).apply();
         if (base.isEmpty()) return existing;
 
+        // Bulk quote request avoids eight independently throttled Groww LTP calls.
+        List<String> symbols = new ArrayList<>();
+        for (JSONObject candidate : base) symbols.add(candidate.optString("symbol", ""));
+        Map<String, Double> batchPrices = new HashMap<>();
+        try { batchPrices = GrowwClient.getResearchLtpBatch(c, symbols); }
+        catch (Throwable marketError) {
+            DiagnosticsStore.runtime(c, "RESEARCH_LTP_BATCH_UNAVAILABLE", "",
+                    "Bulk quote failed; per-symbol fallback only: " + marketError.getClass().getSimpleName());
+        }
+        final Map<String, Double> quotes = batchPrices;
+        final long quotesAt = System.currentTimeMillis();
         ExecutorService exec = Executors.newFixedThreadPool(4);
         List<Future<JSONObject>> futures = new ArrayList<>();
-        for (JSONObject x : base) futures.add(exec.submit(() -> liveZoneScore(c, x, now)));
+        for (JSONObject x : base) futures.add(exec.submit(() -> liveZoneScore(c, x, now, quotes.getOrDefault(x.optString("symbol", ""), 0.0), quotesAt)));
         exec.shutdown();
         List<JSONObject> scored = new ArrayList<>();
         for (Future<JSONObject> f : futures) {
@@ -111,7 +124,7 @@ final class ResearchIntradayScanner {
             event.put("readyConfirmationScans", 2);
             ResearchEventStore.appendDecisionSnapshot(c, "INTRADAY_RESEARCH_RERANK", event);
         } catch (Exception ignored) {}
-        p.edit().putString("status", "2-minute live rerank • " + out.length()
+        p.edit().putString("status", "1-minute live rerank • " + out.length()
                 + " watchlist candidates this tick • rotating through all " + poolSize
                 + " EOD candidates • no daily recommendation quota • READY confirmation required • "
                 + AppPrefs.istDayKey(now)).apply();
@@ -123,11 +136,12 @@ final class ResearchIntradayScanner {
                 .getString("status", "Waiting for the first regular-session intraday rerank.");
     }
 
-    private static JSONObject liveZoneScore(Context c, JSONObject x, long now) {
+    private static JSONObject liveZoneScore(Context c, JSONObject x, long now, double batchLtp, long quotesAt) {
         String symbol = x.optString("symbol", "");
         if (symbol.isEmpty()) return null;
         try {
-            double ltp = GrowwClient.getLtpForAutomation(c, symbol);
+            double ltp = batchLtp > 0 && System.currentTimeMillis() - quotesAt < 6_000L
+                    ? batchLtp : GrowwClient.getLtpForAutomation(c, symbol);
             if (!(ltp > 0)) return null;
             double low = x.optDouble("buyLow", 0), high = x.optDouble("buyHigh", 0), chase = x.optDouble("chaseLimit", 0);
             double adj = 0; String zone = "OUTSIDE";
@@ -143,7 +157,7 @@ final class ResearchIntradayScanner {
             x.put("intradayZoneState", zone);
             x.put("intradayZoneAdjustment", adj);
             x.put("intradayPreMinuteScore", clamp(base + adj));
-            x.put("intradayScannedAt", now);
+            x.put("intradayScannedAt", System.currentTimeMillis());
             return x;
         } catch (Throwable ignored) { return null; }
     }

@@ -8,14 +8,12 @@ public class ForecastTargetPolicyTest {
         assertEquals(1.0, ForecastTargetPolicy.nextNetPct(0, 0, 0), 0.00001);
         assertEquals(1.0, ForecastTargetPolicy.nextNetPct(0, 0, Double.NaN), 0.00001);
     }
-    @Test public void growingUnivestAverageRaisesButNeverLowersTargetPolicy() {
+    @Test public void officialAverageCannotRaiseOrContaminateForecastTarget() {
         double pct = ForecastTargetPolicy.nextNetPct(1.0, 6, 1.6);
-        assertEquals(1.6, pct, 0.00001);
-        pct = ForecastTargetPolicy.nextNetPct(pct, 10, 2.15);
-        assertEquals(2.15, pct, 0.00001);
-        pct = ForecastTargetPolicy.nextNetPct(pct, 12, 0.3);
-        assertEquals(2.15, pct, 0.00001);
-        assertEquals(2.15, ForecastTargetPolicy.nextNetPct(pct, 0, 0), 0.00001);
+        assertEquals(1.0, pct, 0.00001);
+        pct = ForecastTargetPolicy.nextNetPct(15.0, 10, 24.15);
+        assertEquals(1.0, pct, 0.00001);
+        assertEquals(1.0, ForecastTargetPolicy.nextNetPct(pct, 0, 0), 0.00001);
     }
     @Test public void negativeOrInvalidAverageDoesNotFalsifyTarget() {
         assertEquals(1.0, ForecastTargetPolicy.nextNetPct(-8, 5, -2), 0.00001);

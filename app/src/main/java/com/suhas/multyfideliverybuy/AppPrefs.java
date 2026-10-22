@@ -238,9 +238,9 @@ final class AppPrefs {
     static void setResearchPreopenFreezeKey(Context c, String v) { p(c).edit().putString("research_preopen_freeze_key", clean(v)).apply(); }
     static String getResearchReplayKey(Context c) { return p(c).getString("research_replay_key", ""); }
     static void setResearchReplayKey(Context c, String v) { p(c).edit().putString("research_replay_key", clean(v)).apply(); }
-    /** Saved high-water mark for Forecast target policy; not an achieved average. */
+    /** The former official-derived high-water mark is obsolete; never reuse it. */
     static double getForecastTargetPolicyPct(Context c) {
-        return Math.max(ForecastTargetPolicy.MIN_NET_PCT, p(c).getFloat("forecast_target_policy_net_pct", 1.0f));
+        return ForecastTargetPolicy.MIN_NET_PCT;
     }
 
     static synchronized double advanceForecastTargetPolicyPct(Context c, int officialCompleted,

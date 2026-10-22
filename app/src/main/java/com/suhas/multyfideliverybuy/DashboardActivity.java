@@ -914,9 +914,8 @@ public class DashboardActivity extends Activity {
     private LinearLayout upsideMetricCard(String title, double value, int sample) {
         LinearLayout c = card();
         c.addView(text(title, 10, SUBTEXT, true));
-        String valueText = Math.abs(value) < 0.0001
-                ? "0.0%"
-                : String.format(Locale.US, "%+.1f%%", value);
+        String valueText = sample == 0 ? "—" : (Math.abs(value) < 0.0001
+                ? "0.0%" : String.format(Locale.US, "%+.1f%%", value));
         c.addView(text(valueText, 22, value >= 0 ? GREEN : RED, true), margins(0, 6, 0, 0));
         c.addView(meta("Rolling 30D • " + sample + " closed"), margins(0, 4, 0, 0));
         return c;
@@ -927,12 +926,13 @@ public class DashboardActivity extends Activity {
         double avg = ResearchTradeEngine.rolling30DayAverageUpsidePct(this);
         int sample = ResearchTradeEngine.rolling30DayClosedCount(this);
         c.addView(text("Forecasted Stocks Avg Upside %", 11, SUBTEXT, false));
-        c.addView(text(Math.abs(avg) < 0.0001 ? "0.00%" : String.format(Locale.US, "%+.2f%%", avg),
+        c.addView(text(sample == 0 ? "—" : (Math.abs(avg) < 0.0001 ? "0.00%"
+                        : String.format(Locale.US, "%+.2f%%", avg)),
                 26, avg >= 0 ? GREEN : RED, true), margins(0, 8, 0, 0));
-        c.addView(meta("Actual realized Forecast result • 30 days • " + sample + " closed"), margins(0, 6, 0, 0));
-        c.addView(meta(String.format(Locale.US,
-                "Target policy ≥+%.2f%% NET • 1%% floor • rises with completed Univest calls",
-                AppPrefs.getForecastTargetPolicyPct(this))), margins(0, 4, 0, 0));
+        c.addView(meta("Net outcome across " + sample + " completed Forecast calls • rolling 30 days; open calls excluded"),
+                margins(0, 6, 0, 0));
+        c.addView(meta("Forecast only — never mixed with official Univest results. Same-day target: +1.00% NET, prospective and unguaranteed; hit requires verified post-call price."),
+                margins(0, 4, 0, 0));
         return c;
     }
 
