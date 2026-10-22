@@ -302,6 +302,16 @@ final class FormulaEngine {
                 call.put("factors", factorJson);
                 call.put("missing", p.optString("missingData", ""));
                 calls.put(call);
+                JSONObject live40Evidence = ResearchEntryFingerprint.snapshotLiveCandidate(
+                        p, minute, null, price, quoteAt);
+                try {
+                    live40Evidence.put("source", "FORMULA_LIVE_DECISION");
+                    live40Evidence.put("signalType", "FORMULA_ENTRY");
+                    live40Evidence.put("symbol", symbol);
+                    live40Evidence.put("recommendationId", call.optString("id", ""));
+                    live40Evidence.put("signalAt", quoteAt);
+                } catch (Exception ignored) {}
+                ResearchEventStore.appendDecisionSnapshot(c, "FORMULA_40_LIVE_DECISION", live40Evidence);
                 nextPending.remove(today + "|" + symbol);
                 saveCalls(pref, calls);
                 DiagnosticsStore.runtime(c, "FORMULA_V1_CALL", symbol,

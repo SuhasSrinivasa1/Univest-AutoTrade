@@ -125,6 +125,42 @@ final class ResearchEntryFingerprint {
         } catch (Exception ignored) {}
     }
 
+    /** Persist only observed decision-time intraday evidence. Frozen EOD values
+     * remain intact, while fields without a data source remain absent/null. */
+    static JSONObject snapshotLiveCandidate(JSONObject frozen,
+                                            List<GrowwClient.Candle> oneMinute,
+                                            GrowwClient.QuoteSnapshot book,
+                                            double livePrice, long observedAt) {
+        JSONObject row;
+        try { row = frozen == null ? new JSONObject() : new JSONObject(frozen.toString()); }
+        catch (Exception ignored) { row = new JSONObject(); }
+        try {
+            ResearchMath.Features m = ResearchMath.fromCandles(oneMinute);
+            row.put("parameterSchemaVersion", SCHEMA_VERSION);
+            row.put("parameterCount", PARAMETERS.length);
+            row.put("decisionObservedAt", observedAt);
+            row.put("liveReferencePrice", livePrice > 0 ? livePrice : JSONObject.NULL);
+            row.put("minute1Return1Pct", oneMinute != null && oneMinute.size() >= 2
+                    ? returnPct(oneMinute, 1) : JSONObject.NULL);
+            row.put("minute1Return5Pct", oneMinute != null && oneMinute.size() >= 6
+                    ? returnPct(oneMinute, 5) : JSONObject.NULL);
+            row.put("minute1Rsi14", m.dataPoints >= 15 ? m.rsi14 : JSONObject.NULL);
+            row.put("minute1RelativeVolume20", m.dataPoints >= 21
+                    ? m.relativeVolume20 : JSONObject.NULL);
+            double v = vwap(oneMinute);
+            row.put("minute1VwapDistancePct", livePrice > 0 && v > 0
+                    ? distancePct(livePrice, v) : JSONObject.NULL);
+            row.put("timeOfDayBucket", timeBucket(observedAt));
+            if (oneMinute != null && !oneMinute.isEmpty())
+                row.put("lastMinuteEpochSeconds", oneMinute.get(oneMinute.size() - 1).epochSeconds);
+            // Book quote is captured during evaluation, with its own time source.
+            row.put("bookCaptureStatus", book != null && book.success ? "AVAILABLE" : "NOT_CONNECTED");
+            annotateQuote(row, book);
+            applyCoverage(row);
+        } catch (Exception ignored) {}
+        return row;
+    }
+
     static void annotateQuote(JSONObject row, GrowwClient.QuoteSnapshot q) {
         if (row == null) return;
         try {

@@ -142,6 +142,8 @@ final class ResearchTradeEngine {
                     continue;
                 }
 
+                List<GrowwClient.Candle> signalMinuteCandles = null;
+                GrowwClient.QuoteSnapshot signalDepth = null;
                 // A frozen strategy score is NOT a live probability of success.
                 // Confirm point-in-time 1-minute momentum, RSI, actual VWAP and volume
                 // before turning a watched stock into a visible Forecast call.
@@ -149,6 +151,7 @@ final class ResearchTradeEngine {
                     long minuteNow = System.currentTimeMillis();
                     List<GrowwClient.Candle> liveCandles = GrowwClient.getHistoricalCandles(
                             c, symbol, minuteNow - 80L * 60_000L, minuteNow, "1minute");
+                    signalMinuteCandles = liveCandles;
                     ResearchMath.Features liveMinute = ResearchMath.fromCandles(liveCandles);
                     long latestBar = 0L;
                     double turnover = 0, tradedVolume = 0;
@@ -191,6 +194,7 @@ final class ResearchTradeEngine {
                     p.put("minuteVwap", minuteVwap);
                     p.put("lastMinuteCaptureAt", minuteNow);
                     GrowwClient.QuoteSnapshot depth = GrowwClient.getQuoteForAutomation(c, symbol);
+                    signalDepth = depth;
                     double spread = depth.success ? depth.spreadPct() : Double.NaN;
                     double closeVsSma20 = p.optDouble("sma20", 0) > 0
                             ? 100.0 * (ltp / p.optDouble("sma20") - 1.0) : Double.NaN;
@@ -255,6 +259,18 @@ final class ResearchTradeEngine {
                             "Atomic Research position claim rejected a duplicate recommendation.");
                     continue;
                 }
+                JSONObject live40Evidence = ResearchEntryFingerprint.snapshotLiveCandidate(
+                        p, signalMinuteCandles, signalDepth, executableReference, quoteAt);
+                try {
+                    live40Evidence.put("source", "FORECAST_LIVE_DECISION");
+                    live40Evidence.put("signalType", "FORECAST_ENTRY");
+                    live40Evidence.put("symbol", symbol);
+                    live40Evidence.put("recommendationId", pos.optString("id", ""));
+                    live40Evidence.put("signalAt", quoteAt);
+                    live40Evidence.put("positive40ObservedShared", p.optInt("positive40ObservedShared", 0));
+                    live40Evidence.put("positive40MatchScore", p.optDouble("positive40MatchScore", 0));
+                } catch (Exception ignored) {}
+                ResearchEventStore.appendDecisionSnapshot(c, "FORECAST_40_LIVE_DECISION", live40Evidence);
                 postEntryReady(c, pos);
                 emittedThisTick++;
 
@@ -981,8 +997,7 @@ final class ResearchTradeEngine {
         return 0;
     }
 
-    static String activePositionsText(Context c) {
-        JSONArray a = ResearchStore.positions(c);
+    static String activePositionsText(Context c) {        JSONArray a = ResearchStore.positions(c);
         StringBuilder b = new StringBuilder();
         for (int i = a.length() - 1; i >= 0; i--) {
             JSONObject p = a.optJSONObject(i);
@@ -997,7 +1012,8 @@ final class ResearchTradeEngine {
                     .append(one(p.optDouble("mfePct", 0))).append("%")
                     .append("\nExit model: ").append(p.optString("exitState", "HOLD"))
                     .append(" • attribution: ").append(p.optString("signalAttribution", "RESEARCH_ONLY"))
-                    .append("\nBenchmark target +").append(one(p.optDouble("benchmarkTargetUpsidePct", MIN_NET_WIN_PCT)))                    .append("% ≤").append(p.optInt("benchmarkMaxSessions", UnivestBenchmark.PRIMARY_MAX_SESSIONS))
+                    .append("\nBenchmark target +").append(one(p.optDouble("benchmarkTargetUpsidePct", MIN_NET_WIN_PCT)))
+                    .append("% ≤").append(p.optInt("benchmarkMaxSessions", UnivestBenchmark.PRIMARY_MAX_SESSIONS))
                     .append(" sessions • ").append(p.optString("benchmarkOpportunityOutcome", "OPEN"))
                     .append("\n").append(p.optString("lastReason", "Monitoring entry/exit conditions."));
         }

@@ -93,7 +93,8 @@ public class MarketGuardianService extends Service {
                     }
                 }, "market-guardian-tick").start();
             }
-            handler.postDelayed(this, TICK_MS);
+            handler.postDelayed(this, NseTradingCalendar.isRegularMarketOpen(now)
+                    ? TICK_MS : 2L * 60_000L);
         }
     };
 
