@@ -56,6 +56,14 @@ final class UnivestStateStore {
         double deferredProfitSellGttPrice = 0;
         int deferredProfitSellGttQty = 0;
         boolean deferredProfitSellGttUncertain = false;
+        // Official +1.00% activation / +0.05pp-buffered 0.10pp step trailing GTT.
+        long flatObservedAt = 0;
+        double trailPeakPct = 0;
+        double trailFloorPct = 0;
+        double trailTrigger = 0;
+        String trailGttId = "";
+        boolean trailGttUncertain = false;
+        boolean legacySellsUnresolved = false;
         String lastAction = "";
         long updatedAt = System.currentTimeMillis();
 
@@ -94,6 +102,13 @@ final class UnivestStateStore {
                 j.put("deferredProfitSellGttPrice", deferredProfitSellGttPrice);
                 j.put("deferredProfitSellGttQty", deferredProfitSellGttQty);
                 j.put("deferredProfitSellGttUncertain", deferredProfitSellGttUncertain);
+                j.put("flatObservedAt", flatObservedAt);
+                j.put("trailPeakPct", trailPeakPct);
+                j.put("trailFloorPct", trailFloorPct);
+                j.put("trailTrigger", trailTrigger);
+                j.put("trailGttId", trailGttId);
+                j.put("trailGttUncertain", trailGttUncertain);
+                j.put("legacySellsUnresolved", legacySellsUnresolved);
                 j.put("lastAction", lastAction);
                 j.put("updatedAt", updatedAt);
             } catch (Exception ignored) {}
@@ -134,6 +149,13 @@ final class UnivestStateStore {
             s.deferredProfitSellGttPrice = j.optDouble("deferredProfitSellGttPrice", 0);
             s.deferredProfitSellGttQty = j.optInt("deferredProfitSellGttQty", 0);
             s.deferredProfitSellGttUncertain = j.optBoolean("deferredProfitSellGttUncertain", false);
+            s.flatObservedAt = j.optLong("flatObservedAt", 0);
+            s.trailPeakPct = j.optDouble("trailPeakPct", 0);
+            s.trailFloorPct = j.optDouble("trailFloorPct", 0);
+            s.trailTrigger = j.optDouble("trailTrigger", 0);
+            s.trailGttId = j.optString("trailGttId", "");
+            s.trailGttUncertain = j.optBoolean("trailGttUncertain", false);
+            s.legacySellsUnresolved = j.optBoolean("legacySellsUnresolved", false);
             s.lastAction = j.optString("lastAction", "");
             s.updatedAt = j.optLong("updatedAt", System.currentTimeMillis());
             return s;

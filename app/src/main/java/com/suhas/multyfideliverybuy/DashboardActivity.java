@@ -313,7 +313,7 @@ public class DashboardActivity extends Activity {
                 margins(0, 8, 0, 0));
         title.addView(meta("Three families: Momentum/Trend • Participation/Liquidity • Structure/Market context. 40 point-in-time parameters remain research evidence; missing inputs are not invented."),
                 margins(0, 7, 0, 0));
-        title.addView(meta("EOD exits may realize a loss. Same-day broker fills cannot be guaranteed. Shared averaging: -0.5% through -5%, ten budgeted legs maximum."),
+        title.addView(meta("Forecast has separate same-day rules. Official Univest now uses one holding, no averaging, and trailing stop only."),
                 margins(0, 7, 0, 0));
         root.addView(title, margins(0, 20, 0, 12));
 
@@ -576,7 +576,6 @@ public class DashboardActivity extends Activity {
         safety.addView(sectionRow("OFFICIAL UNIVEST TRADING", AppPrefs.getExecutionMode(this)));
 
         Switch live = styledSwitch("LIVE MODE — REAL CNC ORDERS", AppPrefs.isLiveMode(this));
-        Switch avg = styledSwitch("CONTROLLED DOWNWARD AVERAGING", AppPrefs.isAveragingEnabled(this));
         Switch arm = styledSwitch("ARM UNIVEST AUTOTRADE", AppPrefs.isUnivestEnabled(this));
 
         safety.addView(budgetSlider(
@@ -586,20 +585,9 @@ public class DashboardActivity extends Activity {
                 true,
                 arm), margins(0, 12, 0, 0));
 
-        safety.addView(budgetSlider(
-                "RE-ENTRY + AVERAGING BUDGET",
-                "ONE shared averaging engine for Forecast and official calls: -0.5%, -1.0%, ... -5.0%, ten levels at most.",
-                AppPrefs.getUnivestAddBudget(this),
-                false,
-                arm), margins(0, 12, 0, 0));
-
-        safety.addView(meta("₹0 disables that buy leg. Range: ₹0–₹1,00,000 in ₹1,000 steps."), margins(0, 10, 0, 0));
-        safety.addView(meta("Potential per-stock exposure = initial budget + 10 × averaging budget. At defaults: ₹20,000 + 10 × ₹5,000 = ₹70,000, subject to actual fills and available cash."),
-                margins(0, 7, 0, 0));
-        safety.addView(meta("Budget changes apply to new orders and newly-created averaging GTTs. Existing broker-hosted averaging GTTs are left unchanged for safety."), margins(0, 6, 0, 10));
-
+        safety.addView(meta("Official strategy: ONE CNC stock live. +1.00% peak arms +0.95% trailing stop; every +0.10% peak raises the stop +0.10%."), margins(0,10,0,0));
+        safety.addView(meta("Official sell alerts, downward averaging and forced EOD exits are DISABLED. Positions can remain overnight; all stops can slip."), margins(0,6,0,10));
         safety.addView(live, margins(0, 2, 0, 0));
-        safety.addView(avg, margins(0, 0, 0, 0));
         safety.addView(arm, margins(0, 0, 0, 0));
 
         live.setOnCheckedChangeListener((b, checked) -> {
@@ -611,20 +599,10 @@ public class DashboardActivity extends Activity {
             render();
         });
 
-        avg.setOnCheckedChangeListener((b, checked) -> {
-            AppPrefs.setAveragingEnabled(this, checked);
-            AppPrefs.setUnivestEnabled(this, false);
-            DiagnosticsStore.runtime(this, "AVERAGING_SETTING_CHANGED", "",
-                    "Averaging " + (checked ? "enabled" : "disabled") + "; automation disarmed.");
-            Toast.makeText(this, "Averaging changed. AutoTrade disarmed for safety.", Toast.LENGTH_LONG).show();
-            render();
-        });
-
         arm.setOnCheckedChangeListener((b, checked) -> onArmRequested(checked));
 
         safety.addView(meta("Official source only • NSE CASH • CNC delivery"), margins(0, 10, 0, 0));
-        safety.addView(meta(formatRupees(AppPrefs.getUnivestBudget(this)) + " initial • "
-                + formatRupees(AppPrefs.getUnivestAddBudget(this)) + " re-entry / each averaging level • -0.5% to -5% (10 shared levels)"),
+        safety.addView(meta(formatRupees(AppPrefs.getUnivestBudget(this)) + " initial • one active official position • trail-only exits"),
                 margins(0, 6, 0, 0));
         root.addView(safety, margins(0, 0, 0, 14));
 
@@ -851,8 +829,8 @@ public class DashboardActivity extends Activity {
         c.addView(body(AppPrefs.isUnivestEnabled(this) ? "AutoTrade is ARMED" : "AutoTrade is DISARMED"), margins(0, 10, 0, 0));
         c.addView(meta(formatRupees(AppPrefs.getUnivestBudget(this)) + " initial • "
                 + formatRupees(AppPrefs.getUnivestAddBudget(this))
-                + " back-in-range / each averaging level from -0.5% to -5%"), margins(0, 8, 0, 0));
-        c.addView(meta("Official book-profit/exit cancels tracked averaging orders and sells the actual broker CNC holding."), margins(0, 6, 0, 0));
+                + " • one stock / 1% activates the trailing stop"), margins(0, 8, 0, 0));
+        c.addView(meta("Official SELL alerts ignored. Only broker-confirmed trailing-stop exits release the next official entry."), margins(0, 6, 0, 0));
 
         Button manage = secondaryButton("MANAGE EXECUTION SETTINGS");
         manage.setOnClickListener(v -> {
@@ -880,7 +858,7 @@ public class DashboardActivity extends Activity {
                 + activeCampaignCount() + " active position" + (activeCampaignCount() == 1 ? "" : "s")
                 + " • " + DiagnosticsStore.todayNotificationCount(this) + " signals today"), margins(0, 10, 0, 0));
         c.addView(meta(formatRupees(AppPrefs.getUnivestBudget(this)) + " fresh entry • "
-                + formatRupees(AppPrefs.getUnivestAddBudget(this)) + " each re-entry / averaging leg"), margins(0, 6, 0, 0));
+                + formatRupees(AppPrefs.getUnivestAddBudget(this)) + " legacy add budget (disabled)"), margins(0, 6, 0, 0));
 
         Button manage = secondaryButton("MANAGE TRADING SETTINGS");
         manage.setOnClickListener(v -> {
@@ -914,9 +892,8 @@ public class DashboardActivity extends Activity {
     private LinearLayout upsideMetricCard(String title, double value, int sample) {
         LinearLayout c = card();
         c.addView(text(title, 10, SUBTEXT, true));
-        String valueText = Math.abs(value) < 0.0001
-                ? "0.0%"
-                : String.format(Locale.US, "%+.1f%%", value);
+        String valueText = sample == 0 ? "—" : (Math.abs(value) < 0.0001
+                ? "0.0%" : String.format(Locale.US, "%+.1f%%", value));
         c.addView(text(valueText, 22, value >= 0 ? GREEN : RED, true), margins(0, 6, 0, 0));
         c.addView(meta("Rolling 30D • " + sample + " closed"), margins(0, 4, 0, 0));
         return c;
@@ -927,12 +904,13 @@ public class DashboardActivity extends Activity {
         double avg = ResearchTradeEngine.rolling30DayAverageUpsidePct(this);
         int sample = ResearchTradeEngine.rolling30DayClosedCount(this);
         c.addView(text("Forecasted Stocks Avg Upside %", 11, SUBTEXT, false));
-        c.addView(text(Math.abs(avg) < 0.0001 ? "0.00%" : String.format(Locale.US, "%+.2f%%", avg),
+        c.addView(text(sample == 0 ? "—" : (Math.abs(avg) < 0.0001 ? "0.00%"
+                        : String.format(Locale.US, "%+.2f%%", avg)),
                 26, avg >= 0 ? GREEN : RED, true), margins(0, 8, 0, 0));
-        c.addView(meta("Actual realized Forecast result • 30 days • " + sample + " closed"), margins(0, 6, 0, 0));
-        c.addView(meta(String.format(Locale.US,
-                "Target policy ≥+%.2f%% NET • 1%% floor • rises with completed Univest calls",
-                AppPrefs.getForecastTargetPolicyPct(this))), margins(0, 4, 0, 0));
+        c.addView(meta("Net outcome across " + sample + " completed Forecast calls • rolling 30 days; open calls excluded"),
+                margins(0, 6, 0, 0));
+        c.addView(meta("Forecast only — never mixed with official Univest results. Same-day target: +1.00% NET, prospective and unguaranteed; hit requires verified post-call price."),
+                margins(0, 4, 0, 0));
         return c;
     }
 
@@ -1019,8 +997,7 @@ public class DashboardActivity extends Activity {
         if (r.calledAt > 0) {
             stock.addView(text("Call " + formatTime(r.calledAt, "dd MMM • HH:mm:ss")
                     + " IST", 9, TEAL, false), margins(0, 3, 0, 0));
-            stock.addView(meta("Target window • Session "
-                    + Math.min(ForecastPolicy.FORECAST_TARGET_MAX_SESSIONS, r.sessionNumber)
+            stock.addView(meta("Target window • Session "                    + Math.min(ForecastPolicy.FORECAST_TARGET_MAX_SESSIONS, r.sessionNumber)
                     + "/" + ForecastPolicy.FORECAST_TARGET_MAX_SESSIONS
                     + " NSE trading sessions"), margins(0, 2, 0, 0));
         }
@@ -1094,7 +1071,7 @@ public class DashboardActivity extends Activity {
         c.addView(sectionRow("CURRENT POSITIONS", String.valueOf(activeCampaignCount())));
         List<UnivestStateStore.State> states = UnivestStateStore.all(this);
         boolean any = false;
-        c.addView(campaignTableRow("Stock", "Qty", "State", "Averaging", true), margins(0, 12, 0, 0));
+        c.addView(campaignTableRow("Stock", "Qty", "State", "Trail", true), margins(0, 12, 0, 0));
         for (UnivestStateStore.State s : states) {
             if (s == null || s.symbol == null || s.symbol.isEmpty()
                     || UnivestStateStore.EXITED.equals(s.phase)) continue;
@@ -1147,10 +1124,13 @@ public class DashboardActivity extends Activity {
 
     private String averagingSummary(UnivestStateStore.State s) {
         if (s == null) return "—";
+        if (s.trailGttUncertain) return "GTT UNKNOWN";
+        if (s.trailFloorPct > 0 && s.trailGttId!=null && !s.trailGttId.isEmpty())
+            return String.format(java.util.Locale.US,"+%.2f%%",s.trailFloorPct);
         if (UnivestStateStore.EXITING_OFFICIAL.equals(s.phase)
                 || UnivestStateStore.EXITING_PROFIT.equals(s.phase)
                 || UnivestStateStore.EXITING_STOP.equals(s.phase)) return "Cancelled";
-        if (!AppPrefs.isAveragingEnabled(this)) return "Off";
+        if (!AppPrefs.isAveragingEnabled(this)) return "Waiting +1%";
         int armed = 0;
         if (s.averageGtt1Id != null && !s.averageGtt1Id.isEmpty()) armed++;
         if (s.averageGtt2Id != null && !s.averageGtt2Id.isEmpty()) armed++;

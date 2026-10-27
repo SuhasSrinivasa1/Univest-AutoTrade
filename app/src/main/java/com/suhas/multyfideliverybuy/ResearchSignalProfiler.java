@@ -132,21 +132,23 @@ final class ResearchSignalProfiler {
                 row.put("sectorContextStatus", "NOT_CONNECTED");
             }
 
+            // Post-receipt news can be useful for follow-up analysis, but it is
+            // NEVER a point-in-time positive/negative catalyst feature.
             if (!row.has("positiveCatalysts") && !row.has("negativeCatalysts")) {
                 try {
                     ResearchNewsClient.Summary n = ResearchNewsClient.fetch(
                             resolved == null ? symbol : resolved.name, symbol);
-                    row.put("nationalNews", n.nationalCount);
-                    row.put("internationalNews", n.internationalCount);
-                    row.put("positiveCatalysts", n.positiveCatalysts);
-                    row.put("negativeCatalysts", n.negativeCatalysts);
-                    row.put("newsSignal", n.catalystLabel);
+                    row.put("postSignalNewsNational", n.nationalCount);
+                    row.put("postSignalNewsInternational", n.internationalCount);
+                    row.put("postSignalNewsPositive", n.positiveCatalysts);
+                    row.put("postSignalNewsNegative", n.negativeCatalysts);
+                    row.put("postSignalNewsCapturedAt", System.currentTimeMillis());
                 } catch (Throwable ignored) {}
             }
 
             JSONObject marketContext = null;
             try {
-                marketContext = ResearchMarketContext.snapshot(c, signalAt);
+                marketContext = ResearchMarketContext.snapshot(c, dailyCutoff);
                 if (marketContext != null && "AVAILABLE".equals(marketContext.optString("status"))) {
                     row.put("marketRegimeStatus", ResearchMarketContext.label(marketContext));
                     row.put("marketRegimeText", ResearchMarketContext.text(marketContext));

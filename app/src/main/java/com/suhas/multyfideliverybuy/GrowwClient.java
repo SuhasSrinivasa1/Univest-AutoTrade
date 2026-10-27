@@ -19,6 +19,8 @@ import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -538,6 +540,44 @@ final class GrowwClient {
         }
     }
 
+    /** Research-only bulk LTP snapshot; never used by official order submission.
+     * One request covers up to 50 instruments. Missing/invalid prices stay unavailable. */
+    static Map<String, Double> getResearchLtpBatch(Context context, List<String> symbols) throws Exception {
+        Map<String, Double> prices = new HashMap<>();
+        if (symbols == null || symbols.isEmpty()) return prices;
+        StringBuilder keys = new StringBuilder();
+        int added = 0;
+        for (String raw : symbols) {
+            if (raw == null) continue;
+            String symbol = raw.trim().toUpperCase(Locale.US);
+            if (!symbol.matches("[A-Z0-9&._-]{1,30}")) continue;
+            if (added++ >= 50) break;
+            if (keys.length() > 0) keys.append(',');
+            keys.append("NSE_").append(symbol);
+        }
+        if (keys.length() == 0) return prices;
+        String url = LTP_URL + "?segment=CASH&exchange_symbols="
+                + URLEncoder.encode(keys.toString(), StandardCharsets.UTF_8.name());
+        HttpResponse response = get(url, ensureToken(context), true);
+        if (response.code == 401 || response.code == 403) {
+            AppPrefs.clearAccessToken(context);
+            Result login = authenticate(context);
+            if (!login.success) throw new IllegalStateException(login.message);
+            response = get(url, AppPrefs.getAccessToken(context), true);
+        }
+        if (response.code < 200 || response.code >= 300)
+            throw new IllegalStateException("Research LTP HTTP " + response.code + ": "
+                    + shortText(response.body));
+        JSONObject payload = new JSONObject(response.body).optJSONObject("payload");
+        if (payload == null) return prices;
+        for (String key : keys.toString().split(",")) {
+            double value = payload.optDouble(key, Double.NaN);
+            if (Double.isFinite(value) && value > 0)
+                prices.put(key.substring(4), value);
+        }
+        return prices;
+    }
+
     static double getLtpForAutomation(Context context, String symbol) throws Exception { return getLtp(context, symbol); }
 
     static QuoteSnapshot getQuoteForAutomation(Context context, String symbol) {
@@ -794,6 +834,13 @@ final class GrowwClient {
                 rising?"UP":"DOWN",trigger,ref);
     }
 
+    /** Broker-hosted official Univest trailing protection activates ONLY after +1.00% gross peak. */
+    static GttResult createOfficialCncTrailSellGtt(Context c,String symbol,int qty,
+                                                   double trigger,String ref) {
+        if(qty<1 || !(trigger>0))return new GttResult(false,false,"","Invalid official stop");
+        return createGttMarketDetailed(c,symbol,qty,"CNC","SELL","DOWN",trigger,ref);
+    }
+
     /** Dedicated Forecast/Formula protective GTT; global official stop policy stays disabled. */
     static GttResult createSignalCncTrailSellGtt(Context c,String symbol,int qty,
                                                  double trigger,String ref) {
@@ -950,15 +997,13 @@ final class GrowwClient {
     static Result cancelOpenCncSellOrdersForSymbol(Context context, String symbol) {
         if (symbol == null || symbol.trim().isEmpty()) return new Result(false, false, 0, "Missing symbol for sell-order reconciliation.");
         String wanted = symbol.trim().toUpperCase(Locale.US);
-        try {
-            java.util.ArrayList<String> ids = listOpenCncSellOrderIds(context, wanted);
+        try {            java.util.ArrayList<String> ids = listOpenCncSellOrderIds(context, wanted);
             if (ids.isEmpty()) return new Result(true, false, 200, "No conflicting open CNC SELL orders found.");
 
             boolean sawUnknown = false;
             for (String id : ids) {
                 try {
-                    JSONObject body = new JSONObject();
-                    body.put("segment", "CASH");
+                    JSONObject body = new JSONObject();                    body.put("segment", "CASH");
                     body.put("groww_order_id", id);
                     HttpResponse r = post(ORDER_CANCEL_URL, ensureToken(context), body.toString(), true);
                     if (r.code == 401 || r.code == 403) {

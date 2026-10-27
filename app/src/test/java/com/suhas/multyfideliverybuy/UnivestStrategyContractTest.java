@@ -4,7 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class UnivestStrategyContractTest {
-    @Test public void fixedBudgetsAndAveragingAreLocked() {
+    @Test public void legacyBudgetDefaultsRemainReadableWithoutRearmingAveraging() {
         assertEquals(20000, UnivestManager.ENTRY_BUDGET);
         assertEquals(5000, UnivestManager.REENTRY_BUDGET);
         assertEquals(5000, UnivestManager.AVERAGE_BUDGET);
@@ -18,12 +18,12 @@ public class UnivestStrategyContractTest {
     }
     @Test public void freshNewEquityIgnoresExistingHoldingButNotOpenBrokerBuy() {
         assertTrue(UnivestManager.freshEntryMayProceed(0, false));
-        assertTrue(UnivestManager.freshEntryMayProceed(25, false));
+        assertFalse(UnivestManager.freshEntryMayProceed(25, false));
         assertFalse(UnivestManager.freshEntryMayProceed(0, true));
         assertFalse(UnivestManager.freshEntryMayProceed(25, true));
     }
     @Test public void averagingIsForbiddenOnceOfficialExitStarts() {
-        assertTrue(UnivestManager.phaseAllowsAveraging(UnivestStateStore.ACTIVE));
+        assertFalse(UnivestManager.phaseAllowsAveraging(UnivestStateStore.ACTIVE));
         assertFalse(UnivestManager.phaseAllowsAveraging(UnivestStateStore.ENTRY_PENDING));
         assertFalse(UnivestManager.phaseAllowsAveraging(UnivestStateStore.EXITING_OFFICIAL));
         assertFalse(UnivestManager.phaseAllowsAveraging(UnivestStateStore.EXITED));

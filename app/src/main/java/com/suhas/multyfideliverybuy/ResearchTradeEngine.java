@@ -142,6 +142,8 @@ final class ResearchTradeEngine {
                     continue;
                 }
 
+                List<GrowwClient.Candle> signalMinuteCandles = null;
+                GrowwClient.QuoteSnapshot signalDepth = null;
                 // A frozen strategy score is NOT a live probability of success.
                 // Confirm point-in-time 1-minute momentum, RSI, actual VWAP and volume
                 // before turning a watched stock into a visible Forecast call.
@@ -149,6 +151,7 @@ final class ResearchTradeEngine {
                     long minuteNow = System.currentTimeMillis();
                     List<GrowwClient.Candle> liveCandles = GrowwClient.getHistoricalCandles(
                             c, symbol, minuteNow - 80L * 60_000L, minuteNow, "1minute");
+                    signalMinuteCandles = liveCandles;
                     ResearchMath.Features liveMinute = ResearchMath.fromCandles(liveCandles);
                     long latestBar = 0L;
                     double turnover = 0, tradedVolume = 0;
@@ -191,6 +194,7 @@ final class ResearchTradeEngine {
                     p.put("minuteVwap", minuteVwap);
                     p.put("lastMinuteCaptureAt", minuteNow);
                     GrowwClient.QuoteSnapshot depth = GrowwClient.getQuoteForAutomation(c, symbol);
+                    signalDepth = depth;
                     double spread = depth.success ? depth.spreadPct() : Double.NaN;
                     double closeVsSma20 = p.optDouble("sma20", 0) > 0
                             ? 100.0 * (ltp / p.optDouble("sma20") - 1.0) : Double.NaN;
@@ -223,12 +227,50 @@ final class ResearchTradeEngine {
                     continue;
                 }
 
-                JSONObject pos = openShadow(c, p, ltp, i + 1);
+                // Final live quote prevents publishing the first price after a
+                // spike has already escaped the qualified entry zone. This is a
+                // research-only read and never reroutes official Univest orders.
+                double executableReference;
+                long quoteStart = System.currentTimeMillis();
+                try { executableReference = GrowwClient.getLtpForAutomation(c, symbol); }
+                catch (Throwable freshError) {
+                    ResearchTriggerState.markNotReady(c, symbol, today);
+                    logSkip(c, symbol, "FINAL_QUOTE_UNAVAILABLE", safe(freshError));
+                    continue;
+                }
+                long quoteAt = System.currentTimeMillis();
+                String moved = ResearchEntryFreshness.reject(ltp, executableReference,
+                        p.optDouble("buyLow", 0), p.optDouble("chaseLimit", 0),
+                        quoteAt - quoteStart);
+                if (!moved.isEmpty()) {
+                    ResearchTriggerState.markNotReady(c, symbol, today);
+                    logSkip(c, symbol, "SPIKE_OR_STALE_QUOTE_SKIP", moved);
+                    continue;
+                }
+                try {
+                    p.put("decisionQuoteAt", quoteAt);
+                    p.put("decisionQuoteLatencyMs", quoteAt - quoteStart);
+                    p.put("decisionSignalReferencePrice", executableReference);
+                    p.put("positive40DecisionEvaluatedAt", quoteAt);
+                } catch (Exception ignored) {}
+                JSONObject pos = openShadow(c, p, executableReference, i + 1);
                 if (pos == null) {
                     DiagnosticsStore.runtime(c, "RESEARCH_RECOMMENDATION_DUPLICATE_BLOCK", symbol,
                             "Atomic Research position claim rejected a duplicate recommendation.");
                     continue;
                 }
+                JSONObject live40Evidence = ResearchEntryFingerprint.snapshotLiveCandidate(
+                        p, signalMinuteCandles, signalDepth, executableReference, quoteAt);
+                try {
+                    live40Evidence.put("source", "FORECAST_LIVE_DECISION");
+                    live40Evidence.put("signalType", "FORECAST_ENTRY");
+                    live40Evidence.put("symbol", symbol);
+                    live40Evidence.put("recommendationId", pos.optString("id", ""));
+                    live40Evidence.put("signalAt", quoteAt);
+                    live40Evidence.put("positive40ObservedShared", p.optInt("positive40ObservedShared", 0));
+                    live40Evidence.put("positive40MatchScore", p.optDouble("positive40MatchScore", 0));
+                } catch (Exception ignored) {}
+                ResearchEventStore.appendDecisionSnapshot(c, "FORECAST_40_LIVE_DECISION", live40Evidence);
                 postEntryReady(c, pos);
                 emittedThisTick++;
 
@@ -537,7 +579,8 @@ final class ResearchTradeEngine {
                         && !ForecastPolicy.horizonExpired(callAt, quoteAt)) {
                     double observed = Math.max(p.optDouble("forecastObservedHigh", entry), ltp);
                     p.put("forecastObservedHigh", observed);
-                    double frozenTarget = forecastBenchmarkTargetPrice(c, p, entry);
+                    double frozenTarget = forecastBenchmarkTargetPrice(c, p,
+                            p.optDouble("shadowEntryPrice", entry));
                     if (p.optLong("forecastTargetHitAt", 0L) <= 0
                             && ForecastTargetMath.observedHit(ltp, frozenTarget))
                         p.put("forecastTargetHitAt", quoteAt);
@@ -732,10 +775,12 @@ final class ResearchTradeEngine {
         try {
             long now = System.currentTimeMillis();
             String today = NseTradingCalendar.dayKey(now);
-            if (today.equals(p.optString("minuteReplayKey", ""))) return;
-            long entryAt = p.optLong("entryAt", 0L);
+            if (today.equals(p.optString("verifiedMinuteReplayKey", ""))) return;
+            long entryAt = forecastCallAt(p);
             if (entryAt <= 0) return;
             boolean closed = "CLOSED".equals(p.optString("state"));
+            // Midday replay is incomplete: do not freeze the full-session high.
+            if (!closed && NseTradingCalendar.isRegularMarketOpen(now)) return;
             long exitAt = p.optLong("exitAt", 0L);
             boolean relevantToday = today.equals(NseTradingCalendar.dayKey(entryAt))
                     || (exitAt > 0 && today.equals(NseTradingCalendar.dayKey(exitAt))) || !closed;
@@ -764,16 +809,34 @@ final class ResearchTradeEngine {
             double min = p.optDouble("minPrice", entry);
             double max = p.optDouble("maxPrice", entry);
             long peakSec = 0L, troughSec = 0L;
+            double postCallHigh = p.optDouble("forecastObservedHigh", entry);
+            double signalEntry = p.optDouble("shadowEntryPrice", entry);
+            double target = forecastBenchmarkTargetPrice(c, p, signalEntry);
+            long verifiedHitAt = 0L;
+            int verifiedMinutes = 0;
             for (GrowwClient.Candle x : candles) {
+                if (x == null || !ForecastTargetMath.fullyObservedMinute(
+                        x.epochSeconds, entryAt, end)) continue;
+                verifiedMinutes++;
                 if (x.low > 0 && x.low < min) { min = x.low; troughSec = x.epochSeconds; }
                 if (x.high > 0 && x.high > max) { max = x.high; peakSec = x.epochSeconds; }
+                if (x.high > 0) {
+                    postCallHigh = Math.max(postCallHigh, x.high);
+                    if (verifiedHitAt <= 0 && ForecastTargetMath.observedHit(x.high, target))
+                        verifiedHitAt = x.epochSeconds * 1000L;
+                }
             }
+            if (verifiedMinutes == 0) return;
+            p.put("forecastObservedHigh", postCallHigh);
+            if (verifiedHitAt > 0 && p.optLong("forecastTargetHitAt", 0L) <= 0)
+                p.put("forecastTargetHitAt", verifiedHitAt);
             p.put("minPrice", min);
             p.put("maxPrice", max);
             p.put("maePct", (min / entry - 1.0) * 100.0);
             p.put("mfePct", (max / entry - 1.0) * 100.0);
             p.put("minuteReplayKey", today);
-            p.put("minuteReplayPoints", candles.size());
+            p.put("verifiedMinuteReplayKey", today);
+            p.put("minuteReplayPoints", verifiedMinutes);
             if (peakSec > 0) p.put("timeToPeakMinutes", Math.max(0L, (peakSec * 1000L - entryAt) / 60000L));
             if (troughSec > 0) p.put("timeToTroughMinutes", Math.max(0L, (troughSec * 1000L - entryAt) / 60000L));
         } catch (Throwable t) {
@@ -934,8 +997,7 @@ final class ResearchTradeEngine {
         return 0;
     }
 
-    static String activePositionsText(Context c) {
-        JSONArray a = ResearchStore.positions(c);
+    static String activePositionsText(Context c) {        JSONArray a = ResearchStore.positions(c);
         StringBuilder b = new StringBuilder();
         for (int i = a.length() - 1; i >= 0; i--) {
             JSONObject p = a.optJSONObject(i);
@@ -1399,27 +1461,28 @@ final class ResearchTradeEngine {
 
     private static double forecastBenchmarkTargetPrice(Context c, JSONObject p, double entry) {
         if (!Double.isFinite(entry) || !(entry > 0)) return 0;
+        int qty = p.optInt("shadowQuantity", 0);
+        // Never fall back to the unrelated official Univest benchmark or
+        // unverified legacy sell-zone projections.
+        double pct = p.optDouble("forecastTargetUpsidePct", Double.NaN);
         double locked = p.optDouble("forecastTargetPrice", 0);
-        if (Double.isFinite(locked) && locked > entry) return locked;
-        int qty = p.optInt("shadowQuantity", p.optInt("quantity", 0));
-        double pct = p.optDouble("forecastTargetUpsidePct",
-                p.optDouble("benchmarkTargetUpsidePct", 0));
-        if (qty <= 0 || !Double.isFinite(pct) || pct <= 0) return 0;
+        if (qty <= 0 || !SameDayForecastPolicy.VERSION.equals(
+                p.optString("sameDayStrategyVersion", ""))) return 0;
         double tick = 0.05;
         try {
             InstrumentRepository.Instrument ins = InstrumentRepository.resolve(
                     InstrumentRepository.load(c), p.optString("symbol", ""));
             if (ins != null && ins.tickSize > 0) tick = ins.tickSize;
         } catch (Throwable ignored) {}
-        // Sell-zone projections are not observed price targets. The frozen
-        // fee-adjusted target cannot be raised by an unsupported model sellLow.
-        return ForecastTargetMath.netPrice(entry, qty, tick, pct);
+        // Invalid historical targets are unverified, not retroactively "hit".
+        return ForecastTargetMath.verifiedSameDayTarget(entry, qty, tick, pct, locked);
     }
 
     private static String forecastDecisionState(JSONObject p, long now, double target) {
-        String eval = p.optString("evaluationState", "");
         String raw = p.optString("state", "");
         double net = p.optDouble("netPct", 0);
+        // An unavailable/stale target must not be shown as hit or offered for BUY.
+        if (!(target > 0)) return "TARGET UNVERIFIED";
         // An actual post-call observed high must meet the displayed target.
         long callAt = forecastCallAt(p);
         long hitAt = p.optLong("forecastTargetHitAt", 0L);

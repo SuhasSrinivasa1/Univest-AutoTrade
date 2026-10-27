@@ -16,6 +16,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Standalone, SHADOW-ONLY fixed Formula V1 signal engine.
@@ -26,7 +32,7 @@ import java.util.Locale;
 final class FormulaEngine {
     private static final String PREF = "formula_v1_independent";
     private static final String CHANNEL = "univest_formula_calls";
-    private static final long MIN_REFRESH_MS = 2 * 60_000L;
+    private static final long MIN_REFRESH_MS = 60_000L;
     private static final long CONFIRM_MS = 60_000L;
     // Every eligible stock is kept in the candidate rotation; network work
     // is bounded per tick, NEVER the daily number of qualified recommendations.
@@ -65,6 +71,11 @@ final class FormulaEngine {
 
         if (!NseTradingCalendar.isRegularMarketOpen(now)) {
             pref.edit().putString("status", "NSE closed • existing Formula calls preserved").apply();
+            return;
+        }
+        if (!SameDayForecastPolicy.entryAllowed(now)) {
+            pref.edit().putString("status", "Same-day Formula entries are closed after 14:00 IST • "
+                    + "monitoring existing calls and broker exits only.").apply();
             return;
         }
         String todaySession = NseTradingCalendar.dayKey(now);
@@ -118,23 +129,69 @@ final class FormulaEngine {
         JSONObject nextPending = pending;
         int count = eligible.size();
         int start = count == 0 ? 0 : Math.floorMod(pref.getInt("scan_cursor", 0), count);
-        for (int step = 0; step < count && observed < CHECKS_PER_SCAN; step++) {
-            JSONObject p = eligible.get((start + step) % count);
+        // Select a bounded rotating sample. Network reads may run concurrently;
+        // fixed Formula calculations, confirmation state and call writes remain serial.
+        List<JSONObject> scanCandidates = new ArrayList<>();
+        for (int step = 0; step < count && scanCandidates.size() < CHECKS_PER_SCAN; step++) {
+            JSONObject item = eligible.get((start + step) % count);
             progressed = step + 1;
-            String symbol = p.optString("symbol", "").trim().toUpperCase(Locale.US);
+            String symbol = item.optString("symbol", "").trim().toUpperCase(Locale.US);
             if (symbol.isEmpty()) continue;
             if (containsCall(calls, symbol, today)) { duplicateCalls++; continue; }
+            scanCandidates.add(item);
+        }
+        List<String> batchSymbols = new ArrayList<>();
+        for (JSONObject item : scanCandidates) batchSymbols.add(item.optString("symbol"));
+        Map<String, Double> ltpBatch = new HashMap<>();
+        long pricesAt = 0L;
+        try {
+            ltpBatch = GrowwClient.getResearchLtpBatch(c, batchSymbols);
+            pricesAt = System.currentTimeMillis();
+        } catch (Throwable marketError) {
+            if (applyNetworkBackoff(c, pref, marketError, System.currentTimeMillis()))
+                providerOutage = true;
+            else DiagnosticsStore.error(c, "FORMULA_LTP_BATCH_FAILED", "",
+                    "Research bulk LTP failed; fail closed for this scan.", marketError);
+        }
+        ExecutorService workers = Executors.newFixedThreadPool(Math.max(1,
+                Math.min(3, scanCandidates.size())));
+        Map<String, Future<List<GrowwClient.Candle>>> minuteReads = new HashMap<>();
+        if (!providerOutage) for (JSONObject candidate : scanCandidates) {
+            String symbol = candidate.optString("symbol", "");
+            double price = ltpBatch.getOrDefault(symbol, 0.0);
+            double low = candidate.optDouble("buyLow", 0), high = candidate.optDouble("chaseLimit", 0);
+            if (price > 0 && low > 0 && price >= low && high > low && price <= high)
+                minuteReads.put(symbol, workers.submit(() -> GrowwClient.getHistoricalCandles(
+                        c, symbol, now - 80L * 60_000L, now, "1minute")));
+        }
+        workers.shutdown();
+        // A bounded market-data deadline prevents slow requests from pushing
+        // a signal far beyond its real entry window.
+        long dataDeadline = System.currentTimeMillis() + 16_000L;
+        for (JSONObject p : scanCandidates) {
+            if (providerOutage) break;
+            String symbol = p.optString("symbol", "").trim().toUpperCase(Locale.US);
             observed++;
             try {
-                double price = GrowwClient.getLtpForAutomation(c, symbol);
+                double price = ltpBatch.getOrDefault(symbol, 0.0);
+                if (!(price > 0) || System.currentTimeMillis() - pricesAt > 6_000L)
+                    price = GrowwClient.getLtpForAutomation(c, symbol);
                 double low = p.optDouble("buyLow", 0), chase = p.optDouble("chaseLimit", 0);
                 if (!(price > 0 && low > 0 && price >= low && chase > low && price <= chase)) {
                     outsideZone++;
                     nextPending.remove(today + "|" + symbol);
                     continue;
                 }
-                List<GrowwClient.Candle> minute = GrowwClient.getHistoricalCandles(
-                        c, symbol, now - 80L * 60_000L, now, "1minute");
+                Future<List<GrowwClient.Candle>> task = minuteReads.get(symbol);
+                List<GrowwClient.Candle> minute;
+                if (task != null) {
+                    long left = dataDeadline - System.currentTimeMillis();
+                    if (left <= 0) throw new java.util.concurrent.TimeoutException("Formula data window expired");
+                    minute = task.get(left, TimeUnit.MILLISECONDS);
+                } else {
+                    minute = GrowwClient.getHistoricalCandles(
+                            c, symbol, now - 80L * 60_000L, now, "1minute");
+                }
                 ResearchMath.Features intraday = ResearchMath.fromCandles(minute);
                 // Incomplete minute data is UNKNOWN, not a high-confirmation score.
                 if (intraday.dataPoints < 15) {
@@ -190,13 +247,46 @@ final class FormulaEngine {
                     continue;
                 }
 
+                long quoteStart = System.currentTimeMillis();
+                double latest = GrowwClient.getLtpForAutomation(c, symbol);
+                long quoteAt = System.currentTimeMillis();
+                String moved = ResearchEntryFreshness.reject(price, latest, low, chase,
+                        quoteAt - quoteStart);
+                if (!moved.isEmpty()) {
+                    nextPending.remove(today + "|" + symbol);
+                    failedSafetyGate++;
+                    DiagnosticsStore.runtime(c, "FORMULA_SPIKE_OR_STALE_QUOTE_SKIP", symbol, moved);
+                    continue;
+                }
+                price = latest;
+                // Target is recomputed at the final observed price; the score's
+                // mathematical inputs and thresholds remain Formula V1.
+                qty = Math.max(1, (int)Math.floor(Math.max(1,
+                        AppPrefs.getUnivestBudget(c)) / price));
+                target = ForecastTargetMath.netPrice(
+                        price, qty, tick, FixedFormulaMath.TARGET_NET_PCT);
+                double[] confirmedFactors = factorScores(p, champions, intraday, price, vwap);
+                double confirmedScore = FixedFormulaMath.score(confirmedFactors);
+                if (!ForecastSignalGate.rejectReason(
+                        p.optString("marketRegimeStatus", "NOT_CONNECTED"), ret5,
+                        p.optInt("positiveCatalysts", 0), p.optInt("negativeCatalysts", 0),
+                        price, target, dailyAtr, false, 0).isEmpty()
+                        || !FixedFormulaMath.qualified(confirmedScore, best, consensus,
+                                confidence, price, target, dailyAtr)) {
+                    nextPending.remove(today + "|" + symbol);
+                    failedSafetyGate++;
+                    continue;
+                }
+                score = confirmedScore;
+                factors = confirmedFactors;
                 JSONObject call = new JSONObject();
                 call.put("model", FixedFormulaMath.VERSION);
                 call.put("id", today + "|" + symbol);
                 call.put("session", today);
                 call.put("symbol", symbol);
                 call.put("companyName", p.optString("companyName", ""));
-                call.put("calledAt", now);
+                call.put("calledAt", quoteAt);
+                call.put("decisionQuoteLatencyMs", quoteAt - quoteStart);
                 call.put("entry", price);
                 call.put("target", target);
                 call.put("targetNetPct", FixedFormulaMath.TARGET_NET_PCT);
@@ -212,6 +302,16 @@ final class FormulaEngine {
                 call.put("factors", factorJson);
                 call.put("missing", p.optString("missingData", ""));
                 calls.put(call);
+                JSONObject live40Evidence = ResearchEntryFingerprint.snapshotLiveCandidate(
+                        p, minute, null, price, quoteAt);
+                try {
+                    live40Evidence.put("source", "FORMULA_LIVE_DECISION");
+                    live40Evidence.put("signalType", "FORMULA_ENTRY");
+                    live40Evidence.put("symbol", symbol);
+                    live40Evidence.put("recommendationId", call.optString("id", ""));
+                    live40Evidence.put("signalAt", quoteAt);
+                } catch (Exception ignored) {}
+                ResearchEventStore.appendDecisionSnapshot(c, "FORMULA_40_LIVE_DECISION", live40Evidence);
                 nextPending.remove(today + "|" + symbol);
                 saveCalls(pref, calls);
                 DiagnosticsStore.runtime(c, "FORMULA_V1_CALL", symbol,
@@ -230,6 +330,10 @@ final class FormulaEngine {
                         "Fixed Formula candidate check failed; no call issued.", t);
             }
         }
+        for (Future<List<GrowwClient.Candle>> future : minuteReads.values()) {
+            if (!future.isDone()) future.cancel(true);
+        }
+        workers.shutdownNow();
         String scanSummary = "Formula V1 • EOD pool " + pool.length()
                 + " • today's session " + datedPool + " • qualified daily " + count
                 + " • checked " + observed + " • outside entry zone " + outsideZone
@@ -250,7 +354,7 @@ final class FormulaEngine {
         if (!providerOutage) {
             e.putInt("failure_streak", 0).putLong("network_cooldown_until", 0)
              .putString("network_outage", "");
-            e.putString("status", scanSummary + " • rotating through all candidates");
+            e.putString("status", scanSummary + " • rotating through all candidates every 60 seconds");
             if (triggered == 0) {
                 DiagnosticsStore.runtime(c, "FORMULA_NO_CALL_SCAN", "", scanSummary);
             }
