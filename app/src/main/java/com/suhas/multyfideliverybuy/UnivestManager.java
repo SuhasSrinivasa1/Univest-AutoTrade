@@ -120,6 +120,7 @@ final class UnivestManager {
         reservation.brokerBaselineQty = Math.max(0,before.quantity);
         reservation.averageLevel = 0;
         reservation.reentryUsed = false;
+        reservation.flatObservedAt = 0;
         reservation.trailPeakPct = 0;
         reservation.trailFloorPct = 0;
         reservation.trailTrigger = 0;
@@ -996,8 +997,8 @@ final class UnivestManager {
     }
 
     private static void cancelLegacyTrackedOrders(Context context, UnivestStateStore.State s) {
-        if (s == null) return;
-        final String symbol = s.symbol;        final String activeId = s.activeGttId == null ? "" : s.activeGttId;
+        if (s == null) return;        final String symbol = s.symbol;
+        final String activeId = s.activeGttId == null ? "" : s.activeGttId;
         final String stopId = s.protectiveStopGttId == null ? "" : s.protectiveStopGttId;
 
         GrowwClient.Result activeResult = null;

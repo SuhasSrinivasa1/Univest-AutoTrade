@@ -45,6 +45,14 @@ final class OfficialTrailingStopManager {
         GrowwClient.PositionSnapshot p=GrowwClient.getCncPosition(c,symbol);
         if(!p.success)return;
         if(p.quantity<=s.brokerBaselineQty) {
+            // A BUY fill may precede holdings visibility: never unlock on a single flat observation.
+            GrowwClient.Result pending=GrowwClient.checkForActiveCncBuyOrder(c,symbol);
+            if(pending.unknown || pending.success)return;
+            long now=System.currentTimeMillis();
+            if(s.flatObservedAt<=0) {
+                s.flatObservedAt=now;UnivestStateStore.put(c,s);return;
+            }
+            if(now-s.flatObservedAt<15_000L)return;
             // A triggered GTT may have sold already; broker flat is the unlock criterion.
             if(!s.trailGttId.isEmpty()) {
                 GrowwClient.GttStatusResult g=GrowwClient.getCashGttStatus(c,s.trailGttId);
@@ -62,6 +70,9 @@ final class OfficialTrailingStopManager {
             DiagnosticsStore.runtime(c,"OFFICIAL_TRAIL_CLOSED",symbol,s.lastAction);
             return;
         }
+        if(s.flatObservedAt>0) {
+            s.flatObservedAt=0;UnivestStateStore.put(c,s);
+        }
         if(UnivestStateStore.EXITING_OFFICIAL.equals(s.phase)
                 || UnivestStateStore.EXITING_STOP.equals(s.phase)) {
             // An earlier accepted SELL/old policy still needs broker reconciliation.
@@ -69,6 +80,16 @@ final class OfficialTrailingStopManager {
             DiagnosticsStore.runtime(c,"OFFICIAL_EXISTING_SELL_PENDING",symbol,
                     "Existing SELL phase unresolved; no second order issued.");
             return;
+        }
+        if(s.quantity<=s.brokerBaselineQty && p.quantity>s.brokerBaselineQty) {
+            GrowwClient.Result pending=GrowwClient.checkForActiveCncBuyOrder(c,symbol);
+            if(pending.success||pending.unknown)return;
+            s.quantity=p.quantity;
+            if(p.netPrice>0) {
+                if(!(s.anchorPrice>0))s.anchorPrice=p.netPrice;
+                s.principal=p.netPrice*p.quantity;
+            }
+            UnivestStateStore.put(c,s);
         }
         if(p.quantity!=s.quantity || s.brokerBaselineQty>0) {
             DiagnosticsStore.runtime(c,"OFFICIAL_TRAIL_QUANTITY_MISMATCH",symbol,

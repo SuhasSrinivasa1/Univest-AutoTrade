@@ -57,6 +57,7 @@ final class UnivestStateStore {
         int deferredProfitSellGttQty = 0;
         boolean deferredProfitSellGttUncertain = false;
         // Official +1.00% activation / +0.05pp-buffered 0.10pp step trailing GTT.
+        long flatObservedAt = 0;
         double trailPeakPct = 0;
         double trailFloorPct = 0;
         double trailTrigger = 0;
@@ -101,6 +102,7 @@ final class UnivestStateStore {
                 j.put("deferredProfitSellGttPrice", deferredProfitSellGttPrice);
                 j.put("deferredProfitSellGttQty", deferredProfitSellGttQty);
                 j.put("deferredProfitSellGttUncertain", deferredProfitSellGttUncertain);
+                j.put("flatObservedAt", flatObservedAt);
                 j.put("trailPeakPct", trailPeakPct);
                 j.put("trailFloorPct", trailFloorPct);
                 j.put("trailTrigger", trailTrigger);
@@ -147,6 +149,7 @@ final class UnivestStateStore {
             s.deferredProfitSellGttPrice = j.optDouble("deferredProfitSellGttPrice", 0);
             s.deferredProfitSellGttQty = j.optInt("deferredProfitSellGttQty", 0);
             s.deferredProfitSellGttUncertain = j.optBoolean("deferredProfitSellGttUncertain", false);
+            s.flatObservedAt = j.optLong("flatObservedAt", 0);
             s.trailPeakPct = j.optDouble("trailPeakPct", 0);
             s.trailFloorPct = j.optDouble("trailFloorPct", 0);
             s.trailTrigger = j.optDouble("trailTrigger", 0);
