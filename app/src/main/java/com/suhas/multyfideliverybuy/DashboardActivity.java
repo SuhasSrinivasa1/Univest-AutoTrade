@@ -1124,7 +1124,9 @@ public class DashboardActivity extends Activity {
 
     private String averagingSummary(UnivestStateStore.State s) {
         if (s == null) return "—";
-        if (s.trailFloorPct > 0) return String.format(java.util.Locale.US,"+%.2f%%",s.trailFloorPct);
+        if (s.trailGttUncertain) return "GTT UNKNOWN";
+        if (s.trailFloorPct > 0 && s.trailGttId!=null && !s.trailGttId.isEmpty())
+            return String.format(java.util.Locale.US,"+%.2f%%",s.trailFloorPct);
         if (UnivestStateStore.EXITING_OFFICIAL.equals(s.phase)
                 || UnivestStateStore.EXITING_PROFIT.equals(s.phase)
                 || UnivestStateStore.EXITING_STOP.equals(s.phase)) return "Cancelled";

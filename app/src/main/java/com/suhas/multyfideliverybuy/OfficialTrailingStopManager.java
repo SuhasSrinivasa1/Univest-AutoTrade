@@ -117,7 +117,8 @@ final class OfficialTrailingStopManager {
                 return;
             }
             if(st.contains("CANCEL")||st.contains("EXPIRE")||st.contains("REJECT")||st.contains("FAIL")) {
-                s.trailGttId="";s.trailTrigger=0;UnivestStateStore.put(c,s);
+                s.trailGttId="";s.trailTrigger=0;s.trailFloorPct=0;
+                UnivestStateStore.put(c,s);
             } else if(!(st.contains("ACTIVE")||st.contains("OPEN"))) {
                 // Never blind-replace an unrecognized or uncertain broker status.
                 return;
@@ -134,7 +135,8 @@ final class OfficialTrailingStopManager {
             s.lastAction=String.format(Locale.US,"Waiting for +1.00%% activation • currently %+.2f%%",gain);
             UnivestStateStore.put(c,s);return;
         }
-        s.trailFloorPct=desired;
+        // Desired floor is not the broker-confirmed stop. Update trailFloorPct ONLY
+        // after Groww acknowledges GTT creation/modification.
         double trigger=OfficialTrailPolicy.trigger(entry,s.tickSize,desired);
         if(!(trigger>0))return;
         int qty=p.quantity-s.brokerBaselineQty;
@@ -154,6 +156,7 @@ final class OfficialTrailingStopManager {
             s.trailGttUncertain=result.unknown || (result.success && result.smartOrderId.isEmpty());
             if(result.success && !result.smartOrderId.isEmpty()) {
                 s.trailGttId=result.smartOrderId;s.trailTrigger=trigger;
+                s.trailFloorPct=desired;
             }
             s.lastAction="Official trail +"+String.format(Locale.US,"%.2f",desired)
                     +"% • broker GTT: "+result.message;
@@ -163,7 +166,7 @@ final class OfficialTrailingStopManager {
             // Never cancel/recreate a live GTT: modification keeps a single SELL intent.
             GrowwClient.Result result=GrowwClient.modifySignalCncTrailGtt(c,s.trailGttId,qty,trigger);
             if(result.unknown)s.trailGttUncertain=true;
-            if(result.success)s.trailTrigger=trigger;
+            if(result.success) { s.trailTrigger=trigger; s.trailFloorPct=desired; }
             s.lastAction="Official trail +"+String.format(Locale.US,"%.2f",desired)
                     +"% • GTT ratchet: "+result.message;
             UnivestStateStore.put(c,s);
