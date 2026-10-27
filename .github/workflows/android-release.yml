@@ -79,8 +79,8 @@ jobs:
           grep -q 'PreMarketReadinessJobService' app/src/main/AndroidManifest.xml
           grep -q 'extends SQLiteOpenHelper' app/src/main/java/com/suhas/multyfideliverybuy/UnivestHistoryDb.java
           grep -q 'UnivestStrategyStudy.runNightly' app/src/main/java/com/suhas/multyfideliverybuy/ResearchOrchestrator.java
-          grep -q "versionCode 315" app/build.gradle
-          grep -q "versionName '2.9.25'" app/build.gradle
+          grep -q "versionCode 316" app/build.gradle
+          grep -q "versionName '2.9.26'" app/build.gradle
           grep -Fq 'installedVersion()' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           ! grep -Fq '"v2.9.10"' app/src/main/java/com/suhas/multyfideliverybuy/DashboardActivity.java
           grep -q 'ForecastLiveQualityGate.reject' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
@@ -88,7 +88,9 @@ jobs:
           grep -q 'PositiveUnivestFortyModel.annotateCandidate' app/src/main/java/com/suhas/multyfideliverybuy/ResearchEngine.java
           grep -q 'PositiveUnivestFortyModelTest' app/src/test/java/com/suhas/multyfideliverybuy/PositiveUnivestFortyModelTest.java
           grep -q 'SameDayForecastPolicy.evaluate' app/src/main/java/com/suhas/multyfideliverybuy/ResearchTradeEngine.java
-          grep -q 'UnivestSameDayExitManager.tick' app/src/main/java/com/suhas/multyfideliverybuy/MarketGuardianService.java
+          grep -q 'OfficialTrailingStopManager.tick' app/src/main/java/com/suhas/multyfideliverybuy/MarketGuardianService.java
+          grep -q 'OfficialSingleSlotQueue.offer' app/src/main/java/com/suhas/multyfideliverybuy/UnivestManager.java
+          grep -q 'OfficialTrailPolicy.floor' app/src/main/java/com/suhas/multyfideliverybuy/OfficialTrailingStopManager.java
           grep -q 'SameDayForecastPolicyTest' app/src/test/java/com/suhas/multyfideliverybuy/SameDayForecastPolicyTest.java
           grep -q 'SharedIntradayAveragingTest' app/src/test/java/com/suhas/multyfideliverybuy/SharedIntradayAveragingTest.java
           grep -q 'GttProfitTrailPolicyTest' app/src/test/java/com/suhas/multyfideliverybuy/GttProfitTrailPolicyTest.java

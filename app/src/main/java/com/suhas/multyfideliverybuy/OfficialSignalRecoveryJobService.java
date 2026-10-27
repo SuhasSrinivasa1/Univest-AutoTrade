@@ -12,6 +12,7 @@ public class OfficialSignalRecoveryJobService extends JobService {
                 // Also reconcile broker-confirmed/pending official exits. This is deliberately
                 // broker-truth based and does not create new strategy signals.
                 UnivestManager.reconcileAll(getApplicationContext());
+                OfficialSingleSlotQueue.drain(getApplicationContext());
             } catch (Throwable t) {
                 DiagnosticsStore.error(getApplicationContext(), "OFFICIAL_SIGNAL_RECOVERY_JOB_FAILED", "",
                         "Durable official-signal recovery job failed.", t);

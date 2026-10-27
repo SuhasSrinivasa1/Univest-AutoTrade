@@ -44,10 +44,10 @@ public class MarketGuardianService extends Service {
                         // Drive all orchestrator stages, not only the live market stage.
                         // This makes Session-3 timeout scoring and post-close replay resilient on
                         // restrictive OEM firmware where the fallback JobScheduler may be delayed.
-                        // Same-day broker exits must precede slow scanner operations.
-                        try { UnivestSameDayExitManager.tick(getApplicationContext()); }
+                        // Broker-hosted official trailing-stop protection precedes slow research scans.
+                        try { OfficialTrailingStopManager.tick(getApplicationContext()); }
                         catch (Throwable ignored) { DiagnosticsStore.runtime(getApplicationContext(),
-                                "OFFICIAL_EOD_PRIORITY_ERROR", "", "Priority exit check failed."); }
+                                "OFFICIAL_TRAIL_PRIORITY_ERROR", "", "Official trailing stop check failed."); }
                         try { ResearchTradeEngine.prioritizeSameDayExits(getApplicationContext()); }
                         catch (Throwable ignored) { DiagnosticsStore.runtime(getApplicationContext(),
                                 "FORECAST_EOD_PRIORITY_ERROR", "", "Priority Forecast exit check failed."); }
@@ -61,21 +61,7 @@ public class MarketGuardianService extends Service {
                                     "Formula/Forecast protective GTT monitoring failed.",t);
                         }
                         ResearchOrchestrator.tick(getApplicationContext());
-                        // Broker-risk cleanup has priority over market discovery. Exit only
-                        // positions attributable to this app, with fill reconciliation.
-                        try {
-                            for (UnivestStateStore.State managed :
-                                    UnivestStateStore.all(getApplicationContext())) {
-                                if (managed == null || managed.symbol.isEmpty()) continue;
-                                if (SameDayForecastPolicy.entryAllowed(System.currentTimeMillis()))
-                                    SharedIntradayAveraging.refresh(getApplicationContext(), managed.symbol);
-                            }
-                            UnivestSameDayExitManager.tick(getApplicationContext());
-                        } catch (Throwable exitFailure) {
-                            DiagnosticsStore.error(getApplicationContext(),
-                                    "SAME_DAY_GUARDIAN_EXIT_FAILED", "",
-                                    "Broker-aware same-day exit coordinator could not complete.",exitFailure);
-                        }
+                        // Stop reconciliation already ran ahead of research; avoid duplicate Groww calls.
                         // Formula retains its own 60-second scan limiter, on a separate worker.
                         // A slow Formula score may not delay official execution or Forecast.
                         new Thread(() -> {

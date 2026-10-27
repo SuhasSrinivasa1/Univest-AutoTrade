@@ -118,8 +118,8 @@ public class MainActivity extends Activity {
         contract.addView(text("Product lock: NSE CASH • CNC DELIVERY ONLY • no intraday", 13, ACCENT, true), margins(0,5,0,0));
         contract.addView(text("New eligible ≤3-month equity pick: ₹20,000 initial buy", 13, TEXT, false), margins(0,8,0,0));
         contract.addView(text("Back-in-range: broker flat → ₹20,000 missed entry; holding exists → +₹5,000 CNC", 13, TEXT, false));
-        contract.addView(text("Controlled downward averaging: ₹5,000 at -2%, -4%, -6% from initial fill", 13, TEXT, false));
-        contract.addView(text("Official book-profit / exit: cancel tracked averaging orders and sell full broker CNC holding", 13, TEXT, false));
+        contract.addView(text("No downward averaging; only one official stock position at a time", 13, TEXT, false));
+        contract.addView(text("Official exit: +1% activates +0.95% trailing floor, +0.10% steps thereafter", 13, TEXT, false));
         root.addView(contract, margins(0,0,0,12));
 
         LinearLayout controls = card();
@@ -144,7 +144,8 @@ public class MainActivity extends Activity {
             DiagnosticsStore.runtime(this, "AVERAGING_SETTING_CHANGED", "", "Downward averaging " + (checked ? "ENABLED" : "DISABLED") + "; automation disarmed for explicit re-arm.");
             refreshStatus();
         });
-        controls.addView(averagingSwitch);
+        averagingSwitch.setVisibility(View.GONE); // downward averaging removed from official strategy
+
         controls.addView(text("Enabled: broker-hosted CNC GTT buys of about ₹5,000 each at -2%, -4%, -6%. Maximum 3 levels per campaign.", 12, MUTED, false));
 
         armSwitch = new Switch(this);
@@ -228,7 +229,7 @@ public class MainActivity extends Activity {
         settings.addView(instruments, margins(0,8,0,0));
         root.addView(settings);
 
-        root.addView(text("v2.2 architecture: broker truth > local state • every official Univest signal evaluated • deterministic broker order references • daily operational logs + historical archive • fixed 3-level controlled averaging.", 11, MUTED, false), margins(2,14,2,0));
+        root.addView(text("v2.9.26: one official position • gross +1% activates trailing GTT • no averaging or sell-alert exits.", 11, MUTED, false), margins(2,14,2,0));
         return scroll;
     }
 

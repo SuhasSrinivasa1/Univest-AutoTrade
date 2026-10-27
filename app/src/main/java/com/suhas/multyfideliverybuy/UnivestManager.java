@@ -26,9 +26,22 @@ final class UnivestManager {
 
     static void handle(Context context, UnivestParser.Signal signal, long notificationPostTime) {
         if (signal == null) return;
-        if (signal.type == UnivestParser.Type.ENTRY) handleEntry(context, signal, notificationPostTime);
-        else if (signal.type == UnivestParser.Type.REENTRY) handleReentry(context, signal, notificationPostTime);
-        else handleExit(context, signal, notificationPostTime);
+        if (signal.type == UnivestParser.Type.EXIT) {
+            // A Univest sell alert is observation-only. The profit trail alone may sell.
+            DiagnosticsStore.runtime(context,"OFFICIAL_EXIT_IGNORED",signal.symbol,
+                    "Univest EXIT alert ignored by single-position trailing-only policy.");
+            return;
+        }
+        if (signal.type == UnivestParser.Type.REENTRY) {
+            DiagnosticsStore.runtime(context,"OFFICIAL_REENTRY_IGNORED",signal.symbol,
+                    "Back-in-range/downward-averaging buys disabled.");
+            return;
+        }
+        if (AppPrefs.isPaperMode(context)) {
+            handleEntry(context,signal,notificationPostTime); // logs PAPER only
+            return;
+        }
+        OfficialSingleSlotQueue.offer(context,signal,notificationPostTime);
     }
 
     static void handleEntry(Context context, UnivestParser.Signal signal, long notificationPostTime) {
@@ -73,6 +86,11 @@ final class UnivestManager {
         // including after an exit if the older holding remained negative.
         GrowwClient.PositionSnapshot before = GrowwClient.getCncPosition(context, symbol);
         if (!before.success) { fail(context, "ENTRY_HOLDING_CHECK_FAILED", symbol, before.message, null); return; }
+        if (before.quantity > 0) {
+            DiagnosticsStore.runtime(context,"OFFICIAL_EXISTING_HOLDING_NO_ADD",symbol,
+                    "Fresh entry blocked: broker already holds this ticker; no averaging or adding to holdings.");
+            return;
+        }
 
         GrowwClient.Result pending = GrowwClient.checkForActiveCncBuyOrder(context, symbol);
         if (pending.unknown) { fail(context, "ENTRY_PENDING_ORDER_CHECK_UNKNOWN", symbol, pending.message, null); return; }
@@ -102,6 +120,11 @@ final class UnivestManager {
         reservation.brokerBaselineQty = Math.max(0,before.quantity);
         reservation.averageLevel = 0;
         reservation.reentryUsed = false;
+        reservation.trailPeakPct = 0;
+        reservation.trailFloorPct = 0;
+        reservation.trailTrigger = 0;
+        reservation.trailGttId = "";
+        reservation.trailGttUncertain = false;
         reservation.exitOrderId = "";
         reservation.exitRequestedQty = 0;
         reservation.lastAction = "Fresh official New Equity recommendation reserved • broker baseline qty "
@@ -116,6 +139,18 @@ final class UnivestManager {
         GrowwClient.ExecutionResult r = GrowwClient.placeUnivestCncMarketBuy(context, symbol, entryBudget, orderRef);
         OfficialExecutionLatency.orderDispatched(context, signal.type, symbol, notificationPostTime, r.dispatchAtMillis);
         if (!r.submitted) {
+            if (r.unknown) {
+                // An indeterminate broker BUY submission still owns the ONE official slot.
+                UnivestStateStore.State unknown = UnivestStateStore.get(context, symbol);
+                if (unknown != null) {
+                    unknown.phase = UnivestStateStore.ENTRY_PENDING;
+                    unknown.lastAction = "Groww BUY acceptance UNKNOWN; slot locked until broker reconciliation. " + r.message;
+                    UnivestStateStore.put(context, unknown);
+                }
+                DiagnosticsStore.runtime(context,"OFFICIAL_BUY_UNKNOWN_SLOT_LOCKED",symbol,
+                        "No second official stock may be purchased until prior unknown BUY is resolved.");
+                return;
+            }
             // Restore the local campaign from live broker truth instead of marking an existing holding EXITED.
             GrowwClient.PositionSnapshot restore = GrowwClient.getCncPosition(context, symbol);
             if (restore.success && restore.quantity > 0) {
@@ -163,7 +198,7 @@ final class UnivestManager {
                     + " • broker baseline qty " + before.quantity;
         UnivestStateStore.put(context, state);
 
-        if (r.filled && r.averagePrice > 0) armAveragingLadder(context, state, r.orderId);
+        // Downward averaging removed: no official averaging BUY/GTT ladder is armed.
         DiagnosticsStore.trade(context, r.filled ? "BUY_EXECUTED_FRESH_CYCLE" : "BUY_SUBMITTED_FILL_UNCONFIRMED",
                 symbol, state.lastAction, r);
         long age = r.dispatchAtMillis > 0 && notificationPostTime > 0 ? Math.max(0, r.dispatchAtMillis - notificationPostTime) : -1;
@@ -174,10 +209,15 @@ final class UnivestManager {
 
     static boolean freshEntryMayProceed(int brokerQuantity, boolean activeBrokerBuy) {
         // brokerQuantity is intentionally not a blocker: a distinct official New Equity call is a new cycle.
-        return !activeBrokerBuy;
+        return brokerQuantity == 0 && !activeBrokerBuy;
     }
 
     static void handleReentry(Context context, UnivestParser.Signal signal, long notificationPostTime) {
+        if (signal != null) {
+            DiagnosticsStore.runtime(context,"OFFICIAL_REENTRY_DISABLED",signal.symbol,
+                    "Reentry/downward averaging is disabled for official Univest trades.");
+            return;
+        }
         synchronized (campaignLock(signal.symbol)) {
             handleReentrySerial(context, signal, notificationPostTime);
         }
@@ -317,6 +357,11 @@ final class UnivestManager {
     }
 
     static void handleExit(Context context, UnivestParser.Signal signal, long notificationPostTime) {
+        if (signal != null) {
+            DiagnosticsStore.runtime(context,"OFFICIAL_EXIT_DISABLED",signal.symbol,
+                    "Sell notification ignored. Only +1% activated trailing stop may sell.");
+            return;
+        }
         synchronized (campaignLock(signal.symbol)) {
             handleExitSerial(context, signal, notificationPostTime);
         }
@@ -548,6 +593,10 @@ final class UnivestManager {
     }
 
     static void reconcileAll(Context context) {
+        if (context != null) {
+            OfficialTrailingStopManager.tick(context);
+            return;
+        }
         migrateLegacyRules(context);
         if (!AppPrefs.isLiveMode(context)) return;
 
@@ -625,7 +674,7 @@ final class UnivestManager {
     }
 
     static boolean phaseAllowsAveraging(String phase) {
-        return UnivestStateStore.ACTIVE.equals(phase);
+        return false; // official downward averaging removed
     }
 
     static boolean phaseBlocksCampaignResurrection(String phase) {
@@ -640,6 +689,7 @@ final class UnivestManager {
     }
 
     static boolean reconcileDeferredExit(Context context, String symbol) {
+        if (context != null) return true; // old notification-triggered EXIT recovery disabled
         synchronized (campaignLock(symbol)) {
             return reconcileDeferredExitSerial(context, symbol);
         }
@@ -798,6 +848,7 @@ final class UnivestManager {
     }
 
     private static void armAveragingLadder(Context context, UnivestStateStore.State state, String entrySeed) {
+        if (context != null) return; // official downward averaging retired
         if (state == null || !(state.anchorPrice > 0) || !phaseAllowsAveraging(state.phase))
             return;
         // One shared 10-step GTT engine for official and Forecast campaigns.
@@ -823,7 +874,7 @@ final class UnivestManager {
         }
     }
 
-    private static void cancelAveragingLadder(Context context, UnivestStateStore.State s) {
+    static void cancelAveragingLadder(Context context, UnivestStateStore.State s) {
         if (s == null) return;
         SharedIntradayAveraging.cancel(context, s.symbol);
         cancelAveragingIds(context, s, knownAveragingIds(context, s));
@@ -946,8 +997,7 @@ final class UnivestManager {
 
     private static void cancelLegacyTrackedOrders(Context context, UnivestStateStore.State s) {
         if (s == null) return;
-        final String symbol = s.symbol;
-        final String activeId = s.activeGttId == null ? "" : s.activeGttId;
+        final String symbol = s.symbol;        final String activeId = s.activeGttId == null ? "" : s.activeGttId;
         final String stopId = s.protectiveStopGttId == null ? "" : s.protectiveStopGttId;
 
         GrowwClient.Result activeResult = null;

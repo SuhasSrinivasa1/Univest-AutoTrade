@@ -834,6 +834,13 @@ final class GrowwClient {
                 rising?"UP":"DOWN",trigger,ref);
     }
 
+    /** Broker-hosted official Univest trailing protection activates ONLY after +1.00% gross peak. */
+    static GttResult createOfficialCncTrailSellGtt(Context c,String symbol,int qty,
+                                                   double trigger,String ref) {
+        if(qty<1 || !(trigger>0))return new GttResult(false,false,"","Invalid official stop");
+        return createGttMarketDetailed(c,symbol,qty,"CNC","SELL","DOWN",trigger,ref);
+    }
+
     /** Dedicated Forecast/Formula protective GTT; global official stop policy stays disabled. */
     static GttResult createSignalCncTrailSellGtt(Context c,String symbol,int qty,
                                                  double trigger,String ref) {
@@ -990,8 +997,7 @@ final class GrowwClient {
     static Result cancelOpenCncSellOrdersForSymbol(Context context, String symbol) {
         if (symbol == null || symbol.trim().isEmpty()) return new Result(false, false, 0, "Missing symbol for sell-order reconciliation.");
         String wanted = symbol.trim().toUpperCase(Locale.US);
-        try {
-            java.util.ArrayList<String> ids = listOpenCncSellOrderIds(context, wanted);
+        try {            java.util.ArrayList<String> ids = listOpenCncSellOrderIds(context, wanted);
             if (ids.isEmpty()) return new Result(true, false, 200, "No conflicting open CNC SELL orders found.");
 
             boolean sawUnknown = false;

@@ -38,8 +38,8 @@ final class AppPrefs {
                 .putBoolean("research_autotrade_enabled", false).putBoolean("formula_autotrade_enabled", false).apply();
     }
 
-    static boolean isAveragingEnabled(Context c) { return p(c).getBoolean("downward_averaging_enabled", true); }
-    static void setAveragingEnabled(Context c, boolean v) { p(c).edit().putBoolean("downward_averaging_enabled", v).apply(); }
+    static boolean isAveragingEnabled(Context c) { return false; }
+    static void setAveragingEnabled(Context c, boolean v) { p(c).edit().putBoolean("downward_averaging_enabled", false).apply(); }
     static int getAveragingLevels(Context c) { return SameDayForecastPolicy.AVERAGE_LEVELS; }
     static void setAveragingLevels(Context c, int v) {
         // No independent averaging ladder count: both lanes share exactly ten 0.5% steps.
