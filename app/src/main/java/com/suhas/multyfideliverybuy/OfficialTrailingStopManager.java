@@ -106,6 +106,14 @@ final class OfficialTrailingStopManager {
         if(!retireOldOrders(c,s)) return;
         s=UnivestStateStore.get(c,symbol); // cleanup changed persisted legacy-order fields
         if(s==null)return;
+        // An old profit SELL (or a just-triggered GTT child) may still be in flight.
+        // Never arm/modify a second SELL while a normal CNC SELL is open or uncertain.
+        GrowwClient.Result pendingSell=GrowwClient.checkForActiveCncSellOrder(c,symbol);
+        if(pendingSell.unknown || pendingSell.success) {
+            DiagnosticsStore.runtime(c,"OFFICIAL_TRAIL_SELL_ORDER_CONFLICT",symbol,
+                    "Existing/unknown broker SELL blocks trailing changes: "+pendingSell.message);
+            return;
+        }
         // Do not replace an accepted broker stop until its current state is known.
         if(!s.trailGttId.isEmpty()) {
             GrowwClient.GttStatusResult status=GrowwClient.getCashGttStatus(c,s.trailGttId);
